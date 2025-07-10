@@ -1,20 +1,40 @@
-
+/*
+ * Copyright (c) 2025 DigitalChickenLabs
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 package org.firstinspires.ftc.teamcode.testcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.MovingStatistics;
 
 import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
-import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 
-
-
+/**
+ * This OpMode demonstrates how to use the absolute localizer feature of the OctoQuad
+ * FTC Edition MK2. It is STRONGLY recommended to read the Quick Start guide for the
+ * localizer feature, located here:
+ */
 @TeleOp
-public class GamepadTest extends LinearOpMode
+public class OctoQuadTest extends LinearOpMode
 {
 
 
@@ -45,8 +65,6 @@ public class GamepadTest extends LinearOpMode
     // Data structure which will store the localizer data read from the OctoQuad
     OctoQuadFWv3.LocalizerDataBlock localizer = new OctoQuadFWv3.LocalizerDataBlock();
 
-
-
     /*
      * Main OpMode function
      */
@@ -56,9 +74,7 @@ public class GamepadTest extends LinearOpMode
         // to specify 'OctoQuadFWv3' as specifying 'OctoQuad' will load the FTC SDK's
         // built-in driver which only supports firmware v2.
         OctoQuadFWv3 oq = hardwareMap.get(OctoQuadFWv3.class, "OctoQuadFWv3");
-        Gamepad.RumbleEffect.Builder rumbleBuilder = new Gamepad.RumbleEffect.Builder();
 
-        rumbleBuilder.addStep(1,1,50);
         // Crank up the telemetry update frequency to make the data display a bit less laggy
         telemetry.setMsTransmissionInterval(50);
 
@@ -82,7 +98,6 @@ public class GamepadTest extends LinearOpMode
         // This function will NOT block until calibration of the IMU is complete -
         // for that you need to look at the status returned by getLocalizerStatus()
         oq.resetLocalizerAndCalibrateIMU();
-        teamUtil.init(this);
 
         /*
          * INIT LOOP
@@ -93,7 +108,7 @@ public class GamepadTest extends LinearOpMode
             telemetry.addData("Localizer Status", oq.getLocalizerStatus());
             telemetry.addData("Heading Axis Detection", oq.getLocalizerHeadingAxisChoice());
             telemetry.update();
-            teamUtil.pause(100);
+            sleep(100);
         }
 
         /*
@@ -145,7 +160,7 @@ public class GamepadTest extends LinearOpMode
                     telemetry.addData("Loop Hz", 1e3/statistics.getMean());
                 }
                 prevTime = curTime;
-                /*
+
                 telemetry.addData("Localizer Status", localizer.localizerStatus);
                 telemetry.addData("Heading deg", localizer.heading_rad * RAD2DEG);
                 telemetry.addData("Heading dps", localizer.velHeading_radS * RAD2DEG);
@@ -153,13 +168,8 @@ public class GamepadTest extends LinearOpMode
                 telemetry.addData("Y mm", localizer.posY_mm);
                 telemetry.addData("VX mm/s", localizer.velX_mmS);
                 telemetry.addData("VY mm/s", localizer.velY_mmS);
-
-                 */
-                telemetry.addData("VX mm/s", localizer.velX_mmS);
-                telemetry.addData("VY mm/s", localizer.velY_mmS);
                 goodPacketCount++;
             }
-
             else
             {
                 telemetry.addLine("Data CRC not valid");
@@ -169,17 +179,17 @@ public class GamepadTest extends LinearOpMode
             // Print some statistics about CRC validation
             telemetry.addLine(String.format("CRC Mismatch Count: %d/%d (%.3f%%)", badPacketCount, goodPacketCount, ((float)badPacketCount/(float)goodPacketCount)*100.0f));
 
-           //reset localizer
-            if(gamepad1.psWasReleased()){
-                oq.setLocalizerPose(0, 0, (float)(Math.PI/4.0f));
+            // Demonstrate the ability to "teleport" the localizer position on demand.
+            if (gamepad1.left_bumper)
+            {
+                // You can teleport position AND heading
+                oq.setLocalizerPose(500, 750, (float)(Math.PI/4.0f));
             }
-
-            double offsetHyp = Math.sqrt(Math.pow(localizer.posY_mm,2)+Math.pow(localizer.posX_mm,2));
-
-            if(offsetHyp>100){
-                gamepad1.runRumbleEffect(rumbleBuilder.build());
+            else if (gamepad1.right_bumper)
+            {
+                // Or you can teleport just heading
+                oq.setLocalizerHeading((float) Math.PI);
             }
-
 
             // Send updated telemetry to the Driver Station
             telemetry.update();
