@@ -12,7 +12,9 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
+import org.firstinspires.ftc.teamcode.assemblies.Detector;
 import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
+import org.firstinspires.ftc.teamcode.assemblies.OpenCVSampleDetector;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 import java.util.Arrays;
@@ -24,6 +26,10 @@ public class LimelightTest extends LinearOpMode
 
 
     Limelight3A limelight;
+    Detector detector;
+    OpenCVSampleDetector.FrameData frameData = null;
+
+
 
 
     public void initCam() {
@@ -33,12 +39,28 @@ public class LimelightTest extends LinearOpMode
     }
 
 
+    //Runs Limelight and logitech simultaneously
+
+
     public void runOpMode()
     {
 
         teamUtil.init(this);
+
+        //limelight init
         initCam();
+
+        //logitech init
+
+        detector = new Detector();
+        detector.initCV(true);
+        detector.startCVPipeline();
+
+
         waitForStart();
+
+        OpenCVSampleDetector.FrameData newFrame;
+
 
         int currentPipeIndex = 5;
         limelight.pipelineSwitch(currentPipeIndex); // Switch to desired pipeline num
@@ -63,7 +85,7 @@ public class LimelightTest extends LinearOpMode
                 telemetry.addData("Limelight", "No Targets");
             }
             
-            
+            //max 32 double array run through snapscript
             double[] pythonOutputs = result.getPythonOutput();
 
             teamUtil.log("Python output:");
@@ -87,10 +109,25 @@ public class LimelightTest extends LinearOpMode
                 limelight.pipelineSwitch(currentPipeIndex); // Switch to desired pipeline num
 
             }
+
+
+
+            if (detector.sampleDetector.frameDataQueue.peek()!=null) {
+                frameData = detector.sampleDetector.frameDataQueue.peek();
+                teamUtil.log("Rect Angle" + frameData.rectAngle);
+            }
+
+
+
+
+
+
+
+
+
+
             telemetry.addLine("Valid?: " + result.isValid());
             telemetry.addLine("Null?: " + (result == null));
-
-
             telemetry.update();
 
         }
