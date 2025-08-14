@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 import java.util.Arrays;
 
-
+//USE limelight test config for this opmode
 @TeleOp
 public class LimelightTest extends LinearOpMode
 {
@@ -115,6 +115,10 @@ public class LimelightTest extends LinearOpMode
             if (detector.sampleDetector.frameDataQueue.peek()!=null) {
                 frameData = detector.sampleDetector.frameDataQueue.peek();
                 teamUtil.log("Rect Angle" + frameData.rectAngle);
+            }
+
+            if(gamepad1.dpadDownWasReleased()){
+                detector.sampleDetector.configureCam(detector.portal, OpenCVSampleDetector.APEXPOSURE, OpenCVSampleDetector.AEPRIORITY, OpenCVSampleDetector.EXPOSURE, OpenCVSampleDetector.GAIN, OpenCVSampleDetector.WHITEBALANCEAUTO, OpenCVSampleDetector.TEMPERATURE, OpenCVSampleDetector.AFOCUS, OpenCVSampleDetector.FOCUSLENGTH);
             }
 
 
