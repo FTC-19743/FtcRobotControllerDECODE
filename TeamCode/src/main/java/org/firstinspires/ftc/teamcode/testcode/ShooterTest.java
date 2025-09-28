@@ -22,12 +22,14 @@ public class ShooterTest extends LinearOpMode {
     public static final float openPos = 0.39f;
     public static final float launchPos = 0.51f;
     public double CurrentPower = 0;
-    public double currentVelocity = 0;
+    public double currentRVelocity = 0;
+    public double currentLVelocity = 0;
     public static double shooterIncrement = 0.11;
     public static double shooterP = 50;
     public static double shooterI = 1;
     public static double shooterD = 0.5;
     public double shooterF = 0;
+    public static int pusherPause = 400;
 
 
 
@@ -61,23 +63,23 @@ public class ShooterTest extends LinearOpMode {
             motor.setPower(CurrentPower);
             //motorL.setPower(CurrentPower);
             //motorR.setPower(-CurrentPower);
-            motorL.setVelocity(currentVelocity);
-            motorR.setVelocity(-currentVelocity);
+            motorL.setVelocity(currentLVelocity);
+            motorR.setVelocity(-currentRVelocity);
             if(gamepad1.dpadUpWasReleased()){
                 CurrentPower+=PowerIncrement;
-                currentVelocity+=VelocityIncrement;
+                currentLVelocity+=VelocityIncrement;
             }
             if(gamepad1.dpadDownWasReleased()){
                 CurrentPower-=PowerIncrement;
-                currentVelocity-=VelocityIncrement;
+                currentLVelocity-=VelocityIncrement;
             }
             if(gamepad1.dpadRightWasReleased()){
                 CurrentPower+=PowerIncrement;
-                currentVelocity+=SmallVelocityIncrement;
+                currentRVelocity+=VelocityIncrement;
             }
             if(gamepad1.dpadLeftWasReleased()){
                 CurrentPower-=PowerIncrement;
-                currentVelocity-=SmallVelocityIncrement;
+                currentRVelocity-=VelocityIncrement;
             }
             if(gamepad1.aWasPressed()) {
                 pusher.setPosition(pusher.getPosition()-shooterIncrement);
@@ -85,11 +87,18 @@ public class ShooterTest extends LinearOpMode {
             if(gamepad1.yWasPressed()) {
                 pusher.setPosition(pusher.getPosition()+shooterIncrement);
             }
+            if(gamepad1.bWasPressed()) {
+                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+                teamUtil.pause(pusherPause);
+                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+                teamUtil.pause(pusherPause);
+                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+            }
 
             TelemetryPacket packet = new TelemetryPacket();
             dashboard.sendTelemetryPacket(packet);
             telemetry.addLine("Current Power: " + CurrentPower);
-            telemetry.addLine("currentVelocity: " + currentVelocity);
+            telemetry.addLine("currentVelocity: " + currentRVelocity + ", " + currentLVelocity);
             telemetry.addLine("ReportedVelocity: " + motorL.getVelocity()+", "+motorR.getVelocity());
             telemetry.addData("Reported Left Velocity: " , motorL.getVelocity());
             telemetry.addData("Reported Right Velocity: " , motorR.getVelocity());

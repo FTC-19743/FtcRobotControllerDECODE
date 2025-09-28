@@ -73,9 +73,12 @@ public class BallDetector extends LinearOpMode
         initCam();
 
         //logitech init
+        /*
         detector = new Detector();
         detector.initCV(true);
         detector.startCVPipeline();
+
+         */
 
         telemetry.setMsTransmissionInterval(11);
         LimeLightTool llIt = new LimeLightTool(limelight);  // instantiate the lime light tools class, pulls IP address from LimeLight
@@ -83,6 +86,7 @@ public class BallDetector extends LinearOpMode
         llIt.setDriverStationStreamSource();
 
         llIt.forwardAll();
+
 
         FtcDashboard.getInstance().startCameraStream(llIt.getStreamSource(),10);
 
@@ -116,13 +120,17 @@ public class BallDetector extends LinearOpMode
                 }
             }
 
+
+
             telemetry.addLine("Current Pipeline Index: " + currentPipeIndex);
 
-
+            /*
             if (detector.sampleDetector.frameDataQueue.peek()!=null) {
                 frameData = detector.sampleDetector.frameDataQueue.peek();
                 teamUtil.log("Rect Angle" + frameData.rectAngle);
             }
+
+             */
 
             if(gamepad1.dpadDownWasReleased()){
                 detector.sampleDetector.configureCam(detector.portal, OpenCVSampleDetector.APEXPOSURE, OpenCVSampleDetector.AEPRIORITY, OpenCVSampleDetector.EXPOSURE, OpenCVSampleDetector.GAIN, OpenCVSampleDetector.WHITEBALANCEAUTO, OpenCVSampleDetector.TEMPERATURE, OpenCVSampleDetector.AFOCUS, OpenCVSampleDetector.FOCUSLENGTH);
@@ -134,6 +142,7 @@ public class BallDetector extends LinearOpMode
                     currentPipeIndex = 0;
                 }
                 limelight.pipelineSwitch(currentPipeIndex); // Switch to desired pipeline num
+
 
             }
 
