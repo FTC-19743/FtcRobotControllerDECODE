@@ -3,6 +3,7 @@
 package org.firstinspires.ftc.teamcode.testcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -66,7 +67,8 @@ public class BallDetector extends LinearOpMode
 
     public void runOpMode()
     {
-
+        FtcDashboard dashboard = FtcDashboard.getInstance();
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
         teamUtil.init(this);
 
         //limelight init
@@ -93,7 +95,7 @@ public class BallDetector extends LinearOpMode
 
 
         //ball detector index
-        int currentPipeIndex = 4;
+        int currentPipeIndex = 6;
         limelight.pipelineSwitch(currentPipeIndex); // Switch to desired pipeline num
 
 
@@ -123,6 +125,21 @@ public class BallDetector extends LinearOpMode
 
 
             telemetry.addLine("Current Pipeline Index: " + currentPipeIndex);
+            telemetry.addData("TX : ", result.getTx());
+            telemetry.addData("TY : ", result.getTy());
+            telemetry.addData("TA : ", result.getTa());
+            telemetry.addData("BotPOSE : ", result.getBotpose());
+
+            if(Math.abs(result.getTx())>1){
+                telemetry.addLine("Outside Shot Threshold");
+            }else if(result.getTx()==0){
+                telemetry.addLine("April Tag Not Seen");
+            }else{
+                telemetry.addLine("Within Shot Threshold");
+            }
+
+
+
 
             /*
             if (detector.sampleDetector.frameDataQueue.peek()!=null) {
@@ -133,7 +150,8 @@ public class BallDetector extends LinearOpMode
              */
 
             if(gamepad1.dpadDownWasReleased()){
-                detector.sampleDetector.configureCam(detector.portal, OpenCVSampleDetector.APEXPOSURE, OpenCVSampleDetector.AEPRIORITY, OpenCVSampleDetector.EXPOSURE, OpenCVSampleDetector.GAIN, OpenCVSampleDetector.WHITEBALANCEAUTO, OpenCVSampleDetector.TEMPERATURE, OpenCVSampleDetector.AFOCUS, OpenCVSampleDetector.FOCUSLENGTH);
+                FtcDashboard.getInstance().stopCameraStream();
+                FtcDashboard.getInstance().startCameraStream(llIt.getStreamSource(),10);
             }
 
             if(gamepad1.dpadUpWasReleased()){
