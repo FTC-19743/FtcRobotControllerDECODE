@@ -10,6 +10,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.TempUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
+import org.firstinspires.ftc.teamcode.assemblies.Robot;
 
 import java.util.List;
 
@@ -28,6 +29,8 @@ public class teamUtil {
     public static Alliance alliance = Alliance.RED;
     public enum Side {BASKET, OBSERVATION}
     public static Side SIDE = Side.OBSERVATION;
+
+    public static Robot robot;
 
 
     public static boolean finishedGoToLoad = true;

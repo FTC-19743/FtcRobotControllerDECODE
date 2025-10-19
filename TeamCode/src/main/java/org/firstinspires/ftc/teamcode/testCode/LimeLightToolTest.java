@@ -18,7 +18,7 @@ fields. It's crucial to emphasize that using such a tool at an event is forbidde
 potential strain on the event's network infrastructure. This is a policy we maintain across the
 board, and it's the same reason we don't allow streaming to the Driver Station."
 */
-package org.firstinspires.ftc.teamcode.testcode;
+package org.firstinspires.ftc.teamcode.testCode;
 
 import android.graphics.Bitmap;
 

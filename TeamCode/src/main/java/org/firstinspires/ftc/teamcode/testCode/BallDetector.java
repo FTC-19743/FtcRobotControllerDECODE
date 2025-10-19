@@ -1,26 +1,19 @@
 
 
-package org.firstinspires.ftc.teamcode.testcode;
+package org.firstinspires.ftc.teamcode.testCode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.MovingStatistics;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
-import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.teamcode.assemblies.Detector;
-import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
 import org.firstinspires.ftc.teamcode.assemblies.OpenCVSampleDetector;
 import org.firstinspires.ftc.teamcode.libs.LimeLightTool;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
-
-import java.util.Arrays;
 
 //USE limelight test config for this opmode
 @TeleOp
