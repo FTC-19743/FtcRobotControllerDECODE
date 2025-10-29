@@ -3,15 +3,26 @@
     <!--<Webcam name="Webcam 1" serialNumber="BB3B2F40" />
    <Webcam name="Webcam 2" serialNumber="989ECEC0" />
    Webcam name="Webcam Left" serialNumber="VendorProduct:vendor=0x046d|product=0x0825|connection=" /> -->
+
+    <!-- OctoQuad Ports
+        0 - Forward Odometry
+        1 - Strafe Odometry
+        3 - Pusher Encoder
+    -->
+
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
         <LynxModule name="Expansion Hub 2" port="2">
             <goBILDA5202SeriesMotor name="frm" port="0" />
             <goBILDA5202SeriesMotor name="brm" port="1" />
+            <goBILDA5202SeriesMotor name="rightflywheel" port="2" />
+            <goBILDA5202SeriesMotor name="leftflywheel" port="3" />
 
+            <RevBlinkinLedDriver name="blinkin" port="0"/>
+            <ContinuousRotationServo name = "pusher" port = "3" />
             <Servo name = "rightflipper" port = "4" />
-
             <Servo name = "pushup" port = "5" />
 
+            <AnalogInput name = "pusherPotentiometer" port ="0"/>
 
 
         </LynxModule>
@@ -22,15 +33,14 @@
             <goBILDA5202SeriesMotor name="elevator" port="2" />
             <goBILDA5202SeriesMotor name="intake" port="3" />
 
-            <OctoQuadFWv3 name="octo" port="0" bus="1"/>
+            <Servo name = "aimer" port = "0" />
             <Servo name = "middleflipper" port = "4" />
             <Servo name = "leftflipper" port = "5" />
 
-
-
-
+            <OctoQuadFWv3 name="octoquad" port="0" bus="1"/>
 
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
+
         </LynxModule>
     </LynxUsbDevice>
 </Robot>

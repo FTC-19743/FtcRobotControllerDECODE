@@ -33,12 +33,14 @@ public class findServoPositions extends LinearOpMode {
         }
         name = name + port;
         servo = hardwareMap.servo.get(name);
+        /*
         if (!ch && port == 4) {
             ServoControllerEx flickerControl = (ServoControllerEx) servo.getController();
             int flickerPort = servo.getPortNumber();
             PwmControl.PwmRange flickerRange = new PwmControl.PwmRange(500, 2500);
             flickerControl.setServoPwmRange(flickerPort, flickerRange);
         }
+         */
         servo.setPosition(INITIAL_POS);
         currentPosition = INITIAL_POS;
         if (port < 4) {
@@ -53,7 +55,6 @@ public class findServoPositions extends LinearOpMode {
         } else {
             potentiometer=null;
         }
-
     }
 
     public void runOpMode() {

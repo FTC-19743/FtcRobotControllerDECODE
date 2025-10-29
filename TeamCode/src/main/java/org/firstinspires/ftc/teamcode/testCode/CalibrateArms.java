@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
 
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
-import org.firstinspires.ftc.teamcode.assemblies.Output;
+import org.firstinspires.ftc.teamcode.assemblies.Shooter;
 
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
@@ -23,18 +23,18 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 public class CalibrateArms extends LinearOpMode {
 
     Intake intake;
-    Output output;
-    BasicDrive drive;
+    Shooter shooter;
+//    BasicDrive drive;
     static public float FLIPPER_TEST_VAL = 0f;
-
+    double aimerPosition = Shooter.AIMER_CALIBRATE;
     //Robot robot;  // DO NOT USE, not properly initialized!
     boolean hangCalibrated = false;
 
     
-    public enum Ops {Test_Intake
-       
+    public enum Ops {Test_Intake,
+       Test_Shooter
     };
-    public static Ops AA_Operation = Ops.Test_Intake;
+    public static Ops AA_Operation = Ops.Test_Shooter;
     public static boolean useCV = true;
 
     
@@ -55,18 +55,17 @@ public class CalibrateArms extends LinearOpMode {
         teamUtil.SIDE=teamUtil.Side.BASKET;
         //Robot robot = new Robot();
         //teamUtil.robot = robot;
-        BasicDrive drive = new BasicDrive();
-        drive.initalize();
-        drive.calibrate();
+//        BasicDrive drive = new BasicDrive();
+//        drive.initalize();
+//        drive.calibrate();
 
 
         intake = new Intake();
         intake.initialize();
 
-        output = new Output();
-        //output.initalize();
-        //output.calibrate();
-        
+        shooter = new Shooter();
+        shooter.initalize();
+        shooter.calibrate();
        
         telemetry.addLine("Ready to start");
         telemetry.update();
@@ -88,6 +87,10 @@ public class CalibrateArms extends LinearOpMode {
                 testIntake();
             }
 
+            if(AA_Operation == Ops.Test_Shooter){
+                testShooter();
+            }
+
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();
@@ -102,17 +105,18 @@ public class CalibrateArms extends LinearOpMode {
             //telemetry.addData("Motor Velocity", 0);
             //intake.axonSlider.loop();
 
-            intake.intakeTelemetry();
-           
 
-            telemetry.addLine("Elevator Tolerance: " + intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
-            
-            telemetry.update();
         }
 
     }
 
     public void testIntake() {
+        intake.intakeTelemetry();
+
+
+        telemetry.addLine("Elevator Tolerance: " + intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
+
+        telemetry.update();
         if (gamepad1.rightBumperWasReleased()) {
             intake.calibrate();
             intake.elevator.setVelocity(0);
@@ -138,6 +142,23 @@ public class CalibrateArms extends LinearOpMode {
             intake.elevatorToFlippers();
         }if(gamepad1.optionsWasReleased()){
             intake.elevatorToFlippersNoWait();
+        }
+    }
+
+    public void testShooter(){
+        shooter.pusher.loop();
+        shooter.outputTelemetry();
+        shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
+        if(gamepad1.aWasPressed()){
+            shooter.pushOne();
+        }
+        if(gamepad1.dpadLeftWasPressed()){
+            aimerPosition -= .025;
+            shooter.aimer.setPosition(aimerPosition);
+        }
+        if(gamepad1.dpadRightWasPressed()){
+            aimerPosition += .025;
+            shooter.aimer.setPosition(aimerPosition);
         }
     }
 }

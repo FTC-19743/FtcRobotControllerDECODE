@@ -1,10 +1,7 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
-import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.RED;
-
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -19,7 +16,7 @@ public class Robot {
     HardwareMap hardwareMap;
     Telemetry telemetry;
     public BasicDrive drive;
-    public Output output;
+    public Shooter output;
 
     public Intake intake;
     //public Blinkin blinkin;
@@ -38,7 +35,7 @@ public class Robot {
         hardwareMap = teamUtil.theOpMode.hardwareMap;
         drive = new BasicDrive();
         intake = new Intake();
-        output = new Output();
+        output = new Shooter();
 
         teamUtil.robot = this;
 

@@ -3,6 +3,19 @@
 <Robot type="FirstInspires-FTC">
 
     <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
+        <LynxModule name="Expansion Hub 2" port="2">
+            <Servo name="ServoEH0" port="0" />
+            <Servo name="ServoEH1" port="1" />
+            <Servo name="ServoEH2" port="2" />
+            <Servo name="ServoEH3" port="3" />
+            <Servo name="ServoEH4" port="4" />
+            <Servo name="ServoEH5" port="5" />
+            <AnalogInput name = "PotEH0" port ="0"/>
+            <AnalogInput name = "PotEH1" port ="1"/>
+            <AnalogInput name = "PotEH2" port ="2"/>
+            <AnalogInput name = "PotEH3" port ="3"/>
+
+        </LynxModule>
         <LynxModule name="Control Hub" port="173">
             <Servo name="ServoCH0" port="0" />
             <Servo name="ServoCH1" port="1" />
