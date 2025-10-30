@@ -37,7 +37,7 @@
             <Servo name = "middleflipper" port = "4" />
             <Servo name = "leftflipper" port = "5" />
 
-            <OctoQuadFWv3 name="octoquad" port="0" bus="1"/>
+            <OctoQuadFWv3 name="octo" port="0" bus="1"/>
 
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
 

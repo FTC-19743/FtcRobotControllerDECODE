@@ -17,8 +17,7 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 public class Teleop extends LinearOpMode {
 
     Robot robot;
-    //Blinkin blinkin;
-    
+
     boolean endgame = false;
     
     
@@ -64,7 +63,7 @@ public class Teleop extends LinearOpMode {
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
 
-
+        robot.calibrate();
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
@@ -90,13 +89,8 @@ public class Teleop extends LinearOpMode {
 
 
             while (opModeIsActive()) {
-
-
                 ////////// Drive
                 // Right bumper resets Heading
-                if (gamepad1.rightBumperWasReleased()) {
-                    robot.drive.setHeading(0);
-                }
                 if (gamepad1.rightStickButtonWasReleased() && gamepad1.leftStickButtonWasReleased()) {
                     robot.drive.setRobotPosition(0, 0, 0);
                 }
@@ -125,6 +119,20 @@ public class Teleop extends LinearOpMode {
                     robot.intake.elevatorToFlippers();
                 }if(gamepad1.optionsWasReleased()){
                     robot.intake.elevatorToFlippersNoWait();
+                }
+                if(gamepad1.dpadUpWasReleased()){
+                    robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
+                    //robot.setFootPos(Robot.FOOT_EXTENDED_POS);
+                }if(gamepad1.dpadDownWasReleased()){
+                    robot.shooter.stopShooter();
+                    //robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
+                }
+                if(gamepad1.dpadRightWasPressed()){
+                    robot.shooter.aimer.setPosition(robot.shooter.aimer.getPosition()+.02);
+                }if(gamepad1.dpadLeftWasPressed()){
+                    robot.shooter.aimer.setPosition(robot.shooter.aimer.getPosition()-.02);
+                }if(gamepad1.rightBumperWasPressed()){
+                    robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
                 }
 
                 robot.outputTelemetry();

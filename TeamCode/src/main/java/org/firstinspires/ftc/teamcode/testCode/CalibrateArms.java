@@ -11,8 +11,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
-import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
-
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Shooter;
 
@@ -64,7 +62,7 @@ public class CalibrateArms extends LinearOpMode {
         intake.initialize();
 
         shooter = new Shooter();
-        shooter.initalize();
+        shooter.initialize();
         shooter.calibrate();
        
         telemetry.addLine("Ready to start");
@@ -146,7 +144,6 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public void testShooter(){
-        shooter.pusher.loop();
         shooter.outputTelemetry();
         shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
         if(gamepad1.aWasPressed()){

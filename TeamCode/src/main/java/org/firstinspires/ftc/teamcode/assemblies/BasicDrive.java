@@ -64,8 +64,6 @@ public class BasicDrive{
     public OctoQuadFWv3.LocalizerDataBlock localizer = new OctoQuadFWv3.LocalizerDataBlock();
     public OctoQuadFWv3.EncoderDataBlock encoders = new OctoQuadFWv3.EncoderDataBlock();
 
-    public OctoQuadFWv3 oq;
-
     //public BNO055IMU imu; //This variable is the imu
     //public IMU imu; // new control hub imu
 
@@ -170,58 +168,36 @@ public class BasicDrive{
         fl.setDirection(DcMotor.Direction.REVERSE);
         bl.setDirection(DcMotor.Direction.REVERSE);
 
-        oq = hardwareMap.get(OctoQuadFWv3.class, "octo");
+        teamUtil.robot.oq = hardwareMap.get(OctoQuadFWv3.class, "octo");
 
-        oq.setSingleEncoderDirection(DEADWHEEL_PORT_X, DEADWHEEL_X_DIR);
-        oq.setSingleEncoderDirection(DEADWHEEL_PORT_Y, DEADWHEEL_Y_DIR);
-        oq.setLocalizerPortX(DEADWHEEL_PORT_X);
-        oq.setLocalizerPortY(DEADWHEEL_PORT_Y);
-        oq.setLocalizerCountsPerMM_X(X_TICKS_PER_MM);
-        oq.setLocalizerCountsPerMM_Y(Y_TICKS_PER_MM);
-        oq.setLocalizerTcpOffsetMM_X(TCP_OFFSET_X_MM);
-        oq.setLocalizerTcpOffsetMM_Y(TCP_OFFSET_Y_MM);
-        oq.setLocalizerImuHeadingScalar(IMU_SCALAR);
-        oq.setLocalizerVelocityIntervalMS(25);
-        oq.setI2cRecoveryMode(OctoQuadFWv3.I2cRecoveryMode.MODE_1_PERIPH_RST_ON_FRAME_ERR);
+        teamUtil.robot.oq.setSingleEncoderDirection(DEADWHEEL_PORT_X, DEADWHEEL_X_DIR);
+        teamUtil.robot.oq.setSingleEncoderDirection(DEADWHEEL_PORT_Y, DEADWHEEL_Y_DIR);
+        teamUtil.robot.oq.setLocalizerPortX(DEADWHEEL_PORT_X);
+        teamUtil.robot.oq.setLocalizerPortY(DEADWHEEL_PORT_Y);
+        teamUtil.robot.oq.setLocalizerCountsPerMM_X(X_TICKS_PER_MM);
+        teamUtil.robot.oq.setLocalizerCountsPerMM_Y(Y_TICKS_PER_MM);
+        teamUtil.robot.oq.setLocalizerTcpOffsetMM_X(TCP_OFFSET_X_MM);
+        teamUtil.robot.oq.setLocalizerTcpOffsetMM_Y(TCP_OFFSET_Y_MM);
+        teamUtil.robot.oq.setLocalizerImuHeadingScalar(IMU_SCALAR);
+        teamUtil.robot.oq.setLocalizerVelocityIntervalMS(25);
+        teamUtil.robot.oq.setI2cRecoveryMode(OctoQuadFWv3.I2cRecoveryMode.MODE_1_PERIPH_RST_ON_FRAME_ERR);
 
-        oq.doInitialize();
-
-
-        // Resetting the localizer will apply the parameters configured above.
-        // This function will NOT block until calibration of the IMU is complete -
-        // for that you need to look at the status returned by getLocalizerStatus()
-        oq.resetLocalizerAndCalibrateIMU();
-
-
-
-
-        // Set up internal IMU on Control Hub
-        //imu = hardwareMap.get(BNO055IMU.class, "imu"); // old control hub
-        //BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        //parameters.angleUnit = AngleUnit.DEGREES;
-        //parameters.accelUnit = IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        //parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        //parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        //imu.initialize(parameters);
-
-        //imu = hardwareMap.get(IMU.class, "imu"); // new control hub
-        //IMU.Parameters parameters = new IMU.Parameters();
-
-        //TODO Initialize Correctly
-        //forwardEncoder = hardwareMap.get(DcMotorEx.class, "leftForwardEncoder");
-        //strafeEncoder = hardwareMap.get(DcMotorEx.class, "strafeEncoder");
+        teamUtil.robot.oq.doInitialize();
 
         setMotorsBrake();
         teamUtil.log("Initializing Drive - FINISHED");
     }
 
     public void calibrate(){
-        oq.resetLocalizerAndCalibrateIMU();
+        // Resetting the localizer will apply the parameters configured above.
+        // This function will NOT block until calibration of the IMU is complete -
+        // for that you need to look at the status returned by getLocalizerStatus()
+        teamUtil.robot.oq.resetLocalizerAndCalibrateIMU();
     }
 
     //TODO Ensure that this loop is essentially an update
     public void loop() { // Call this frequently so that odometry data is up to date
-        oq.readLocalizerDataAndAllEncoderData(localizer,encoders);
+        teamUtil.robot.oq.readLocalizerDataAndAllEncoderData(localizer,encoders);
     }
     /************************************************************************************************************/
     // Telemetry
@@ -581,7 +557,7 @@ public class BasicDrive{
 
     public void setRobotPosition(int x, int y, double heading) {
         teamUtil.log("setRobotPosition: x: "+ x + " y: " + y + " heading: " + heading);
-        oq.setLocalizerPose(x,y,(float)Math.toRadians(heading));
+        teamUtil.robot.oq.setLocalizerPose(x,y,(float)Math.toRadians(heading));
         loop();
         teamUtil.log("odoHeading after reset: " + getRawHeadingODO());
         setHeading((int) heading);
