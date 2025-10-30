@@ -11,7 +11,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
+import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
+import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.assemblies.Shooter;
 
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -20,52 +22,38 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 @TeleOp(name = "Calibrate Arms", group = "Test Code")
 public class CalibrateArms extends LinearOpMode {
 
-    Intake intake;
-    Shooter shooter;
-//    BasicDrive drive;
-    static public float FLIPPER_TEST_VAL = 0f;
-    double aimerPosition = Shooter.AIMER_CALIBRATE;
-    //Robot robot;  // DO NOT USE, not properly initialized!
-    boolean hangCalibrated = false;
-
+    Robot robot;
     
-    public enum Ops {Test_Intake,
-       Test_Shooter
+    static public float FLIPPER_TEST_VAL = 0f;
+    
+    double aimerPosition = Shooter.AIMER_CALIBRATE;
+    
+    public enum Ops {
+        Test_Intake,
+        Test_Shooter,
+        Test_Foot
     };
     public static Ops AA_Operation = Ops.Test_Shooter;
     public static boolean useCV = true;
 
-    
-    private void doAction() {
-        switch (AA_Operation) {
-            case Test_Intake : testIntake();break;
-            
-        }
-    }
     @Override
     public void runOpMode() throws InterruptedException {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         //FtcDashboard.setDrawDefaultField(false); // enable to eliminate field drawing
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
-
         teamUtil.init(this);
-        teamUtil.alliance = teamUtil.Alliance.RED;
-        teamUtil.SIDE=teamUtil.Side.BASKET;
-        //Robot robot = new Robot();
-        //teamUtil.robot = robot;
-//        BasicDrive drive = new BasicDrive();
-//        drive.initalize();
-//        drive.calibrate();
+        
+        robot = new Robot();
+        robot.initialize();
+        //robot.initCV(enableLiveView);// TODO: false for competition
 
+        robot.drive.setHeading(0);
+        teamUtil.justRanAuto = false;
+        teamUtil.justRanCalibrateRobot = false;
 
-        intake = new Intake();
-        intake.initialize();
-
-        shooter = new Shooter();
-        shooter.initialize();
-        shooter.calibrate();
-       
+        robot.calibrate();
         telemetry.addLine("Ready to start");
+        telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
 
         waitForStart();
@@ -80,20 +68,17 @@ public class CalibrateArms extends LinearOpMode {
             if (gamepad1.left_stick_button) {
                 teamUtil.logSystemHealth();
             }
-
-            if (AA_Operation==Ops.Test_Intake){
-                testIntake();
+            switch (AA_Operation) {
+                case Test_Intake : testIntake();break;
+                case Test_Shooter : testShooter();break;
+                case Test_Foot : testFoot();break;
             }
-
-            if(AA_Operation == Ops.Test_Shooter){
-                testShooter();
-            }
-
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();
             dashboard.sendTelemetryPacket(packet);
 
+            telemetry.update();
 
             // Graphing stuff and putting stuff in telemetry
             //telemetry.addData("Item", data)); // Anything written like this can be graphed against time.  Multiple items can be graphed together
@@ -101,7 +86,7 @@ public class CalibrateArms extends LinearOpMode {
             //telemetry.addData("Encoder", 0);
             //telemetry.addData("Current Velocity", 0);
             //telemetry.addData("Motor Velocity", 0);
-            //intake.axonSlider.loop();
+            //robot.intake.axonSlider.loop();
 
 
         }
@@ -109,53 +94,64 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public void testIntake() {
-        intake.intakeTelemetry();
+        robot.intake.intakeTelemetry();
+        telemetry.addLine("Elevator Tolerance: " + robot.intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
 
-
-        telemetry.addLine("Elevator Tolerance: " + intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
-
-        telemetry.update();
         if (gamepad1.rightBumperWasReleased()) {
-            intake.calibrate();
-            intake.elevator.setVelocity(0);
+            robot.intake.calibrate();
+            robot.intake.elevator.setVelocity(0);
         }
         if(gamepad1.dpadUpWasReleased()){
-            intake.middle_flipper.setPosition(FLIPPER_TEST_VAL);
+            robot.intake.middle_flipper.setPosition(FLIPPER_TEST_VAL);
         }
         if(gamepad1.dpadLeftWasReleased()){
-            intake.left_flipper.setPosition(FLIPPER_TEST_VAL);
+            robot.intake.left_flipper.setPosition(FLIPPER_TEST_VAL);
         }
         if(gamepad1.dpadRightWasReleased()){
-            intake.right_flipper.setPosition(FLIPPER_TEST_VAL);
+            robot.intake.right_flipper.setPosition(FLIPPER_TEST_VAL);
         }
         if(gamepad1.circleWasReleased()){
-            intake.intakeStop();
+            robot.intake.intakeStop();
         }
         if(gamepad1.triangleWasReleased()){
-            intake.intakeIn();
+            robot.intake.intakeIn();
         }
         if(gamepad1.squareWasReleased()){
-            intake.intakeOut();
+            robot.intake.intakeOut();
         }if(gamepad1.crossWasReleased()){
-            intake.elevatorToFlippers();
+            robot.intake.elevatorToFlippers();
         }if(gamepad1.optionsWasReleased()){
-            intake.elevatorToFlippersNoWait();
+            robot.intake.elevatorToFlippersNoWait();
         }
     }
 
+    public void testFoot() {
+        if(gamepad1.dpadUpWasReleased()){
+            robot.setFootPos(Robot.FOOT_EXTENDED_POS);
+        }if(gamepad1.dpadDownWasReleased()){
+            robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
+        }
+
+    }
     public void testShooter(){
-        shooter.outputTelemetry();
-        shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
-        if(gamepad1.aWasPressed()){
-            shooter.pushOne();
+        robot.shooter.outputTelemetry();
+
+        if(gamepad1.dpadUpWasReleased()){
+            robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
+        }if(gamepad1.dpadDownWasReleased()){
+            robot.shooter.stopShooter();
         }
         if(gamepad1.dpadLeftWasPressed()){
-            aimerPosition -= .025;
-            shooter.aimer.setPosition(aimerPosition);
+            robot.shooter.aim(robot.shooter.currentAim()-.01);
         }
         if(gamepad1.dpadRightWasPressed()){
-            aimerPosition += .025;
-            shooter.aimer.setPosition(aimerPosition);
+            robot.shooter.aim(robot.shooter.currentAim()+.01);
         }
+
+        if(gamepad1.aWasPressed()){
+            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+
+        }
+
     }
 }

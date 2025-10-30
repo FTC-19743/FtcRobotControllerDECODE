@@ -26,8 +26,8 @@ public class AxonPusher{
     public int ENCODER_LOAD_POSITION_2 = 0;
     public static long RUN_TO_ENCODER_PAUSE = 15;
     public static double RUN_TO_ENCODER_DRIFT = 0;
-    public static float PUSH_SLOW_VELOCITY = 150;
-    public static int PUSH_FAST_THRESHOLD = 8192/4;
+    public static float PUSH_SLOW_VELOCITY = .1f;
+    public static int PUSH_FAST_THRESHOLD = 3072;
 
 
     AtomicBoolean moving = new AtomicBoolean(false);

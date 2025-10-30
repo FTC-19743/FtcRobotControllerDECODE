@@ -128,9 +128,9 @@ public class Teleop extends LinearOpMode {
                     //robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
                 }
                 if(gamepad1.dpadRightWasPressed()){
-                    robot.shooter.aimer.setPosition(robot.shooter.aimer.getPosition()+.02);
+                    robot.shooter.aim(robot.shooter.currentAim()+.01);
                 }if(gamepad1.dpadLeftWasPressed()){
-                    robot.shooter.aimer.setPosition(robot.shooter.aimer.getPosition()-.02);
+                    robot.shooter.aim(robot.shooter.currentAim()-.01);
                 }if(gamepad1.rightBumperWasPressed()){
                     robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
                 }

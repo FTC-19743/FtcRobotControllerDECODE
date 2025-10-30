@@ -16,12 +16,13 @@ public class Shooter {
     public DcMotorEx leftFlywheel;
     public DcMotorEx rightFlywheel;
     public AxonPusher pusher;
-    public Servo aimer;
+    private Servo aimer;
 
     public boolean details;
-    static public float AIMER_START = 00f;
-    public static double PUSHER_INCREMENT = 0;
-    public static double AIMER_CALIBRATE = .5;
+    public static float AIMER_CALIBRATE = .4f;
+    public static float AIMER_MIN = .3f;
+    public static float AIMER_MAX = .55f;
+
     public static double SHOOTER_FAR_VELOCITY = 1300;
     public static float PUSHER_VELOCITY = .5f;
 
@@ -64,7 +65,15 @@ public class Shooter {
         rightFlywheel.setVelocity(0);
     }
 
+    public void aim (double pos) {
+        if (pos<AIMER_MIN) pos = AIMER_MIN;
+        if (pos>AIMER_MAX) pos = AIMER_MAX;
+        aimer.setPosition(pos);
+    }
+    public double currentAim () {
+        return aimer.getPosition();
+    }
     public void pushOne(){
-        pusher.runToEncoderPosition(pusher.getPositionEncoder()+PUSHER_INCREMENT,PUSHER_VELOCITY,1000);
+        pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
     }
 }

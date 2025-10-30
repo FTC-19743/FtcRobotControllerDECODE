@@ -6,7 +6,9 @@ import android.graphics.Color;
 import android.util.Size;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -30,8 +32,6 @@ public class Intake {
     Telemetry telemetry;
     static public boolean details = false;
 
-    //Blinkin blinkin;
-
     public Servo left_flipper;
     public Servo middle_flipper;
     public Servo right_flipper;
@@ -39,8 +39,15 @@ public class Intake {
     public DcMotorEx elevator;
     public DcMotorEx intake;
 
+    private ColorSensor leftTopColorSensor;
+    private ColorSensor middleTopColorSensor;
+    private ColorSensor rightTopColorSensor;
+
     public AtomicBoolean moving = new AtomicBoolean(false);
     public AtomicBoolean timedOut = new AtomicBoolean(false);
+
+    public enum ARTIFACT {NONE, GREEN, PURPLE};
+    public ARTIFACT leftLoad,rightLoad,middleLoad;
 
 
     //TODO FIND OUT
@@ -77,7 +84,6 @@ public class Intake {
         teamUtil.log("Constructing Intake");
         hardwareMap = teamUtil.theOpMode.hardwareMap;
         telemetry = teamUtil.theOpMode.telemetry;
-        //blinkin = new Blinkin(hardwareMap,telemetry);
     }
 
     public void initialize() {
@@ -90,48 +96,12 @@ public class Intake {
         right_flipper = hardwareMap.get(Servo.class,"rightflipper");
         middle_flipper = hardwareMap.get(Servo.class,"middleflipper");
 
+        leftTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperleftcolorsensor");
+        middleTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "uppermiddlecolorsensor");
+        rightTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperrightcolorsensor");
+
         teamUtil.log("Intake Initialized");
     }
-    /*
-    public void initCV(boolean enableLiveView){
-        teamUtil.log("Initializing CV in Intake");
-        lightsOff();
-        CameraName arducam = (CameraName)hardwareMap.get(WebcamName.class, "arducam"); // arducam  logitechhd
-        CameraCharacteristics chars = arducam.getCameraCharacteristics();
-
-        VisionPortal.Builder armBuilder = new VisionPortal.Builder();
-        armBuilder.setCamera(arducam);
-        armBuilder.enableLiveView(enableLiveView);
-
-        // Can also set resolution and stream format if we want to optimize resource usage.
-        armBuilder.setCameraResolution(arduSize);
-        //armBuilder.setStreamFormat(TBD);
-
-        armBuilder.addProcessor(sampleDetector);
-        arduPortal = armBuilder.build();
-        sampleDetector.setVisionPortal(arduPortal);
-        sampleDetector.viewingPipeline = enableLiveView;
-
-        // Wait for the camera to be open
-        if (arduPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
-            telemetry.addData("Camera", "Waiting");
-            telemetry.update();
-            while (!teamUtil.theOpMode.isStopRequested() && (arduPortal.getCameraState() != VisionPortal.CameraState.STREAMING)) {
-                teamUtil.pause(20);
-            }
-            telemetry.addData("Camera", "Ready");
-            telemetry.update();
-        }
-        sampleDetector.configureCam(arduPortal, true, OpenCVSampleDetectorV2.AEPRIORITY, 1, OpenCVSampleDetectorV2.GAIN, OpenCVSampleDetectorV2.WHITEBALANCEAUTO, OpenCVSampleDetectorV2.TEMPERATURE, OpenCVSampleDetectorV2.AFOCUS, OpenCVSampleDetectorV2.FOCUSLENGTH);
-        // TODO: Do we need a pause here?
-        teamUtil.pause(2000);
-        sampleDetector.configureCam(arduPortal, OpenCVSampleDetectorV2.APEXPOSURE, OpenCVSampleDetectorV2.AEPRIORITY, OpenCVSampleDetectorV2.EXPOSURE, OpenCVSampleDetectorV2.GAIN, OpenCVSampleDetectorV2.WHITEBALANCEAUTO, OpenCVSampleDetectorV2.TEMPERATURE, OpenCVSampleDetectorV2.AFOCUS, OpenCVSampleDetectorV2.FOCUSLENGTH);
-        stopCVPipeline();
-        lightsOff();
-        teamUtil.log("Initializing CV in Intake - Finished");
-    }
-
-     */
 
     // Calibrate flippers and elevator.
     public void calibrate() {
@@ -145,7 +115,7 @@ public class Intake {
         elevator.setPower(ELEVATOR_CALIBRATE_POWER);
         int lastelevatorPosition = elevator.getCurrentPosition();
         teamUtil.pause(250);
-        while (elevator.getCurrentPosition() != lastelevatorPosition) {
+        while (elevator.getCurrentPosition() != lastelevatorPosition) { // TODO Add timeout and keepgoing check
             lastelevatorPosition = elevator.getCurrentPosition();
             if (details) teamUtil.log("Calibrate Intake: elevator: " + elevator.getCurrentPosition());
             teamUtil.pause(50);
@@ -185,20 +155,20 @@ public class Intake {
         middle_flipper.setPosition(FLIPPER_PRE_TRANSFER);
         teamUtil.pause(250);
         elevator.setTargetPosition(ELEVATOR_UP);
-        while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_UP)>ELEVATOR_UP_THRESHOLD){
+        while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_UP)>ELEVATOR_UP_THRESHOLD){ // TODO Add timeout and keepgoing check
         }
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
 
         elevator.setTargetPosition(ELEVATOR_PRE_GROUND);
-        while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_PRE_GROUND)>ELEVATOR_DOWN_THRESHOLD){
+        while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_PRE_GROUND)>ELEVATOR_DOWN_THRESHOLD){ // TODO Add timeout and keepgoing check
         }
         elevator.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         elevator.setPower(ELEVATOR_CALIBRATE_POWER);
         int lastelevatorPosition = elevator.getCurrentPosition();
         teamUtil.pause(250);
-        while (elevator.getCurrentPosition() != lastelevatorPosition) {
+        while (elevator.getCurrentPosition() != lastelevatorPosition) { // TODO Add timeout and keepgoing check
             lastelevatorPosition = elevator.getCurrentPosition();
             if (details) teamUtil.log("Calibrate Intake: elevator: " + elevator.getCurrentPosition());
             teamUtil.pause(50);
@@ -222,4 +192,12 @@ public class Intake {
 
     }
 
+    public ARTIFACT checkLoadedArtifact(ColorSensor sensor) {
+        return ARTIFACT.NONE; // TODO put sensing logic in
+    }
+    public void checkLoadedArtifacts () {
+        leftLoad = checkLoadedArtifact(leftTopColorSensor);
+        middleLoad = checkLoadedArtifact(middleTopColorSensor);
+        rightLoad = checkLoadedArtifact(rightTopColorSensor);
+    }
 }
