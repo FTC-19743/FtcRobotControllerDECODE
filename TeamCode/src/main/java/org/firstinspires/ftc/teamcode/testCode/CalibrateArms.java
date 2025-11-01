@@ -78,6 +78,7 @@ public class CalibrateArms extends LinearOpMode {
             TelemetryPacket packet = new TelemetryPacket();
             dashboard.sendTelemetryPacket(packet);
 
+            robot.outputLLPose();
             telemetry.update();
 
             // Graphing stuff and putting stuff in telemetry

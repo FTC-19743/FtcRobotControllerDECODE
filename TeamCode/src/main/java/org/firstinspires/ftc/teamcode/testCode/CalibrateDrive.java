@@ -11,13 +11,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
 
-import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
+import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 @Config
 @TeleOp(name = "Calibrate Drive", group = "Test Code")
 public class CalibrateDrive extends LinearOpMode {
 
+    Robot robot;
     BasicDrive drive;
     public static int testVelocity = 1000;
     public static float testPower = 1f;
@@ -84,19 +85,25 @@ public class CalibrateDrive extends LinearOpMode {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         //FtcDashboard.setDrawDefaultField(false); // enable to eliminate field drawing
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
-
         teamUtil.init(this);
         teamUtil.alliance = teamUtil.Alliance.RED;
         teamUtil.SIDE=teamUtil.Side.BASKET;
 
-        drive = new BasicDrive();
-        drive.initalize();
-        drive.calibrate();
+        robot = new Robot();
+        robot.initialize();
+        //robot.initCV(enableLiveView);// TODO: false for competition
 
-        
+        robot.drive.setHeading(0);
+        teamUtil.justRanAuto = false;
+        teamUtil.justRanCalibrateRobot = false;
 
-        telemetry.addLine("Ready");
+        robot.calibrate();
+        drive = robot.drive;
+
+        telemetry.addLine("Ready to start");
+        telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
+
         waitForStart();
 
         if (isStopRequested()) {

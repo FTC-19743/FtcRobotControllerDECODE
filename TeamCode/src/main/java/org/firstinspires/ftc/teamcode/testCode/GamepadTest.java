@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.MovingStatistics;
 
-import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
+import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 

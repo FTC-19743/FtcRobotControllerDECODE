@@ -19,13 +19,14 @@
  * SOFTWARE.
  */
 
-package org.firstinspires.ftc.teamcode.testCode;
+package org.firstinspires.ftc.teamcode.testCode.OQ;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.MovingStatistics;
 
-import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
+import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
 
 
 /**
@@ -34,6 +35,7 @@ import org.firstinspires.ftc.teamcode.assemblies.OctoQuadFWv3;
  * localizer feature, located here:
  */
 @TeleOp
+@Disabled
 public class OctoQuadTest extends LinearOpMode
 {
 

@@ -3,8 +3,6 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import androidx.core.math.MathUtils;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.bosch.BNO055IMU;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -12,13 +10,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.MovingStatistics;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 import java.util.List;
@@ -39,15 +32,15 @@ public class BasicDrive{
     Telemetry telemetry;
 
 
-    static public int DEADWHEEL_PORT_X = 1;
-    static public int DEADWHEEL_PORT_Y = 0;
+    static public int DEADWHEEL_PORT_X = 0;
+    static public int DEADWHEEL_PORT_Y = 1;
     static public OctoQuadFWv3.EncoderDirection DEADWHEEL_X_DIR = OctoQuadFWv3.EncoderDirection.FORWARD;
     static public OctoQuadFWv3.EncoderDirection DEADWHEEL_Y_DIR = OctoQuadFWv3.EncoderDirection.REVERSE;
-    static public float X_TICKS_PER_MM = 19.89436789f;
-    static public float Y_TICKS_PER_MM = 20.0701f;
-    static public float TCP_OFFSET_X_MM = 125f;
-    static public float TCP_OFFSET_Y_MM = -89F;
-    static public float IMU_SCALAR = 1.0352f;
+    static public float X_TICKS_PER_MM = 19.9848f;
+    static public float Y_TICKS_PER_MM = 20.0066f;
+    static public float TCP_OFFSET_X_MM = 80f;
+    static public float TCP_OFFSET_Y_MM = -155F;
+    static public float IMU_SCALAR = 1.0354f;
 
     // Conversion factor for radians --> degrees
     static public double RAD2DEG = 180/Math.PI;
@@ -182,7 +175,7 @@ public class BasicDrive{
         teamUtil.robot.oq.setLocalizerVelocityIntervalMS(25);
         teamUtil.robot.oq.setI2cRecoveryMode(OctoQuadFWv3.I2cRecoveryMode.MODE_1_PERIPH_RST_ON_FRAME_ERR);
 
-        teamUtil.robot.oq.doInitialize();
+        //teamUtil.robot.oq.doInitialize(); //TODO Why was this call here? Doesn't seem to be recommended in the doc?
 
         setMotorsBrake();
         teamUtil.log("Initializing Drive - FINISHED");
@@ -203,18 +196,17 @@ public class BasicDrive{
     // Telemetry
 
     public void driveMotorTelemetry() {
-        telemetry.addData("Motors ", "flm:%d frm:%d blm:%d brm:%d",
-                fl.getCurrentPosition(), fr.getCurrentPosition(), bl.getCurrentPosition(), br.getCurrentPosition());
-        String data = String.format(Locale.US, "X: %.0f, Y: %.0f, H: %.1f", (float)localizer.posX_mm, (float)localizer.posY_mm, localizer.heading_rad);
+        telemetry.addData("Encoders ", "FL:%d FR:%d BL:%d BR:%d X:%d Y%d",
+                fl.getCurrentPosition(), fr.getCurrentPosition(), bl.getCurrentPosition(), br.getCurrentPosition(),encoders.positions[DEADWHEEL_PORT_X], encoders.positions[DEADWHEEL_PORT_Y]);
+        String data = String.format(Locale.US, "Localizer X: %.0f, Y: %.0f, H: %.1f", (float)localizer.posX_mm, (float)localizer.posY_mm, Math.toDegrees(localizer.heading_rad));
         telemetry.addData("ODO Position ", data);
-        String velocity = String.format(Locale.US, "X: %.0f, Y: %.0f, H: %.1f", (float)localizer.velX_mmS, (float)localizer.velY_mmS, localizer.velHeading_radS);
+        String velocity = String.format(Locale.US, "Velocity X: %.0f, Y: %.0f, H: %.1f", (float)localizer.velX_mmS, (float)localizer.velY_mmS, Math.toDegrees(localizer.velHeading_radS));
         telemetry.addData("ODO Velocity ", velocity);
         telemetry.addData("Headings: CH IMU: ", "%.1f  ODO: %.1f", getHeading(), getHeadingODO());
         telemetry.addData("Held Heading: ", heldHeading);
         String currents = String.format(Locale.US, "FR: %.0f, FL: %.0f, BR: %.0f, BL: %.0f" , fr.getCurrent(CurrentUnit.AMPS), fl.getCurrent(CurrentUnit.AMPS),br.getCurrent(CurrentUnit.AMPS), bl.getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("Current To Subsequent Motors: ", currents);
+        telemetry.addData("CurrentDraw: ", currents);
 
-        //TODO remove log
         //teamUtil.log("FR: " + fr.getCurrent(CurrentUnit.AMPS) +" FL: " + fl.getCurrent(CurrentUnit.AMPS) + " BR: " + br.getCurrent(CurrentUnit.AMPS) + "BL" + bl.getCurrent(CurrentUnit.AMPS));
     }
 

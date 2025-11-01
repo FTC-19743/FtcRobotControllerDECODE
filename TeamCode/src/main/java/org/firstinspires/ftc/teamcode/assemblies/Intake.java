@@ -132,8 +132,12 @@ public class Intake {
     }
 
 
+    private String formatSensor (ColorSensor sensor) {
+        return String.format ("(%d/%d/%d/%d)",sensor.alpha(), sensor.red(), sensor.green(), sensor.blue());
+    }
     public void intakeTelemetry() {
         telemetry.addLine("Intake elevator Position: " + elevator.getCurrentPosition());
+        telemetry.addData("UpperSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftTopColorSensor), formatSensor(middleTopColorSensor), formatSensor(rightTopColorSensor));
     }
 
     public void intakeIn(){
