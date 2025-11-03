@@ -202,7 +202,7 @@ public class BasicDrive{
         telemetry.addData("ODO Position ", data);
         String velocity = String.format(Locale.US, "Velocity X: %.0f, Y: %.0f, H: %.1f", (float)localizer.velX_mmS, (float)localizer.velY_mmS, Math.toDegrees(localizer.velHeading_radS));
         telemetry.addData("ODO Velocity ", velocity);
-        telemetry.addData("Headings: CH IMU: ", "%.1f  ODO: %.1f", getHeading(), getHeadingODO());
+        telemetry.addData("Headings: CH IMU: ", "%.1f  ODO: %.1f  To Goal: %.1f", getHeading(), getHeadingODO(), getGoalHeading());
         telemetry.addData("Held Heading: ", heldHeading);
         String currents = String.format(Locale.US, "FR: %.0f, FL: %.0f, BR: %.0f, BL: %.0f" , fr.getCurrent(CurrentUnit.AMPS), fl.getCurrent(CurrentUnit.AMPS),br.getCurrent(CurrentUnit.AMPS), bl.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("CurrentDraw: ", currents);
@@ -505,6 +505,38 @@ public class BasicDrive{
     public double getHeadingODO() {
         // stows an offset to change the range and set the heading
         return adjustAngle(getRawHeadingODO() - HEADING_OFFSET_ODO);
+    }
+    public static double Goal_x = 1550;
+    public static double Goal_y = 1550;
+
+    public double getGoalHeading(){
+        double local_goal_y = Goal_y;
+        if (teamUtil.alliance == teamUtil.Alliance.RED){ //TODO: is this for red or blue?
+            local_goal_y = -Goal_y;
+        }
+        double offset_x = Goal_x - getPosX();
+        double offset_y = local_goal_y - getPosY();
+        if(offset_x == 0){
+            if(offset_y > 0){
+                return 90;
+            }else{
+                return 270;
+            }
+        }
+        double raw_Angle = Math.toDegrees(Math.atan(offset_y / offset_x));
+        if(offset_x < 0){
+            raw_Angle += 180;
+
+
+        }
+        raw_Angle = adjustAngle(raw_Angle);
+
+        return raw_Angle;
+    }
+
+    public void teleport(int x, int y){
+        //set current position to parameters
+        teamUtil.robot.oq.setLocalizerPose(x, y, localizer.heading_rad);
     }
 
     // Make the current heading 0.

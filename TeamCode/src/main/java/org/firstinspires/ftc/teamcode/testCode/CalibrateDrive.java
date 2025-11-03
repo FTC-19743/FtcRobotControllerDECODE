@@ -55,7 +55,8 @@ public class CalibrateDrive extends LinearOpMode {
         Test_Move_To,
         Test_Move_To2,
         Move_CMs_Test,
-        Move_Encoder_Target_Test};
+        Move_Encoder_Target_Test,
+        Methods_Test};
     public static Ops AAOP = Ops.Test_Wiring;
 
 
@@ -77,6 +78,7 @@ public class CalibrateDrive extends LinearOpMode {
             case Brake_Test_Right : brakeTestRight();break;
             case Reverse_Test:  reverseTest();break;
             case Reverse_Test2: reverseTest2();break;
+
 
         }
     }
@@ -159,7 +161,9 @@ public class CalibrateDrive extends LinearOpMode {
                 testPowerConsumption();
             } else if (AAOP==Ops.test_MoveToHolding) {
                 testMoveToHolding();
-            }
+            }else if (AAOP==Ops.Methods_Test) {
+                testNewMethods();
+        }
             drive.universalDriveJoystickV2(
                     gamepad1.left_stick_x,
                     gamepad1.left_stick_y,
@@ -187,6 +191,11 @@ public class CalibrateDrive extends LinearOpMode {
 
             telemetry.update();
             //sleep(20);
+        }
+    }
+    public void testNewMethods() {
+        if (gamepad1.dpad_up) {
+            drive.teleport(0,0);
         }
     }
 

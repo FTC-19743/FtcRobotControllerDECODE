@@ -94,7 +94,7 @@ public class Teleop extends LinearOpMode {
                 if (gamepad1.rightStickButtonWasReleased() && gamepad1.leftStickButtonWasReleased()) {
                     robot.drive.setRobotPosition(0, 0, 0);
                 }
-
+                robot.drive.setHeldHeading(robot.drive.getGoalHeading());
                 robot.drive.universalDriveJoystickV2(
                         gamepad1.left_stick_x,
                         gamepad1.left_stick_y,
@@ -128,14 +128,16 @@ public class Teleop extends LinearOpMode {
                     //robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
                 }
                 if(gamepad1.dpadRightWasPressed()){
-                    robot.shooter.aim(robot.shooter.currentAim()+.01);
+                    robot.intake.unloadToShooter(true);
+                    //robot.shooter.aim(robot.shooter.currentAim()+.01);
                 }if(gamepad1.dpadLeftWasPressed()){
-                    robot.shooter.aim(robot.shooter.currentAim()-.01);
+                    //robot.shooter.aim(robot.shooter.currentAim()-.01);
                 }if(gamepad1.rightBumperWasPressed()){
                     robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
                 }
 
                 robot.outputTelemetry();
+
                 robot.drive.loop();
                 //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
                 //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());

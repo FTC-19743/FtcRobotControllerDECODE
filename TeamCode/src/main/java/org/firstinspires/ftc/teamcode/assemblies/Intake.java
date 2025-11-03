@@ -2,12 +2,8 @@ package org.firstinspires.ftc.teamcode.assemblies;
 
 import static androidx.core.math.MathUtils.clamp;
 
-import android.graphics.Color;
-import android.util.Size;
-
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
-import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -15,14 +11,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraCharacteristics;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 
 //import org.firstinspires.ftc.teamcode.libs.Blinkin;
 
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
-import org.firstinspires.ftc.vision.VisionPortal;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,12 +35,16 @@ public class Intake {
     private ColorSensor middleTopColorSensor;
     private ColorSensor rightTopColorSensor;
 
+    private ColorSensor leftLowerColorSensor;
+    private ColorSensor middleLowerColorSensor;
+    private ColorSensor rightLowerColorSensor;
+
     public AtomicBoolean moving = new AtomicBoolean(false);
     public AtomicBoolean timedOut = new AtomicBoolean(false);
 
     public enum ARTIFACT {NONE, GREEN, PURPLE};
-    public ARTIFACT leftLoad,rightLoad,middleLoad;
-
+    public ARTIFACT leftLoad,rightLoad,middleLoad, leftIntake, middleIntake, rightIntake;
+    public int intakeNum = 0;
 
     //TODO FIND OUT
     static public float ELEVATOR_TIC_PER_MM = 0000;
@@ -100,6 +96,10 @@ public class Intake {
         middleTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "uppermiddlecolorsensor");
         rightTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperrightcolorsensor");
 
+        leftLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowerleftcolorsensor");
+        middleLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowermiddlecolorsensor");
+        rightLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowerrightcolorsensor");
+
         teamUtil.log("Intake Initialized");
     }
 
@@ -138,6 +138,11 @@ public class Intake {
     public void intakeTelemetry() {
         telemetry.addLine("Intake elevator Position: " + elevator.getCurrentPosition());
         telemetry.addData("UpperSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftTopColorSensor), formatSensor(middleTopColorSensor), formatSensor(rightTopColorSensor));
+        telemetry.addData("LowerSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftLowerColorSensor), formatSensor(middleLowerColorSensor), formatSensor(rightLowerColorSensor));
+        checkLoadedArtifacts();
+        checkIntakeArtifacts();
+        telemetry.addLine("Loaded: L:" + leftLoad.toString() + "  M:" + middleLoad.toString() + "  R:" + rightLoad.toString());
+        telemetry.addLine("Intake: Num:" + intakeNum + " L:" + leftIntake.toString() + "  M:" + middleIntake.toString() + "  R:" + rightIntake.toString());
     }
 
     public void intakeIn(){
@@ -191,17 +196,57 @@ public class Intake {
         });
         thread.start();
     }
-
-    public void shootOne(){
-
+    public static double flippersUnloadPosition = 0.5;
+    public static int unloadPause = 1000;
+    public static int shortUnloadPause = 1000;
+    public Servo onTheBackburner;
+    public void unloadToShooter(boolean ordered){
+        unloadOrder()[0].setPosition(flippersUnloadPosition);
+        if(unloadOrder()[0] == middle_flipper){teamUtil.pause(shortUnloadPause);
+        }else{teamUtil.pause(unloadPause);}
+        unloadOrder()[1].setPosition(flippersUnloadPosition);
+        onTheBackburner = unloadOrder()[2];
     }
 
+    public Servo[] unloadOrder(){
+        //todo: implement
+        Servo[] arr = {left_flipper, middle_flipper, right_flipper};
+        return arr;
+    }
+    public static int UPPER_ALPHA_THRESHOLD = 25;
+    public static double GREEN_THRESHOLD = 1.25;
+    public static int LEFT_ALPHA_THRESHOLD = 70;
+
     public ARTIFACT checkLoadedArtifact(ColorSensor sensor) {
-        return ARTIFACT.NONE; // TODO put sensing logic in
+        if(sensor.alpha() < UPPER_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
+        if(sensor == leftTopColorSensor && sensor.alpha() < LEFT_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
+        if((float) sensor.green()/ (float) sensor.alpha() > GREEN_THRESHOLD){return ARTIFACT.GREEN;}
+        return ARTIFACT.PURPLE;
+    }
+
+    public static int LOWER_ALPHA_THRESHOLD = 75;
+
+    public ARTIFACT checkIntakeArtifact(ColorSensor sensor) {
+        /*
+        int color = colorSensor.argb();
+        int alpha = (color >> 24) & 0xFF;
+        int red   = (color >> 16) & 0xFF;
+        int green = (color >> 8)  & 0xFF;
+        int blue  =  color        & 0xFF;
+         */
+        if(sensor.alpha() < LOWER_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
+        if (sensor.red() > sensor.green() || sensor.blue() > sensor.green()) {return ARTIFACT.PURPLE;}
+        return ARTIFACT.GREEN;
     }
     public void checkLoadedArtifacts () {
         leftLoad = checkLoadedArtifact(leftTopColorSensor);
         middleLoad = checkLoadedArtifact(middleTopColorSensor);
         rightLoad = checkLoadedArtifact(rightTopColorSensor);
+    }
+    public void checkIntakeArtifacts () {
+        leftIntake = checkIntakeArtifact(leftLowerColorSensor);
+        middleIntake = checkIntakeArtifact(middleLowerColorSensor);
+        rightIntake = checkIntakeArtifact(rightLowerColorSensor);
+        intakeNum = (leftIntake == ARTIFACT.NONE ? 0 : 1) + (middleIntake == ARTIFACT.NONE ? 0 : 1) + (rightIntake == ARTIFACT.NONE ? 0 : 1);
     }
 }
