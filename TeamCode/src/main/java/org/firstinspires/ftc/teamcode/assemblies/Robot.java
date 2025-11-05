@@ -15,7 +15,6 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 @Config
 public class Robot {
-    public BNO055IMU imu;
     HardwareMap hardwareMap;
     Telemetry telemetry;
     public OctoQuadFWv3 oq;
@@ -44,7 +43,7 @@ public class Robot {
     }
 
     public void initialize() {
-        drive.initalize();
+        drive.initialize();
         intake.initialize();
         shooter.initialize();
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -83,5 +82,68 @@ public class Robot {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Auto Code
+
+    public static double A00_MAX_SPEED_NEAR_GOAL = 1500;
+    public static double A00_SHOOT_END_VELOCITY = 1000;
+    public static double A00_PICKUP_VELOCITY = 1000;
+    public static double A00_PICKUP_END_VELOCITY = 1000;
+
+    public static double A05_SHOOT1_Y = -884;
+    public static double A05_SHOOT1_X = 935;
+    public static double A05_SHOOT1_H = 315;
+
+    public static double A06_PICKUP1_Y = -1200;
+    public static double A06_PICKUP1_X = 667;
+    public static double A06_PICKUP1_H = 0;
+
+    public static double A07_PICKUP1_Y = -1200;
+    public static double A07_PICKUP1_X = 667-120;
+
+    public void goalSide(boolean useArms) {
+        drive.moveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_Y, A05_SHOOT1_X, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        if (useArms) {
+
+        } else {
+            teamUtil.pause(2000);
+        }
+        drive.moveTo(A00_MAX_SPEED_NEAR_GOAL, A06_PICKUP1_Y, A06_PICKUP1_X, A06_PICKUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.moveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_Y, A07_PICKUP1_X, A06_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        drive.moveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_Y, A05_SHOOT1_X, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+
+    }
+    // Examples from last year's Sample Auto
+    // Move to first drop
+    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A04_READY_FOR_BUCKET_STRAFE,A04_READY_FOR_BUCKET_STRAIGHT,0,A04_END_VELOCITY,null,0, false,5000);
+    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A05_1_BUCKET_STRAFE, A05_1_BUCKET_STRAIGHT,A05_1_BUCKET_HEADING,A05_1_BUCKET_END_VELOCITY,null,0, false, 5000);
+    //drive.setMotorsActiveBrake();
+
+    // Move to pickup 1st sample
+    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A06_1_SAMPLE_PICKUP_STRAFE,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_RH,A00_END_VELOCITY_FOR_PICKUP,null,0,false,3000);
+    //drive.stopMotors();
+    //drive.waitForRobotToStop(1000);
+    //teamUtil.pause(A06_1_BRAKE_PAUSE);
+
+    // Grab and unload (counting on bucket to be at the bottom by the time we get there!
+    //boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true,A12_SAMPLE_PICKUP_TIMEOUT);
+
+    // Move to pickup 2nd sample
+    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A08_2_SAMPLE_PICKUP_STRAFE,A08_2_SAMPLE_PICKUP_STRAIGHT,A08_2_SAMPLE_PICKUP_HEADING,A00_END_VELOCITY_FOR_PICKUP,null,0,false,3000);
+    //drive.stopMotors();
+    //drive.waitForRobotToStop(1000);
+    //teamUtil.pause(A06_1_BRAKE_PAUSE);
+
+    // Move to pickup 3rd sample
+    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A10_3_SAMPLE_PICKUP_STRAFE,A10_3_SAMPLE_PICKUP_STRAIGHT,A10_3_SAMPLE_PICKUP_HEADING,A00_END_VELOCITY_FOR_PICKUP,null,0,false,3000);
+    // drive.stopMotors();
+    //drive.waitForRobotToStop(1000);
+    //teamUtil.pause(A06_1_BRAKE_PAUSE);
+    // Grab and unload (counting on bucket to be at the bottom by the time we get there!
+
+
 }
 

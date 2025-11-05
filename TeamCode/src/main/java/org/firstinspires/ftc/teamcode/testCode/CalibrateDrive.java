@@ -32,6 +32,12 @@ public class CalibrateDrive extends LinearOpMode {
     public static int SECONDS = 1;
     public static int botX = 72;
     public static int botY = 72;
+    public static float botHeading = 0;
+    public static boolean botEndInDeadband = false;
+
+    public static int TELEPORT_X = 0;
+    public static int TELEPORT_Y = 0;
+    public static int TELEPORT_H =  0;
 
 
     public enum Ops {Test_Wiring,
@@ -88,8 +94,8 @@ public class CalibrateDrive extends LinearOpMode {
         //FtcDashboard.setDrawDefaultField(false); // enable to eliminate field drawing
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
         teamUtil.init(this);
-        teamUtil.alliance = teamUtil.Alliance.RED;
-        teamUtil.SIDE=teamUtil.Side.BASKET;
+        teamUtil.alliance = teamUtil.Alliance.BLUE;
+        teamUtil.SIDE=teamUtil.Side.GOAL;
 
         robot = new Robot();
         robot.initialize();
@@ -115,6 +121,7 @@ public class CalibrateDrive extends LinearOpMode {
         while (opModeIsActive()) {
             
             drive.loop(); // keep odometry data up to date
+            telemetry.addLine("Alliance: " + teamUtil.alliance);
             drive.driveMotorTelemetry();
 
             if (gamepad1.left_stick_button) {
@@ -133,7 +140,7 @@ public class CalibrateDrive extends LinearOpMode {
                 drive.setHeading(0);
             }
             if (gamepad1.rightStickButtonWasReleased()&&gamepad1.leftStickButtonWasReleased()) {
-                drive.setRobotPosition(0,0, 0);
+                drive.setRobotPosition(TELEPORT_X,TELEPORT_Y, TELEPORT_H);
             }
 
             // X makes the selected action happen
@@ -165,8 +172,8 @@ public class CalibrateDrive extends LinearOpMode {
                 testNewMethods();
         }
             drive.universalDriveJoystickV2(
-                    gamepad1.left_stick_x,
-                    gamepad1.left_stick_y,
+                    gamepad1.left_stick_y * (teamUtil.alliance== teamUtil.Alliance.BLUE ? 1 : -1),
+                    gamepad1.left_stick_x * (teamUtil.alliance== teamUtil.Alliance.BLUE ? -1 : 1),
                     gamepad1.right_stick_x,
                     gamepad1.right_trigger > .5,gamepad1.left_trigger > .5,
                     drive.getHeadingODO());
@@ -194,9 +201,7 @@ public class CalibrateDrive extends LinearOpMode {
         }
     }
     public void testNewMethods() {
-        if (gamepad1.dpad_up) {
-            drive.teleport(0,0);
-        }
+
     }
 
     public void testMoveToHolding() {
@@ -394,9 +399,9 @@ public class CalibrateDrive extends LinearOpMode {
         if (gamepad1.dpad_up) {
             //drive.setHeading(0);
             drive.loop();
-            double startForward = drive.localizer.posX_mm;
+            double startForward = drive.oQlocalizer.posX_mm;
             double forwardTarget = (long) (startForward + testDistance);
-            double startStrafe = drive.localizer.posY_mm+botY;
+            double startStrafe = drive.oQlocalizer.posY_mm+botY;
             drive.straightHoldingStrafeEncoder(testVelocity, forwardTarget,startStrafe,0,testEndVelocity, powerBraking, null,0,3000);
             if (testEndVelocity > 0) {
                 teamUtil.pause(1000);
@@ -406,9 +411,9 @@ public class CalibrateDrive extends LinearOpMode {
         if (gamepad1.dpad_down) {
             drive.setHeading(0);
             drive.loop();
-            double startForward = drive.localizer.posX_mm;
+            double startForward = drive.oQlocalizer.posX_mm;
             double forwardTarget = (long) (startForward - testDistance);
-            double startStrafe = drive.localizer.posY_mm+botY;
+            double startStrafe = drive.oQlocalizer.posY_mm+botY;
             drive.straightHoldingStrafeEncoder(testVelocity, forwardTarget,startStrafe,0,testEndVelocity, powerBraking, null,0,3000);
             if (testEndVelocity > 0) {
                 teamUtil.pause(1000);
@@ -418,17 +423,17 @@ public class CalibrateDrive extends LinearOpMode {
         if (gamepad1.dpad_right) {
             //drive.setHeading(0);
             drive.loop();
-            double startStrafe = drive.localizer.posY_mm;
+            double startStrafe = drive.oQlocalizer.posY_mm;
             double strafeTarget = (long) (startStrafe - testDistance);
-            double startForward = drive.localizer.posX_mm+botX;
+            double startForward = drive.oQlocalizer.posX_mm+botX;
             drive.strafeHoldingStraightEncoder(testVelocity, strafeTarget,startForward,0,0,null,0,3000);
         }
         if (gamepad1.dpad_left) {
             drive.setHeading(0);
             drive.loop();
-            double startStrafe = drive.localizer.posY_mm;
+            double startStrafe = drive.oQlocalizer.posY_mm;
             double strafeTarget = (long) (startStrafe + testDistance);
-            double startForward = drive.localizer.posX_mm+botX;
+            double startForward = drive.oQlocalizer.posX_mm+botX;
             drive.strafeHoldingStraightEncoder(testVelocity, strafeTarget,startForward,0,0,null,0,3000);
         }
     }
@@ -439,9 +444,9 @@ public class CalibrateDrive extends LinearOpMode {
             //drive.setHeading(0);
             drive.loop();
             drive.loop();
-            double startForward = drive.localizer.posX_mm;
+            double startForward = drive.oQlocalizer.posX_mm;
             double forwardTarget = (long) (startForward + testDistance);
-            double startStrafe = drive.localizer.posY_mm+botY;
+            double startStrafe = drive.oQlocalizer.posY_mm+botY;
             drive.straightHoldingStrafePower(testPower, forwardTarget,startStrafe,0, null,0,3000);
             drive.stopMotors();
         }
@@ -449,27 +454,27 @@ public class CalibrateDrive extends LinearOpMode {
             drive.setHeading(0);
             drive.loop();
             drive.loop();
-            double startForward = drive.localizer.posX_mm;
+            double startForward = drive.oQlocalizer.posX_mm;
             double forwardTarget = (long) (startForward - testDistance);
-            double startStrafe = drive.localizer.posY_mm+botY;
+            double startStrafe = drive.oQlocalizer.posY_mm+botY;
             drive.straightHoldingStrafePower(testPower, forwardTarget,startStrafe,0, null,0,3000);
             drive.stopMotors();
         }
         if (gamepad1.dpad_right) {
             drive.loop();
             drive.loop();
-            double startStrafe = drive.localizer.posY_mm;
+            double startStrafe = drive.oQlocalizer.posY_mm;
             double strafeTarget = (long) (startStrafe - testDistance);
-            double startForward = drive.localizer.posX_mm+botX;
+            double startForward = drive.oQlocalizer.posX_mm+botX;
             drive.strafeHoldingStraightPower(testPower, strafeTarget,startForward,0,null,0,3000);
             drive.stopMotors();
         }
         if (gamepad1.dpad_left) {
             drive.loop();
             drive.loop();
-            double startStrafe = drive.localizer.posY_mm;
+            double startStrafe = drive.oQlocalizer.posY_mm;
             double strafeTarget = (long) (startStrafe + testDistance);
-            double startForward = drive.localizer.posX_mm+botX;
+            double startForward = drive.oQlocalizer.posX_mm+botX;
             drive.strafeHoldingStraightPower(testPower, strafeTarget,startForward,0,null,0,3000);
             drive.stopMotors();
         }
@@ -477,13 +482,13 @@ public class CalibrateDrive extends LinearOpMode {
 
     public void testMoveTo() {
         if (gamepad1.dpad_up){
-            drive.moveTo(testVelocity,botY,botX,0,0,null,0,5000);
+            drive.moveTo(testVelocity,botY,botX,botHeading,0,null,0,5000);
         }
         if (gamepad1.dpad_left){
-            drive.moveTo(testVelocity,botY,botX,0,testEndVelocity,null,0,false,5000);
+            drive.moveTo(testVelocity,botY,botX,botHeading,testEndVelocity,null,0,botEndInDeadband,5000);
         }
         if (gamepad1.dpad_right){
-            drive.moveTo(testVelocity,botY,botX,0,testEndVelocity,null,0,false,5000);
+            drive.moveTo(testVelocity,botY,botX,botHeading,testEndVelocity,null,0,botEndInDeadband,5000);
             drive.setMotorPower(0.3);
             teamUtil.pause(500);
             drive.stopMotors();
@@ -539,10 +544,11 @@ public class CalibrateDrive extends LinearOpMode {
 
 
     public void goForADriveTarget() {
-        long startForward = drive.forwardEncoder.getCurrentPosition();
-        long forwardTarget = (long) (startForward + drive.TICS_PER_CM_STRAIGHT_ENCODER*testDistance);
-        long startStrafe = drive.strafeEncoder.getCurrentPosition();
-        long strafeTarget = (long) (startStrafe + drive.TICS_PER_CM_STRAIGHT_ENCODER*testDistance);
+        drive.loop();
+        long startForward = drive.oQlocalizer.posX_mm;
+        long forwardTarget = (long) (startForward + testDistance);
+        long startStrafe = drive.oQlocalizer.posY_mm;
+        long strafeTarget = (long) (startStrafe + testDistance);
         drive.setHeading(0);
 
         drive.straightHoldingStrafeEncoder(drive.MAX_VELOCITY, forwardTarget,startStrafe,0,0, false, null,0,3000);
@@ -563,9 +569,9 @@ public class CalibrateDrive extends LinearOpMode {
         drive.loop();
         long startBrakeTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < startBrakeTime+1000) {
-            teamUtil.log("vel:"+drive.localizer.velX_mmS+":enc:"+drive.localizer.posX_mm);
-            telemetry.addData("XVelocity", drive.localizer.velX_mmS);
-            telemetry.addData("XEncoder", drive.localizer.posX_mm);
+            teamUtil.log("vel:"+drive.oQlocalizer.velX_mmS+":enc:"+drive.oQlocalizer.posX_mm);
+            telemetry.addData("XVelocity", drive.oQlocalizer.velX_mmS);
+            telemetry.addData("XEncoder", drive.oQlocalizer.posX_mm);
             telemetry.update();
             drive.loop();
         }
@@ -580,9 +586,9 @@ public class CalibrateDrive extends LinearOpMode {
         drive.loop();
         long startBrakeTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < startBrakeTime+1000) {
-            telemetry.addData("YVelocity", drive.localizer.velY_mmS);
-            telemetry.addData("YEncoder", drive.localizer.posY_mm);
-            teamUtil.log("vel:"+drive.localizer.velX_mmS+":enc:"+drive.localizer.posY_mm);
+            telemetry.addData("YVelocity", drive.oQlocalizer.velY_mmS);
+            telemetry.addData("YEncoder", drive.oQlocalizer.posY_mm);
+            teamUtil.log("vel:"+drive.oQlocalizer.velX_mmS+":enc:"+drive.oQlocalizer.posY_mm);
             telemetry.update();
             drive.loop();
         }

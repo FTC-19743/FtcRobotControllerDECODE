@@ -27,8 +27,8 @@ public class teamUtil {
 
     public enum Alliance {RED, BLUE}
     public static Alliance alliance = Alliance.RED;
-    public enum Side {BASKET, OBSERVATION}
-    public static Side SIDE = Side.OBSERVATION;
+    public enum Side {GOAL, HUMAN}
+    public static Side SIDE = Side.GOAL;
 
     public static Robot robot;
 
