@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
+import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.RED;
+
 import androidx.core.math.MathUtils;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -380,7 +382,7 @@ public class BasicDrive{
     // Uses the robots current position (localizer) to determine field relative heading to center of goal
     public double getGoalHeading(){
         double local_goal_y = GOAL_Y;
-        if (teamUtil.alliance == teamUtil.Alliance.RED){
+        if (teamUtil.alliance == RED){
             local_goal_y = -GOAL_Y;
         }
         double offset_x = GOAL_X - oQlocalizer.posX_mm;
@@ -1831,8 +1833,13 @@ public class BasicDrive{
         teamUtil.log("MoveTo FINISHED");
     }
 
-
-
+    public void mirroredMoveTo(double maxVelocity, double xTarget, double yTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout) {
+        if (teamUtil.alliance==RED) {
+            moveTo(maxVelocity,yTarget* -1,xTarget,360-robotHeading,endVelocity,action,actionTarget,endInDeadband,timeout);
+        } else {
+            moveTo(maxVelocity,yTarget,xTarget,robotHeading,endVelocity,action,actionTarget,endInDeadband,timeout);
+        }
+    }
     public void moveTo(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, long timeout){
         moveTo(maxVelocity,strafeTarget,straightTarget,robotHeading,endVelocity,action,actionTarget,true,timeout);
     }

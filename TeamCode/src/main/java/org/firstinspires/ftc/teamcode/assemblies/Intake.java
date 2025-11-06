@@ -73,7 +73,8 @@ public class Intake {
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
     static public float FLIPPER_CEILING = 0.8f;
     static public float FLIPPER_TRANSFER = 0.65f;
-    static public float FLIPPER_SHOOTER_TRANSFER = 0.05f;
+    static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
+    static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
 
 
     public Intake() {
@@ -196,15 +197,15 @@ public class Intake {
         });
         thread.start();
     }
-    public static double flippersUnloadPosition = 0.5;
-    public static int unloadPause = 1000;
-    public static int shortUnloadPause = 1000;
+    public static double FLIPPERS_UNLOAD = 0.5;
+    public static int UNLOAD_PAUSE = 1000;
+    public static int SHORT_UNLOAD_PAUSE = 1000;
     public Servo onTheBackburner;
-    public void unloadToShooter(boolean ordered){
-        unloadOrder()[0].setPosition(flippersUnloadPosition);
-        if(unloadOrder()[0] == middle_flipper){teamUtil.pause(shortUnloadPause);
-        }else{teamUtil.pause(unloadPause);}
-        unloadOrder()[1].setPosition(flippersUnloadPosition);
+    public void unloadToShooter(boolean ordered){ // TODO: check if the artifacts are loaded before sending them to the shooter
+        unloadOrder()[0].setPosition(FLIPPERS_UNLOAD);
+        if(unloadOrder()[0] == middle_flipper){teamUtil.pause(SHORT_UNLOAD_PAUSE);
+        }else{teamUtil.pause(UNLOAD_PAUSE);}
+        unloadOrder()[1].setPosition(FLIPPERS_UNLOAD);
         onTheBackburner = unloadOrder()[2];
     }
 
@@ -226,6 +227,36 @@ public class Intake {
 
     public static int LOWER_ALPHA_THRESHOLD = 75;
 
+    public int loadedBallNum(){
+        checkLoadedArtifacts();
+        int loadedBalls = 0;
+        if(leftLoad != ARTIFACT.NONE){
+            loadedBalls++;
+        }
+        if(middleLoad != ARTIFACT.NONE){
+            loadedBalls++;
+        }
+        if(rightLoad != ARTIFACT.NONE){
+            loadedBalls++;
+        }
+        return loadedBalls;
+    }
+
+    public int intakeBallNum(){
+        checkIntakeArtifacts();
+        int intakeBalls = 0;
+        if(leftIntake != ARTIFACT.NONE){
+            intakeBalls++;
+        }
+        if(middleIntake != ARTIFACT.NONE){
+            intakeBalls++;
+        }
+        if(rightIntake != ARTIFACT.NONE){
+            intakeBalls++;
+        }
+        return intakeBalls;
+    }
+
     public ARTIFACT checkIntakeArtifact(ColorSensor sensor) {
         /*
         int color = colorSensor.argb();
@@ -243,6 +274,7 @@ public class Intake {
         middleLoad = checkLoadedArtifact(middleTopColorSensor);
         rightLoad = checkLoadedArtifact(rightTopColorSensor);
     }
+
     public void checkIntakeArtifacts () {
         leftIntake = checkIntakeArtifact(leftLowerColorSensor);
         middleIntake = checkIntakeArtifact(middleLowerColorSensor);

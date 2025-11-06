@@ -23,17 +23,21 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 public class CalibrateArms extends LinearOpMode {
 
     Robot robot;
-    
-    static public float FLIPPER_TEST_VAL = 0f;
-    
+    public static double VelocityIncrement = 100;
+    public double CurrentPower = 0;
+    public double currentRVelocity = 0;
+    public double currentLVelocity = 0;
+    public float FLIPPER_TEST_VAL = 0f;
+
     double aimerPosition = Shooter.AIMER_CALIBRATE;
     
     public enum Ops {
         Test_Intake,
         Test_Shooter,
-        Test_Foot
+        Test_Foot,
+        Test_PIDF
     };
-    public static Ops AA_Operation = Ops.Test_Shooter;
+    public static Ops AA_Operation = Ops.Test_PIDF;
     public static boolean useCV = true;
 
     @Override
@@ -46,7 +50,6 @@ public class CalibrateArms extends LinearOpMode {
         robot = new Robot();
         robot.initialize();
         //robot.initCV(enableLiveView);// TODO: false for competition
-
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
@@ -55,7 +58,7 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
-
+        
         waitForStart();
 
         if (isStopRequested()) {
@@ -72,6 +75,7 @@ public class CalibrateArms extends LinearOpMode {
                 case Test_Intake : testIntake();break;
                 case Test_Shooter : testShooter();break;
                 case Test_Foot : testFoot();break;
+                case Test_PIDF: shooterPIDF();break;
             }
 
             // Drawing stuff on the field
@@ -136,7 +140,6 @@ public class CalibrateArms extends LinearOpMode {
     }
     public void testShooter(){
         robot.shooter.outputTelemetry();
-
         if(gamepad1.dpadUpWasReleased()){
             robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
         }if(gamepad1.dpadDownWasReleased()){
@@ -154,5 +157,42 @@ public class CalibrateArms extends LinearOpMode {
 
         }
 
+    }
+    
+    public void shooterPIDF(){
+        robot.shooter.leftFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
+        robot.shooter.rightFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
+        //robot.shooter.leftFlywheel.setPower(CurrentPower);
+        //rightFlywheel.setPower(-CurrentPower);
+        robot.shooter.leftFlywheel.setVelocity(currentLVelocity);
+        robot.shooter.rightFlywheel.setVelocity(-currentRVelocity);
+        if(gamepad1.dpadUpWasReleased()){
+            currentLVelocity+=VelocityIncrement;
+
+            currentRVelocity-=VelocityIncrement;
+        }
+        if(gamepad1.dpadDownWasReleased()){
+            currentRVelocity+=VelocityIncrement;
+            currentLVelocity-=VelocityIncrement;
+        }
+        if(gamepad1.aWasReleased()){
+            robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
+        }
+        if(gamepad1.xWasPressed()){
+            robot.intake.elevatorToFlippers();
+        }
+        if(gamepad1.bWasPressed()) {
+            robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1000);
+        }if(gamepad1.leftBumperWasPressed()){
+            robot.shooter.aim(robot.shooter.currentAim()+.005);
+        }if(gamepad1.rightBumperWasPressed()){
+            robot.shooter.aim(robot.shooter.currentAim()-.005);
+        }
+        telemetry.addLine("currentVelocity: " + currentRVelocity + ", " + currentLVelocity);
+        telemetry.addLine("ReportedVelocity: " + robot.shooter.leftFlywheel.getVelocity()+", "+robot.shooter.rightFlywheel.getVelocity());
+        telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
+        telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
+        telemetry.addData("zero", 0);
+        telemetry.addLine("Aimer Position: "+robot.shooter.currentAim());
     }
 }

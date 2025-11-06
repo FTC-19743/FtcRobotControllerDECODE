@@ -136,6 +136,24 @@ public class Teleop extends LinearOpMode {
                     robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
                 }
 
+                if(gamepad2.dpadUpWasReleased()){
+                    robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
+                }if(gamepad2.dpadDownWasReleased()){
+                    robot.shooter.stopShooter();
+                }if(gamepad2.dpadRightWasPressed()){
+                    robot.shooter.aim(robot.shooter.currentAim()+.01);
+                }if(gamepad2.dpadLeftWasPressed()){
+                    robot.shooter.aim(robot.shooter.currentAim()-.01);
+                }if(gamepad2.aWasPressed()){
+                    robot.shootAllArtifacts();
+                }if(gamepad2.xWasPressed()){
+                    robot.intake.elevatorToFlippers();
+                }if(gamepad2.leftBumperWasPressed()){
+                    robot.intake.intakeIn();
+                }if(gamepad2.rightBumperWasPressed()){
+                    robot.intake.intakeStop();
+                }
+
                 robot.outputTelemetry();
 
                 robot.drive.loop();

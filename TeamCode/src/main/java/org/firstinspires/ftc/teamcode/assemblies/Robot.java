@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -89,19 +88,19 @@ public class Robot {
     public static double A00_PICKUP_VELOCITY = 1000;
     public static double A00_PICKUP_END_VELOCITY = 1000;
 
-    public static double A05_SHOOT1_Y = -884;
+    public static double A05_SHOOT1_Y = 884;
     public static double A05_SHOOT1_X = 935;
-    public static double A05_SHOOT1_H = 315;
+    public static double A05_SHOOT1_H = 45;
 
-    public static double A06_PICKUP1_Y = -1200;
+    public static double A06_PICKUP1_Y = 1200;
     public static double A06_PICKUP1_X = 667;
     public static double A06_PICKUP1_H = 0;
 
-    public static double A07_PICKUP1_Y = -1200;
+    public static double A07_PICKUP1_Y = 1200;
     public static double A07_PICKUP1_X = 667-120;
 
     public void goalSide(boolean useArms) {
-        drive.moveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_Y, A05_SHOOT1_X, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
         if (useArms) {
@@ -109,12 +108,40 @@ public class Robot {
         } else {
             teamUtil.pause(2000);
         }
-        drive.moveTo(A00_MAX_SPEED_NEAR_GOAL, A06_PICKUP1_Y, A06_PICKUP1_X, A06_PICKUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.moveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_Y, A07_PICKUP1_X, A06_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
-        drive.moveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_Y, A05_SHOOT1_X, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_PICKUP1_X, A06_PICKUP1_Y, A06_PICKUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A06_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
 
+    }
+
+    public static long FIRST_UNLOAD_PAUSE = 400;
+    public static long SECOND_UNLOAD_PAUSE = 600;
+
+    public void shootAllArtifacts(){
+        intake.checkLoadedArtifacts();
+        int ballCount = intake.loadedBallNum();
+        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
+        if(ballCount == 5){
+            teamUtil.log("shootAllArtifacts called without loaded artifacts");
+            return;
+        }
+        teamUtil.log("shootAllArtifacts starting with "+ballCount+" balls");
+//        if(ballCount == 1){
+//        }else if(ballCount == 2){
+//        }else{
+            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+            shooter.pusher.pushNNoWait(3, AxonPusher.RTP_MAX_VELOCITY, 1250);
+            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+            teamUtil.pause(SECOND_UNLOAD_PAUSE);
+            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+//        }
+        teamUtil.log("shootAllArtifacts finished");
     }
     // Examples from last year's Sample Auto
     // Move to first drop

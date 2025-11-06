@@ -26,6 +26,26 @@ public class Shooter {
     public static double SHOOTER_FAR_VELOCITY = 1300;
     public static float PUSHER_VELOCITY = .5f;
 
+    public static double shooterP = 50;
+    public static double shooterI = 1;
+    public static double shooterD = 0.8;
+    public static double shooterF = 0;
+
+    public static float AIMER_FAR_LONG = .540f; // far from long
+    public static float AIMER_CLOSE_LONG = .515f; // closest from long
+    public static float AIMER_FAR_CLOSE = .380f; // furthest from the close
+    public static float AIMER_CLOSE_CLOSE = .3f; // closest from the close zone
+
+    public static double FAR_LONG_VELOCITY = 1700;
+    public static double CLOSE_LONG_VELOCITY = 1800;
+    public static double FAR_CLOSE_VELOCITY = 1200;
+    public static double CLOSE_CLOSE_VELOCITY = 800;
+
+    // distances:
+    // 12.5 for furthest
+    // closest long shot: 10ft
+    // closest close is 91 inches
+    // furthest close shot is 3ft 10in
 
     public Shooter() {
         teamUtil.log("Constructing Shooter");
@@ -39,7 +59,8 @@ public class Shooter {
         leftFlywheel = hardwareMap.get(DcMotorEx.class,"leftflywheel");
         rightFlywheel = hardwareMap.get(DcMotorEx.class,"rightflywheel");
         leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-
+        leftFlywheel.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+        rightFlywheel.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
         pusher.initialize();
         aimer = hardwareMap.get(Servo.class,"aimer");
 
