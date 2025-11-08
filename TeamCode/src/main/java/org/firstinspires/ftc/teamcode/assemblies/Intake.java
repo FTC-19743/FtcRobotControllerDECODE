@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 //import org.firstinspires.ftc.teamcode.libs.Blinkin;
 
+import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,6 +42,9 @@ public class Intake {
 
     public AtomicBoolean moving = new AtomicBoolean(false);
     public AtomicBoolean timedOut = new AtomicBoolean(false);
+
+    public AtomicBoolean detecting = new AtomicBoolean(false);
+    public AtomicBoolean stopDetector = new AtomicBoolean(false);
 
     public enum ARTIFACT {NONE, GREEN, PURPLE};
     public ARTIFACT leftLoad,rightLoad,middleLoad, leftIntake, middleIntake, rightIntake;
@@ -281,4 +285,63 @@ public class Intake {
         rightIntake = checkIntakeArtifact(rightLowerColorSensor);
         intakeNum = (leftIntake == ARTIFACT.NONE ? 0 : 1) + (middleIntake == ARTIFACT.NONE ? 0 : 1) + (rightIntake == ARTIFACT.NONE ? 0 : 1);
     }
+
+    public void setBlinkinArtifact(ARTIFACT artifact){
+        switch (artifact) {
+            case NONE: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.RED); break;
+            case PURPLE: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.PURPLE); break;
+            case GREEN: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.GREEN); break;
+        }
+    }
+
+    public static int FLASH_TIME = 100;
+    public static int GAP_TIME = 100;
+    public static int CYCLE_TIME = 500;
+    public void detectIntakeArtifacts() {
+        while (!stopDetector.get()) {
+            checkIntakeArtifacts();
+            setBlinkinArtifact(leftIntake);
+            teamUtil.pause(FLASH_TIME);
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            teamUtil.pause(GAP_TIME);
+            setBlinkinArtifact(middleIntake);
+            teamUtil.pause(FLASH_TIME);
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            teamUtil.pause(GAP_TIME);
+            setBlinkinArtifact(rightIntake);
+            teamUtil.pause(FLASH_TIME);
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            teamUtil.pause(CYCLE_TIME);
+        }
+        detecting.set(false);
+        stopDetector.set(false);
+    }
+
+    public void startDetector () {
+        if (detecting.get()) {
+            teamUtil.log ("WARNING----------startDetector called while already detecting. Ignored");
+        } else {
+            detecting.set(true);
+            stopDetector.set(false);
+            teamUtil.log("Launching Thread to startDetector.");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    detectIntakeArtifacts();
+                }
+            });
+            thread.start();
+
+        }
+    }
+
+    public void stopDetector () {
+        if (!detecting.get()) {
+            teamUtil.log ("WARNING----------stopDetector called while not detecting. Ignored");
+        } else {
+            stopDetector.set(true);
+            teamUtil.log("Stopping Detector Thread");
+        }
+    }
+
 }

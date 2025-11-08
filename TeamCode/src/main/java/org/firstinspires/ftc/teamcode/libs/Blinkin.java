@@ -19,6 +19,8 @@ public class Blinkin {
 
     public enum Signals{
         OFF,
+        PURPLE,
+        GREEN,
         RED,
         FLASHING_RED,
         DARK_GREEN,
@@ -135,6 +137,14 @@ public class Blinkin {
                 break;
             case RED:
                 current = RevBlinkinLedDriver.BlinkinPattern.RED;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case GREEN:
+                current = RevBlinkinLedDriver.BlinkinPattern.GREEN;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case PURPLE:
+                current = RevBlinkinLedDriver.BlinkinPattern.VIOLET;
                 blinkinLedDriver.setPattern(current);
                 break;
 

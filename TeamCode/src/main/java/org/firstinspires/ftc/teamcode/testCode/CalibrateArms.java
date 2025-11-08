@@ -33,6 +33,7 @@ public class CalibrateArms extends LinearOpMode {
     
     public enum Ops {
         Test_Intake,
+        Test_Intake_Detector,
         Test_Shooter,
         Test_Foot,
         Test_PIDF
@@ -73,6 +74,7 @@ public class CalibrateArms extends LinearOpMode {
             }
             switch (AA_Operation) {
                 case Test_Intake : testIntake();break;
+                case Test_Intake_Detector: testIntakeDetector();break;
                 case Test_Shooter : testShooter();break;
                 case Test_Foot : testFoot();break;
                 case Test_PIDF: shooterPIDF();break;
@@ -98,6 +100,15 @@ public class CalibrateArms extends LinearOpMode {
 
     }
 
+    public void testIntakeDetector() {
+        robot.intake.intakeTelemetry();
+        if(gamepad1.dpadUpWasReleased()){
+            robot.intake.startDetector();
+        }
+        if(gamepad1.dpadDownWasReleased()){
+            robot.intake.stopDetector();
+        }
+    }
     public void testIntake() {
         robot.intake.intakeTelemetry();
         telemetry.addLine("Elevator Tolerance: " + robot.intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));

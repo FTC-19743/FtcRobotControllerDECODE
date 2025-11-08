@@ -45,6 +45,7 @@ public class Robot {
         drive.initialize();
         intake.initialize();
         shooter.initialize();
+        blinkin.init();
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         //telemetry.setMsTransmissionInterval(11); //TODO This is in the limelight example code. why?
         limelight.pipelineSwitch(0);
