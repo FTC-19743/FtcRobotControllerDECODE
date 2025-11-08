@@ -144,6 +144,46 @@ public class Robot {
 //        }
         teamUtil.log("shootAllArtifacts finished");
     }
+
+    public static long EDGE_PUSHER_PAUSE = 200;
+
+    public void shootArtifactColor(Intake.ARTIFACT color){
+        teamUtil.log("shootArtifactColor called");
+        intake.checkLoadedArtifacts();
+        int ballCount = intake.loadedBallNum();
+        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
+        if(color == Intake.ARTIFACT.NONE){
+            teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");
+            return;
+        }
+        if(ballCount == 0) {
+            teamUtil.log("shootArtifactColor called without any artifacts loaded");
+            return;
+        }
+        if(loadedArtifacts[0] != color && loadedArtifacts[1] != color && loadedArtifacts[2] != color){
+            teamUtil.log("shootArtifactColor called without a loaded artifact of the specified color");
+            return;
+        }
+        if(color == loadedArtifacts[1]){
+            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+            shooter.pushOne();
+        }else if(color == loadedArtifacts[0]){
+            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+            teamUtil.pause(EDGE_PUSHER_PAUSE);
+            shooter.pushOne();
+        }else{
+            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+            teamUtil.pause(EDGE_PUSHER_PAUSE);
+            shooter.pushOne();
+        }
+
+    }
     // Examples from last year's Sample Auto
     // Move to first drop
     //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A04_READY_FOR_BUCKET_STRAFE,A04_READY_FOR_BUCKET_STRAIGHT,0,A04_END_VELOCITY,null,0, false,5000);
