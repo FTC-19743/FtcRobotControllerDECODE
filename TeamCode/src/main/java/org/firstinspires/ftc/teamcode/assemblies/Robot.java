@@ -7,10 +7,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @Config
 public class Robot {
@@ -21,6 +25,8 @@ public class Robot {
     public Intake intake;
     public Shooter shooter;
     public Blinkin blinkin;
+    private AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
     public Limelight3A limelight;
 
     public Servo foot;
@@ -50,7 +56,28 @@ public class Robot {
         //telemetry.setMsTransmissionInterval(11); //TODO This is in the limelight example code. why?
         limelight.pipelineSwitch(0);
         limelight.start();
+    }
 
+    public void initCV (boolean liveStream) {
+        String webCamName;
+        if (teamUtil.SIDE == teamUtil.Side.HUMAN) {
+            webCamName = "frontwebcam";
+        } else if (teamUtil.alliance == teamUtil.Alliance.BLUE) {
+            webCamName = "rightwebcam";
+        } else {
+            webCamName = "leftwebcam";
+        }
+        aprilTag = AprilTagProcessor.easyCreateWithDefaults();
+        visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, webCamName), aprilTag);
+        if (liveStream) {
+            visionPortal.resumeLiveView();
+        } else {
+            visionPortal.stopLiveView();
+        }
+    }
+
+    public void stopCV () {
+        visionPortal.close();
     }
 
     public void outputTelemetry() {

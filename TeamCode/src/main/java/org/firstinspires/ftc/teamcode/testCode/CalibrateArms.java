@@ -50,7 +50,9 @@ public class CalibrateArms extends LinearOpMode {
         
         robot = new Robot();
         robot.initialize();
-        //robot.initCV(enableLiveView);// TODO: false for competition
+        if (useCV) {
+            robot.initCV(true);
+        }
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;

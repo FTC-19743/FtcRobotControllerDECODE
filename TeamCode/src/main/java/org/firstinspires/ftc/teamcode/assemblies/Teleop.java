@@ -94,7 +94,7 @@ public class Teleop extends LinearOpMode {
                 if (gamepad1.rightStickButtonWasReleased() && gamepad1.leftStickButtonWasReleased()) {
                     robot.drive.setRobotPosition(0, 0, 0);
                 }
-                robot.drive.setHeldHeading(robot.drive.getGoalHeading());
+                //robot.drive.setHeldHeading(robot.drive.getGoalHeading());
                 robot.drive.universalDriveJoystickV2(
                         gamepad1.left_stick_y * (teamUtil.alliance== teamUtil.Alliance.BLUE ? 1 : -1),
                         gamepad1.left_stick_x * (teamUtil.alliance== teamUtil.Alliance.BLUE ? -1 : 1),
