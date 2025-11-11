@@ -19,7 +19,7 @@ public class AxonPusher{
     public AnalogInput servoPot;
 
     public final int ODO_PUSHER = 3; // Pusher encoder octoquad port
-    public final int REV_ENCODER_TICS_PER_REVOLUTION = 8192;
+    public static int REV_ENCODER_TICS_PER_REVOLUTION = 8192;
     public final double AXON_POT_FULL_REVOLUTION = 3.3f;
     public final double AXON_LOAD_1 = 1.12; // TODO: Calibrate
     public final double AXON_LOAD_2 = AXON_LOAD_1 + AXON_POT_FULL_REVOLUTION/2;

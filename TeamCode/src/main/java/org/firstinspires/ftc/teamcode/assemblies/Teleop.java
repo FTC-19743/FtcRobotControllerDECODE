@@ -97,12 +97,13 @@ public class Teleop extends LinearOpMode {
                 ////////// Drive
 
                 //robot.drive.setHeldHeading(robot.drive.getGoalHeading());
-                robot.drive.universalDriveJoystickV2(
+                robot.drive.universalDriveJoystickV3(
                         gamepad1.left_stick_y * (teamUtil.alliance== teamUtil.Alliance.BLUE ? 1 : -1),
                         gamepad1.left_stick_x * (teamUtil.alliance== teamUtil.Alliance.BLUE ? -1 : 1),
                         gamepad1.right_stick_x,
                         gamepad1.right_trigger > .5,gamepad1.left_trigger > .5,
-                        robot.drive.getHeadingODO());
+                        robot.drive.getHeadingODO(),
+                        shootingMode);
 
                 if(gamepad1.yWasReleased()){
                     if(shootingMode == true){

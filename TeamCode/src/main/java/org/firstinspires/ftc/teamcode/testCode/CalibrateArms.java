@@ -186,7 +186,9 @@ public class CalibrateArms extends LinearOpMode {
 
         if(gamepad1.aWasPressed()){
             robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-
+        }
+        if(gamepad1.yWasPressed()){
+            robot.shootAllArtifacts();
         }
 
     }

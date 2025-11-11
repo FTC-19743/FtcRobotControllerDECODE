@@ -26,6 +26,9 @@ public class TestAutoPaths extends LinearOpMode{
         Goal_Side,
         Human_Side
     };
+    static public int RESET_X = 0;
+    static public int RESET_Y = 0;
+    static public int RESET_H = 0;
     public static Ops AA_Operation = Ops.Goal_Side;
     public static boolean useCV = false;
 
@@ -73,6 +76,9 @@ public class TestAutoPaths extends LinearOpMode{
                 case Goal_Side : testGoalSide();break;
                 case Human_Side : testHumanSide();break;
             }
+            if(gamepad1.aWasReleased()){
+                robot.drive.setRobotPosition(RESET_X,RESET_Y,RESET_H);
+            }
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();
@@ -87,7 +93,7 @@ public class TestAutoPaths extends LinearOpMode{
     public void testGoalSide() {
         robot.drive.driveMotorTelemetry();
         if(gamepad1.dpadUpWasReleased()){
-            robot.goalSide(false);
+            robot.goalSide(USE_ARMS);
         }
     }
 
@@ -96,6 +102,8 @@ public class TestAutoPaths extends LinearOpMode{
         if(gamepad1.dpadUpWasReleased()){
         }
     }
+
+
 
 
 }

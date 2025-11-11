@@ -111,8 +111,12 @@ public class BasicDrive{
     public static float STRAFESLOWSPEED = 0.25f;
     public static float MAXROTATIONFACTOR = 0.8f;
     public static float ROTATION_ADJUST_HELD_HEADING = 0.025f;
+    public static float STATIONARY_ROTATION_ADJUST_HELD_HEADING = 0.005f;
     public static float SLOWSLOPE =0.22f;
     public static float SLOWSLOPESTRAFE =0.35f;
+
+    public static float STATIONARYROTATIONFACTOR = 0.8f;
+
 
     public static double STOP_VEL_THRESHOLD = 1;
     public static double STOP_ANGLE_VEL_THRESHOLD = 0.5;
@@ -122,6 +126,11 @@ public class BasicDrive{
 
     public static int RESET_X = -1537;
     public static int RESET_Y = 229;
+
+    public static int HEADING_ERROR_THRESHOLD = 4;
+    public static double STATIONARY_ROTATION_ADJUSTMENT_FACTOR = 4;
+    public static float MIN_SPIN_POWER = 0.15f;
+    public static double HEADING_STOP_THRESHOLD = 1;
 
 
 
@@ -2196,7 +2205,7 @@ public class BasicDrive{
 
         }
 
-        final float MAXROTATIONFACTOR = 2f;
+        final float MAXROTATIONFACTOR = 0.8f;
         if (Math.abs(rightJoyStickX) > DEADBAND) { // driver is turning the robot
             //old code
             //rotationAdjustment = (float) (rightJoyStickX * 0.525 * scaleAmount);
@@ -2252,6 +2261,152 @@ public class BasicDrive{
         //telemetry.addLine("br power: " + backRight);
     }
 
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Drive robot based on two joystick values
+    // Implements a deadband where joystick position will be ignored (translation and rotation)
+    // Uses a linear scale that starts at the edge of the dead band
+    // Attempts to hold the last heading that was commanded via a turn
+    public void driveJoyStickV3(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast, boolean isSlow, boolean autoRotate) {
+
+        float SLOPE = 0.55f;
+        float FASTSLOPE = 1f;
+        float SLOWSPEED = .1f;
+        //float STRAFESLOWSPEED = 0.25f;
+        //float SLOPE = 1 / (1 - DEADBAND); // linear from edge of dead band to full power  TODO: Should this be a curve?
+
+        float POWERFACTOR = 1; // MAKE LESS THAN 0 to cap upperlimit of power
+        float leftX;
+        float leftY;
+        float rotationAdjustment;
+
+        float scaleAmount = isFast ? 1f : 0.5f; // full power is "fast", half power is "slow"
+
+        float frontLeft, frontRight, backRight, backLeft;
+
+        // Ensure nothing happens if we are inside the deadband
+        if (Math.abs(leftJoyStickX) < DEADBAND) {
+            leftJoyStickX = 0;
+        }
+        if (Math.abs(leftJoyStickY) < DEADBAND) {
+            leftJoyStickY = 0;
+        }
+        if (Math.abs(rightJoyStickX) < SPIN_DEADBAND) {
+            rightJoyStickX = 0;
+        }
+
+        if (movingAutonomously.get() && (leftJoyStickX != 0 || rightJoyStickX != 0 || leftJoyStickY != 0)) { // Do we need to interrupt an autonomous operation?
+            manualInterrupt.set(true);
+        }
+        if(leftJoyStickX == 0){ // NEW Power Curves
+            leftX = 0;
+        } else if(isSlow){
+            leftX = leftJoyStickX*SLOWSLOPESTRAFE+(leftJoyStickX>0? -0.078f:0.078f);
+        } else if(isFast){
+            leftX = leftJoyStickX * FASTSLOPE ;
+        }
+        //medium speed
+        else{
+            leftX = leftJoyStickX*SLOPE+(leftJoyStickX>0? -0.055f:0.055f);
+
+        }
+
+        if(leftJoyStickY == 0){
+            leftY = 0;
+        } else if(isSlow){
+            leftY = leftJoyStickY*SLOWSLOPE+(leftJoyStickY>0? -0.078f:0.078f);
+        } else if(isFast){
+            leftY = leftJoyStickY * FASTSLOPE ;
+        }
+        //medium speed
+        else{
+            leftY = leftJoyStickY*SLOPE+(leftJoyStickY>0? -0.055f:0.055f);
+
+        }
+
+        final float MAXROTATIONFACTOR = 0.8f;
+        if (Math.abs(rightJoyStickX) > DEADBAND) { // driver is turning the robot
+            //old code
+            //rotationAdjustment = (float) (rightJoyStickX * 0.525 * scaleAmount);
+            rotationAdjustment = (float) (rightJoyStickX * 1 * scaleAmount);
+
+            holdingHeading = false;
+        } else { // Need to automatically hold the current heading
+            if (!holdingHeading) { // start to hold current heading
+                heldHeading = getHeadingODO();
+                holdingHeading = true;
+                if(details){
+                    teamUtil.log("New heldHeading from turn: "+heldHeading);
+                }
+            }
+            // old code
+            //rotationAdjustment = (float) getHeadingError(heldHeading) * -1f * .05f; // auto rotate to held heading
+
+            if(leftX == 0 && leftY == 0 && autoRotate){
+
+                if(Math.abs(getHeadingError(heldHeading))>HEADING_ERROR_THRESHOLD){
+                    if(getHeadingError(heldHeading)<0){
+                        rotationAdjustment = (float) ((getHeadingError(heldHeading)+HEADING_ERROR_THRESHOLD) * -1f * STATIONARY_ROTATION_ADJUST_HELD_HEADING) + MIN_SPIN_POWER;
+                    }else{
+                        rotationAdjustment = (float) ((getHeadingError(heldHeading)-HEADING_ERROR_THRESHOLD) * -1f * STATIONARY_ROTATION_ADJUST_HELD_HEADING) - MIN_SPIN_POWER; // auto rotate to held heading
+                    }
+
+
+                }
+                else if(Math.abs(getHeadingError(heldHeading))>HEADING_STOP_THRESHOLD){
+                    rotationAdjustment = MIN_SPIN_POWER * (getHeadingError(heldHeading)<0? 1 : -1);
+                }else{
+                    rotationAdjustment = 0;
+                }
+
+                if(details) teamUtil.log("Rotation Adjustment: " + rotationAdjustment + "Heading Error: " + getHeadingError(heldHeading));
+
+
+                //rotationAdjustment = MathUtils.clamp(rotationAdjustment, -STATIONARYROTATIONFACTOR,STATIONARYROTATIONFACTOR ); // clip rotation so it doesn't obliterate translation
+
+            }else{
+                rotationAdjustment = (float) getHeadingError(heldHeading) * -1f * ROTATION_ADJUST_HELD_HEADING; // auto rotate to held heading
+
+                rotationAdjustment = rotationAdjustment * Math.min(Math.max(Math.abs(leftX), Math.abs(leftY)), 0.7f);// make it proportional to speed
+                rotationAdjustment = MathUtils.clamp(rotationAdjustment, -MAXROTATIONFACTOR,MAXROTATIONFACTOR ); // clip rotation so it doesn't obliterate translation
+
+            }
+        }
+        frontLeft = -(leftY - leftX - rotationAdjustment);
+        frontRight = (-leftY - leftX - rotationAdjustment);
+        backRight = (-leftY + leftX - rotationAdjustment);
+        backLeft = -(leftY + leftX - rotationAdjustment); // TODO: fix powers being above 1
+
+        if (details) {
+            teamUtil.telemetry.addLine("Joy X/Y: "+ leftJoyStickX+ "/"+ leftJoyStickY+ " X/Y: "+ leftX+ "/"+leftY);
+            if (holdingHeading) {
+                teamUtil.telemetry.addData("HOLDING:", heldHeading);
+            }
+        }
+        fl.setPower(frontLeft);
+        fr.setPower(frontRight);
+        br.setPower(backRight);
+        bl.setPower(backLeft);
+
+        String currentSpeedState;
+        if(isSlow){
+            currentSpeedState="Is Slow";
+        }else if(isFast){
+            currentSpeedState="Is Fast";
+        }else{
+            currentSpeedState="Is Medium";
+        }
+        //telemetry.addLine("Current Speed State " + currentSpeedState);
+
+        //TODO: take out soon just for testing purposes
+        //telemetry.addLine("Left Joystick Y: " + leftJoyStickY);
+        //telemetry.addLine("Left Joystick X: " + leftJoyStickX);
+        //telemetry.addLine("fl power: " + frontLeft);
+        //telemetry.addLine("fr power: " + frontRight);
+        //telemetry.addLine("bl power: " + backLeft);
+        //telemetry.addLine("br power: " + backRight);
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Adds Field Relative driving to driveJoyStick
     public void universalDriveJoystickV2(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast,boolean isSlow, double robotHeading) {
@@ -2266,6 +2421,21 @@ public class BasicDrive{
 
         driveJoyStickV2(rotatedLeftX, rotatedLeftY, rightX, isFast,isSlow);
     }
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Adds Field Relative driving to driveJoyStick
+    public void universalDriveJoystickV3(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast,boolean isSlow, double robotHeading, boolean autoRotate) {
+        double angleInRadians = robotHeading * Math.PI / 180;
+        float leftX = leftJoyStickX;
+        float leftY = leftJoyStickY;
+        float rightX = rightJoyStickX;
+
+        //rotate to obtain new coordinates
+        float rotatedLeftX = (float) (Math.cos(angleInRadians) * leftX - Math.sin(angleInRadians) * leftY);
+        float rotatedLeftY = (float) (Math.sin(angleInRadians) * leftX + Math.cos(angleInRadians) * leftY);
+
+        driveJoyStickV3(rotatedLeftX, rotatedLeftY, rightX, isFast,isSlow,autoRotate);
+    }
+
 
     public void setHeldHeading(double heading){
         holdingHeading = true;

@@ -39,6 +39,11 @@ public class CalibrateDrive extends LinearOpMode {
     public static int TELEPORT_Y = 0;
     public static int TELEPORT_H =  0;
 
+    public static float FRPOWER = 0;
+    public static float FLPOWER = 0;
+    public static float BLPOWER = 0;
+    public static float BRPOWER = 0;
+
 
     public enum Ops {Test_Wiring,
         Test_Rot_Bug,
@@ -62,7 +67,8 @@ public class CalibrateDrive extends LinearOpMode {
         Test_Move_To2,
         Move_CMs_Test,
         Move_Encoder_Target_Test,
-        Methods_Test};
+        Methods_Test,
+    Set_Drive_Powers};
     public static Ops AAOP = Ops.Test_Wiring;
 
 
@@ -84,6 +90,7 @@ public class CalibrateDrive extends LinearOpMode {
             case Brake_Test_Right : brakeTestRight();break;
             case Reverse_Test:  reverseTest();break;
             case Reverse_Test2: reverseTest2();break;
+            case Set_Drive_Powers: setMotorPowers();
 
 
         }
@@ -104,6 +111,7 @@ public class CalibrateDrive extends LinearOpMode {
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
+        boolean autoRotate = false;
 
         robot.calibrate();
         drive = robot.drive;
@@ -170,13 +178,22 @@ public class CalibrateDrive extends LinearOpMode {
                 testMoveToHolding();
             }else if (AAOP==Ops.Methods_Test) {
                 testNewMethods();
-        }
-            drive.universalDriveJoystickV2(
+            }else if (AAOP == Ops.Set_Drive_Powers){
+                setMotorPowers();
+            }
+            if(gamepad1.yWasReleased()){
+                if(!autoRotate){autoRotate = true;}
+                else{autoRotate = false;}
+            }
+            if(autoRotate){
+                robot.drive.setHeldHeading(robot.drive.getGoalHeading());
+            }
+            drive.universalDriveJoystickV3(
                     gamepad1.left_stick_y * (teamUtil.alliance== teamUtil.Alliance.BLUE ? 1 : -1),
                     gamepad1.left_stick_x * (teamUtil.alliance== teamUtil.Alliance.BLUE ? -1 : 1),
                     gamepad1.right_stick_x,
                     gamepad1.right_trigger > .5,gamepad1.left_trigger > .5,
-                    drive.getHeadingODO());
+                    drive.getHeadingODO(),autoRotate);
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();
@@ -195,6 +212,7 @@ public class CalibrateDrive extends LinearOpMode {
             telemetry.addData("YEncoder", 0);
             telemetry.addData("XVelocity", 0);
             telemetry.addData("XEncoder", 0);
+            telemetry.addLine("autoRotate: " + autoRotate);
 
             telemetry.update();
             //sleep(20);
@@ -595,10 +613,21 @@ public class CalibrateDrive extends LinearOpMode {
         
     }
 
+    public void setMotorPowers(){
+        if(gamepad1.yWasReleased()){
+            drive.setMotorPowers(FLPOWER, FRPOWER, BLPOWER, BRPOWER);
+            teamUtil.pause(2000);
+            drive.setMotorPowers(0,0,0,0);
+        }
+
+    }
+
     public void TuneFrontBraking () {
 
 
     }
+
+
     
 
 }
