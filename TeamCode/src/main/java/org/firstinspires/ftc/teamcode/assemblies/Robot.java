@@ -126,31 +126,98 @@ public class Robot {
     public static double A00_PICKUP_VELOCITY = 1000;
     public static double A00_PICKUP_END_VELOCITY = 1000;
 
-    public static double A05_SHOOT1_Y = 884;
-    public static double A05_SHOOT1_X = 935;
+    public static double A01_TILE_LENGTH = 610;
+
+    public static double A05_SHOOT1_Y = 610;
+    public static double A05_SHOOT1_X = 610;
     public static double A05_SHOOT1_H = 45;
 
-    public static double A06_PICKUP1_Y = 1200;
-    public static double A06_PICKUP1_X = 667;
-    public static double A06_PICKUP1_H = 0;
+    public static double A06_SETUP1_Y = 1219;
+    public static double A06_SETUP1_X = 813;
+    public static double A06_SETUP1_H = 0;
 
-    public static double A07_PICKUP1_Y = 1200;
-    public static double A07_PICKUP1_X = 667-120;
+    public static double A07_PICKUP1_Y = 1219;
+    public static double A07_PICKUP1_X = 509;
+    public static double A07_PICKUP1_H = 0;
+
+    public static double B05_SHOOT1_Y = 483;
+    public static double B05_SHOOT1_X = 1397;
+    public static double B05_SHOOT1_H = 45; //TODO: FIND
+
+    public static double B06_SETUP1_Y = 1219;
+    public static double B06_SETUP1_X = -1320;
+    public static double B06_SETUP1_H = 0;
+
+    public static double B07_PICKUP1_Y = 1219;
+    public static double B07_PICKUP1_X = -1095;
+    public static double B07_PICKUP1_H = 0;
+
+
+
 
     public void goalSide(boolean useArms) {
+        //Shoot Preloads
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
         if (useArms) {
-
+            shootAllArtifacts();
+            intake.intakeStart();
         } else {
             teamUtil.pause(2000);
         }
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_PICKUP1_X, A06_PICKUP1_Y, A06_PICKUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A06_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+
+        //Collect Set 1
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X, A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        if (useArms) {
+            intake.elevatorToFlippersV2NoWait();
+        }
+        //Shoot Set 1
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
+        if (useArms) {
+            shootAllArtifacts();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
+
+        //Collect Set 2
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-A01_TILE_LENGTH, A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        if (useArms) {
+            intake.elevatorToFlippersV2NoWait();
+        }
+        //Shoot Set 2
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        if (useArms) {
+            shootAllArtifacts();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
+
+        //Collect Set 3
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-2*(A01_TILE_LENGTH), A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-2*(A01_TILE_LENGTH), A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        if (useArms) {
+            intake.elevatorToFlippersV2NoWait();
+        }
+        //Shoot Set 3
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        if (useArms) {
+            shootAllArtifacts();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
+
 
     }
 
