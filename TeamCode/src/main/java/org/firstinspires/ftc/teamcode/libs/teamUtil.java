@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.libs;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.lynx.commands.standard.LynxGetModuleStatusCommand;
 import com.qualcomm.hardware.lynx.commands.standard.LynxGetModuleStatusResponse;
@@ -13,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VoltageUnit;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 
 import java.util.List;
+@Config
 
 public class teamUtil {
 
@@ -38,6 +40,12 @@ public class teamUtil {
     public static boolean LEFT = true; // Don't use this anymore!
 
     public static long startTime;
+
+    public static int cacheX;
+    public static int cacheY;
+    public static double cacheHeading;
+
+
 
 
 

@@ -40,8 +40,8 @@ public class Intake {
     private ColorSensor middleLowerColorSensor;
     private ColorSensor rightLowerColorSensor;
 
-    public AtomicBoolean moving = new AtomicBoolean(false);
-    public AtomicBoolean timedOut = new AtomicBoolean(false);
+    public AtomicBoolean elevatorMoving = new AtomicBoolean(false);
+    public AtomicBoolean failedOut = new AtomicBoolean(false);
 
     public AtomicBoolean detecting = new AtomicBoolean(false);
     public AtomicBoolean stopDetector = new AtomicBoolean(false);
@@ -60,7 +60,10 @@ public class Intake {
     static public int ELEVATOR_UP = 500;
     static public int ELEVATOR_UP_THRESHOLD = 50;
     static public int ELEVATOR_DOWN_THRESHOLD = 50;
-    static public int ELEVATOR_VELOCITY = 1500;
+    static public int ELEVATOR_VELOCITY = 2000;
+    static public long ELEVATOR_PAUSE_1 = 500;
+    static public long ELEVATOR_PAUSE_2 = 500;
+
 
 
 
@@ -112,6 +115,7 @@ public class Intake {
     public void calibrate() {
         teamUtil.log("Calibrating Intake");
         calibrateElevators();
+
     }
 
     public void calibrateElevators(){
@@ -153,6 +157,14 @@ public class Intake {
     public void intakeIn(){
         intake.setPower(INTAKE_IN_POWER);
     }
+    public void intakeStart(){
+        intakeIn();
+        startDetector();
+        left_flipper.setPosition(FLIPPER_CEILING);
+        right_flipper.setPosition(FLIPPER_CEILING);
+        middle_flipper.setPosition(FLIPPER_CEILING);
+
+    }
     public void intakeOut(){
         intake.setPower(INTAKE_OUT_POWER);
     }
@@ -162,18 +174,20 @@ public class Intake {
 
     //TODO FIX METHOD
     public void elevatorToFlippers(){
-        elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        elevator.setVelocity(ELEVATOR_VELOCITY);
+
         left_flipper.setPosition(FLIPPER_PRE_TRANSFER);
         right_flipper.setPosition(FLIPPER_PRE_TRANSFER);
         middle_flipper.setPosition(FLIPPER_PRE_TRANSFER);
-        teamUtil.pause(250);
+        teamUtil.pause(ELEVATOR_PAUSE_1);
+        elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        elevator.setVelocity(ELEVATOR_VELOCITY);
         elevator.setTargetPosition(ELEVATOR_UP);
         while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_UP)>ELEVATOR_UP_THRESHOLD){ // TODO Add timeout and keepgoing check
         }
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
+        teamUtil.pause(ELEVATOR_PAUSE_2);
 
         elevator.setTargetPosition(ELEVATOR_PRE_GROUND);
         while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_PRE_GROUND)>ELEVATOR_DOWN_THRESHOLD){ // TODO Add timeout and keepgoing check
@@ -188,10 +202,12 @@ public class Intake {
             teamUtil.pause(50);
         }
         elevator.setPower(0);
-        moving.set(false);
+        intakeOut();
+        stopDetector();
+        elevatorMoving.set(false);
     }
     public void elevatorToFlippersNoWait(){
-        moving.set(true);
+        elevatorMoving.set(true);
         teamUtil.log("Launching Thread to elevatorToFlippersNoWait.  Intake: moving = true");
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -201,6 +217,192 @@ public class Intake {
         });
         thread.start();
     }
+
+    public static float ELEVATOR_UP_POWER = .75f;
+    public static float ELEVATOR_DOWN_POWER = -.75f;
+    public static int ELEVATOR_UP_TIMEOUT = 1500;
+    public static int ELEVATOR_DOWN_TIMEOUT = 1500;
+    public static int ELEVATOR_UP_VELOCITY_THRESHOLD = 400;
+    public static int ELEVATOR_DOWN_VELOCITY_THRESHOLD = -600;
+
+    public static int ELEVATOR_REVERSE_INTAKE_ENCODER = 140;
+    public static int ELEVATOR_UP_ENCODER = 440;
+    public static int ELEVATOR_DOWN_ENCODER = 130;
+    public static int ELEVATOR_UNLOAD_ENCODER = 460;
+    public static int ELEVATOR_HOLD_VELOCITY = 1500;
+
+
+    public boolean elevatorToGroundV2() {
+        teamUtil.log("elevatorToGroundV2.");
+        failedOut.set(false);
+        elevatorMoving.set(true);
+        if (elevator.getCurrentPosition() <= 5) {
+            teamUtil.log("WARNING: elevatorToGroundV2 called while elevator already at bottom--Ignored");
+            elevatorMoving.set(false);
+            return true;
+        }
+        elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        elevator.setPower(ELEVATOR_DOWN_POWER);
+        long timeOutTime = System.currentTimeMillis()+ELEVATOR_DOWN_TIMEOUT;
+        teamUtil.pause(250); // allow time for elevator to get moving
+        while(teamUtil.keepGoing(timeOutTime) && elevator.getVelocity() < ELEVATOR_DOWN_VELOCITY_THRESHOLD && elevator.getCurrentPosition()>ELEVATOR_DOWN_ENCODER){
+            if (details) {
+                teamUtil.log("Elevator Pos: "+ elevator.getCurrentPosition() + " Vel: "+ elevator.getVelocity());
+            }
+        }
+        if (elevator.getCurrentPosition() > ELEVATOR_DOWN_ENCODER) {
+            // We ran into an issue so fail out
+            teamUtil.log("WARNING: elevatorToGroundV2 Failed Out due to stall or timeout");
+            elevator.setPower(0);
+            elevatorMoving.set(false);
+            failedOut.set(true);
+            return false;
+        }
+
+        // Run the last bit at low power and stall against mechanical block
+        elevator.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        elevator.setPower(ELEVATOR_CALIBRATE_POWER);
+        int lastelevatorPosition = elevator.getCurrentPosition();
+        teamUtil.pause(250);
+        while (teamUtil.keepGoing(timeOutTime) && elevator.getCurrentPosition() != lastelevatorPosition) {
+            lastelevatorPosition = elevator.getCurrentPosition();
+            if (details) teamUtil.log("dropping Intake: elevator: " + elevator.getCurrentPosition());
+            teamUtil.pause(50);
+        }
+        elevator.setPower(0);
+        elevatorMoving.set(false);
+
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("elevatorToGroundV2 TIMED OUT!!!!!!!!!!!!");
+            failedOut.set(true);
+            return false;
+        } else {
+            teamUtil.log("elevatorToGroundV2 Finished");
+            return true;
+        }
+    }
+
+    public boolean getReadyToIntake() {
+        teamUtil.log("getReadyToIntake");
+
+        // Move flippers into out of the way position to drop any artifacts we might be holding
+        left_flipper.setPosition(FLIPPER_PRE_TRANSFER);
+        right_flipper.setPosition(FLIPPER_PRE_TRANSFER);
+        middle_flipper.setPosition(FLIPPER_PRE_TRANSFER);
+        teamUtil.pause(500); // Allow time for drop
+
+        // Move elevator to ground
+        if( elevatorToGroundV2()) {
+            // Move flippers into blocking position
+            left_flipper.setPosition(FLIPPER_CEILING);
+            right_flipper.setPosition(FLIPPER_CEILING);
+            middle_flipper.setPosition(FLIPPER_CEILING);
+
+            intakeIn();
+            teamUtil.log("getReadyToIntake Finished");
+            return true;
+        } else {
+            teamUtil.log("getReadyToIntake Finished");
+            return false;
+        }
+    }
+
+    public void getReadyToIntakeNoWait(){
+        if (elevatorMoving.get()) {
+            teamUtil.log("WARNING: getReadyToIntake called while moving--Ignored");
+            return;
+        }
+        elevatorMoving.set(true);
+        failedOut.set(false);
+        teamUtil.log("Launching Thread to getReadyToIntake.");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                getReadyToIntake();
+            }
+        });
+        thread.start();
+    }
+
+    public boolean elevatorToFlippersV2(){
+        teamUtil.log("elevatorToFlippersV2NoWait");
+
+        failedOut.set(false);
+        elevatorMoving.set(true);
+        if (elevator.getCurrentPosition() > ELEVATOR_DOWN_ENCODER) {
+            teamUtil.log("WARNING: elevatorToFlippersV2 called while elevator not at bottom--Ignored");
+            elevatorMoving.set(false);
+            return true;
+        }
+
+        // TODO: Consider turning the intake wheel off at this point, it might make it slightly more difficult for the elevator to go up but avoid pulling in extra balls
+
+        // Move flippers out of the way
+        left_flipper.setPosition(FLIPPER_PRE_TRANSFER);
+        right_flipper.setPosition(FLIPPER_PRE_TRANSFER);
+        middle_flipper.setPosition(FLIPPER_PRE_TRANSFER);
+        teamUtil.pause(ELEVATOR_PAUSE_1);
+
+        // Move elevator up while checking for stall (jam) or timeout
+        elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        elevator.setPower(ELEVATOR_UP_POWER);
+        long timeOutTime = System.currentTimeMillis()+ELEVATOR_UP_TIMEOUT;
+        teamUtil.pause(250); // allow time for elevator to get moving
+        while(teamUtil.keepGoing(timeOutTime) && elevator.getVelocity() > ELEVATOR_UP_VELOCITY_THRESHOLD && elevator.getCurrentPosition()<ELEVATOR_UP_ENCODER){
+            if (details) {
+                teamUtil.log("Elevator Pos: "+ elevator.getCurrentPosition() + " Vel: "+ elevator.getVelocity());
+            }
+            // If the balls are past the intake wheel, reverse the intake to avoid pulling in more
+            if (elevator.getCurrentPosition() > ELEVATOR_REVERSE_INTAKE_ENCODER) {
+                intakeOut();
+            }
+        }
+        if (elevator.getCurrentPosition() < ELEVATOR_UP_ENCODER) {
+            // We ran into an issue so fail out
+            teamUtil.log("elevatorToFlippersV2 Failed Out due to time out or stall");
+
+            elevator.setPower(0);
+            stopDetector();
+            elevatorMoving.set(false);
+            failedOut.set(true);
+            return false;
+        }
+        stopDetector();
+
+        // Hold at unload position
+        elevator.setTargetPosition(ELEVATOR_UNLOAD_ENCODER);
+        elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        elevator.setVelocity(ELEVATOR_HOLD_VELOCITY);
+        elevatorMoving.set(false);
+
+        // Load balls into flippers
+        left_flipper.setPosition(FLIPPER_TRANSFER);
+        right_flipper.setPosition(FLIPPER_TRANSFER);
+        middle_flipper.setPosition(FLIPPER_TRANSFER);
+        teamUtil.pause(ELEVATOR_PAUSE_2);
+
+        boolean success =  elevatorToGroundV2();
+        teamUtil.log("elevatorToFlippersV2 Finished");
+        return success;
+    }
+
+    public void elevatorToFlippersV2NoWait(){
+        if (elevatorMoving.get()) {
+            teamUtil.log("WARNING: elevatorToFlippersV2NoWait called while moving--Ignored");
+            return;
+        }
+        elevatorMoving.set(true);
+        failedOut.set(false);
+        teamUtil.log("Launching Thread to elevatorToFlippersV2NoWait.");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                elevatorToFlippersV2();
+            }
+        });
+        thread.start();
+    }
+
     public static double FLIPPERS_UNLOAD = 0.5;
     public static int UNLOAD_PAUSE = 1000;
     public static int SHORT_UNLOAD_PAUSE = 1000;

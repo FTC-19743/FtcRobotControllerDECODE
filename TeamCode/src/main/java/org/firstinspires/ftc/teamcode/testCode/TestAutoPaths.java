@@ -37,7 +37,7 @@ public class TestAutoPaths extends LinearOpMode{
         teamUtil.init(this);
 
         robot = new Robot();
-        robot.initialize();
+        robot.initialize(false);
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         robot.drive.setHeading(0);

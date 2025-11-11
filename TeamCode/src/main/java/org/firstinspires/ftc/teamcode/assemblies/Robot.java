@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -30,6 +32,7 @@ public class Robot {
     public Limelight3A limelight;
 
     public Servo foot;
+    private ColorSensor footColorSensor;
     public static double FOOT_CALIBRATE_POS = .1;
     public static double FOOT_EXTENDED_POS = .8;
 
@@ -47,25 +50,28 @@ public class Robot {
         teamUtil.robot = this;
     }
 
-    public void initialize() {
+    public void initialize(boolean useLimeLight) {
         drive.initialize();
         intake.initialize();
         shooter.initialize();
         blinkin.init();
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        //telemetry.setMsTransmissionInterval(11); //TODO This is in the limelight example code. why?
-        limelight.pipelineSwitch(0);
-        limelight.start();
+        footColorSensor = hardwareMap.get(RevColorSensorV3.class, "floorcolorsensor");
+
+        if (useLimeLight) {
+            limelight = hardwareMap.get(Limelight3A.class, "limelight");
+            limelight.pipelineSwitch(0);
+            limelight.start();
+        }
     }
 
     public void initCV (boolean liveStream) {
         String webCamName;
         if (teamUtil.SIDE == teamUtil.Side.HUMAN) {
-            webCamName = "frontwebcam";
+            webCamName = "webcamfront";
         } else if (teamUtil.alliance == teamUtil.Alliance.BLUE) {
-            webCamName = "rightwebcam";
+            webCamName = "webcamright";
         } else {
-            webCamName = "leftwebcam";
+            webCamName = "webcamleft";
         }
         aprilTag = AprilTagProcessor.easyCreateWithDefaults();
         visionPortal = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, webCamName), aprilTag);
@@ -81,10 +87,14 @@ public class Robot {
     }
 
     public void outputTelemetry() {
-        drive.driveMotorTelemetry();
-        intake.intakeTelemetry();
-        shooter.outputTelemetry();
-        telemetry.update();
+        //drive.driveMotorTelemetry();
+    }
+    private String formatSensor (ColorSensor sensor) {
+        return String.format ("(%d/%d/%d/%d)",sensor.alpha(), sensor.red(), sensor.green(), sensor.blue());
+    }
+
+    public void outputFootSensor() {
+        telemetry.addLine("FootSensor(A/R/G/B): " + formatSensor(footColorSensor));
     }
 
     public void outputLLPose() {
@@ -146,19 +156,51 @@ public class Robot {
 
     public static long FIRST_UNLOAD_PAUSE = 400;
     public static long SECOND_UNLOAD_PAUSE = 600;
+    public static double TWO_BALL_EDGE_PORTION = 1f/4;
 
     public void shootAllArtifacts(){
         intake.checkLoadedArtifacts();
         int ballCount = intake.loadedBallNum();
         Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
-        if(ballCount == 5){
+        if(ballCount == 0){
             teamUtil.log("shootAllArtifacts called without loaded artifacts");
             return;
         }
         teamUtil.log("shootAllArtifacts starting with "+ballCount+" balls");
-//        if(ballCount == 1){
-//        }else if(ballCount == 2){
-//        }else{
+        if(ballCount == 1){
+            if(loadedArtifacts[1] != Intake.ARTIFACT.NONE){
+                shootArtifactColor(loadedArtifacts[1]);
+            }if(loadedArtifacts[0] != Intake.ARTIFACT.NONE){
+                shootArtifactColor(loadedArtifacts[0]);
+            }else{
+                shootArtifactColor(loadedArtifacts[2]);
+            }
+        }else if(ballCount == 2){
+            if(loadedArtifacts[1] == Intake.ARTIFACT.NONE){
+                intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+                intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+                teamUtil.pause(FIRST_UNLOAD_PAUSE);
+                intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+                teamUtil.pause((long)(EDGE_PUSHER_PAUSE*(1-TWO_BALL_EDGE_PORTION)));
+                intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+                teamUtil.pause((long)(EDGE_PUSHER_PAUSE*TWO_BALL_EDGE_PORTION));
+                shooter.pusher.pushNNoWait(2, AxonPusher.RTP_MAX_VELOCITY, 1000);
+            }if(loadedArtifacts[0] == Intake.ARTIFACT.NONE){
+                intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+                intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+                teamUtil.pause(FIRST_UNLOAD_PAUSE);
+                intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+                shooter.pusher.pushNNoWait(2, AxonPusher.RTP_MAX_VELOCITY, 1250);
+                intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+            }else{
+                intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+                intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+                teamUtil.pause(FIRST_UNLOAD_PAUSE);
+                intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+                shooter.pusher.pushNNoWait(2, AxonPusher.RTP_MAX_VELOCITY, 1250);
+                intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+            }
+        }else{
             intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
             intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
@@ -168,11 +210,23 @@ public class Robot {
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(SECOND_UNLOAD_PAUSE);
             intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
-//        }
+        }
+        intake.intakeIn();
         teamUtil.log("shootAllArtifacts finished");
     }
 
-    public static long EDGE_PUSHER_PAUSE = 200;
+    public void shootAllArtifactsNoWait(){
+        teamUtil.log("Launching Thread to shootAllArtifactsNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shootAllArtifacts();
+            }
+        });
+        thread.start();
+    }
+
+    public static long EDGE_PUSHER_PAUSE = 700;
 
     public void shootArtifactColor(Intake.ARTIFACT color){
         teamUtil.log("shootArtifactColor called");
@@ -209,7 +263,21 @@ public class Robot {
             teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
         }
+        if(ballCount == 1){
+            intake.intakeStart();
+        }
 
+    }
+
+    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
+        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shootArtifactColor(color);
+            }
+        });
+        thread.start();
     }
     // Examples from last year's Sample Auto
     // Move to first drop

@@ -29,6 +29,7 @@ public class AxonPusher{
     public static double RUN_TO_ENCODER_DRIFT = 0;
     public static float PUSH_SLOW_VELOCITY = .1f;
     public static int PUSH_FAST_THRESHOLD = 3072;
+    public static int PUSH_N_PAUSE = 300;
 
 
     AtomicBoolean moving = new AtomicBoolean(false);
@@ -146,6 +147,9 @@ public class AxonPusher{
             if(timedOut.get()){
                 teamUtil.log("PushN timed out");
                 break;
+            }
+            if(i<num-1){
+                teamUtil.pause(PUSH_N_PAUSE);
             }
         }
         moving.set(false);

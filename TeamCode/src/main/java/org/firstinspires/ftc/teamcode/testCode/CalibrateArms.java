@@ -34,12 +34,13 @@ public class CalibrateArms extends LinearOpMode {
     public enum Ops {
         Test_Intake,
         Test_Intake_Detector,
+        Test_Elevator,
         Test_Shooter,
         Test_Foot,
         Test_PIDF
     };
     public static Ops AA_Operation = Ops.Test_PIDF;
-    public static boolean useCV = true;
+    public static boolean useCV = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -49,7 +50,7 @@ public class CalibrateArms extends LinearOpMode {
         teamUtil.init(this);
         
         robot = new Robot();
-        robot.initialize();
+        robot.initialize(true);
         if (useCV) {
             robot.initCV(true);
         }
@@ -77,6 +78,7 @@ public class CalibrateArms extends LinearOpMode {
             switch (AA_Operation) {
                 case Test_Intake : testIntake();break;
                 case Test_Intake_Detector: testIntakeDetector();break;
+                case Test_Elevator: testElevator();break;
                 case Test_Shooter : testShooter();break;
                 case Test_Foot : testFoot();break;
                 case Test_PIDF: shooterPIDF();break;
@@ -111,6 +113,25 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.stopDetector();
         }
     }
+
+    public void testElevator() {
+        if (gamepad1.dpadUpWasReleased()) {
+            robot.intake.elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.intake.elevator.setPower(Intake.ELEVATOR_UP_POWER);
+        }
+        if (gamepad1.dpadDownWasReleased()) {
+            robot.intake.elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.intake.elevator.setPower(Intake.ELEVATOR_DOWN_POWER);
+        }
+        if (gamepad1.dpadLeftWasReleased()) {
+            robot.intake.elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.intake.elevator.setPower(0);
+        }
+        telemetry.addData("Elevator Velocity", robot.intake.elevator.getVelocity());
+        telemetry.addLine("Elevator Position: " + robot.intake.elevator.getCurrentPosition());
+        telemetry.addLine("Elevator Velocity: " + robot.intake.elevator.getVelocity());
+    }
+
     public void testIntake() {
         robot.intake.intakeTelemetry();
         telemetry.addLine("Elevator Tolerance: " + robot.intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
@@ -120,12 +141,14 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.elevator.setVelocity(0);
         }
         if(gamepad1.dpadUpWasReleased()){
-            robot.intake.middle_flipper.setPosition(FLIPPER_TEST_VAL);
+            robot.intake.elevatorToFlippersV2NoWait();
         }
-        if(gamepad1.dpadLeftWasReleased()){
-            robot.intake.left_flipper.setPosition(FLIPPER_TEST_VAL);
+        if(gamepad1.dpadDownWasReleased()){
+            robot.intake.getReadyToIntakeNoWait();
         }
         if(gamepad1.dpadRightWasReleased()){
+            robot.intake.middle_flipper.setPosition(FLIPPER_TEST_VAL);
+            robot.intake.left_flipper.setPosition(FLIPPER_TEST_VAL);
             robot.intake.right_flipper.setPosition(FLIPPER_TEST_VAL);
         }
         if(gamepad1.circleWasReleased()){
@@ -136,20 +159,16 @@ public class CalibrateArms extends LinearOpMode {
         }
         if(gamepad1.squareWasReleased()){
             robot.intake.intakeOut();
-        }if(gamepad1.crossWasReleased()){
-            robot.intake.elevatorToFlippers();
-        }if(gamepad1.optionsWasReleased()){
-            robot.intake.elevatorToFlippersNoWait();
         }
     }
 
     public void testFoot() {
+        robot.outputFootSensor();
         if(gamepad1.dpadUpWasReleased()){
             robot.setFootPos(Robot.FOOT_EXTENDED_POS);
         }if(gamepad1.dpadDownWasReleased()){
             robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
         }
-
     }
     public void testShooter(){
         robot.shooter.outputTelemetry();

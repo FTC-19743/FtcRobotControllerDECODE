@@ -98,7 +98,7 @@ public class CalibrateDrive extends LinearOpMode {
         teamUtil.SIDE=teamUtil.Side.GOAL;
 
         robot = new Robot();
-        robot.initialize();
+        robot.initialize(false);
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         robot.drive.setHeading(0);

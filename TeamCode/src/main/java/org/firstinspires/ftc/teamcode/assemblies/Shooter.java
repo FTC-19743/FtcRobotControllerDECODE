@@ -37,15 +37,24 @@ public class Shooter {
     public static float AIMER_CLOSE_CLOSE = .3f; // closest from the close zone
 
     public static double FAR_LONG_VELOCITY = 1700;
-    public static double CLOSE_LONG_VELOCITY = 1800;
+    public static double CLOSE_LONG_VELOCITY = 1800; // 1600?
     public static double FAR_CLOSE_VELOCITY = 1200;
     public static double CLOSE_CLOSE_VELOCITY = 800;
 
+    public static double MID_DISTANCE_THRESHOLD = 2667;
+
+    // for aimer:
+    // close: .000069913x + .218222
+    // far: .0000328084x + .415
+    // for v:
+    // close: 0.349956x + 391+1/9
+    // far: 0.131234x + 1300
+
     // distances:
-    // 12.5 for furthest
+    // 12.5ft for furthest
     // closest long shot: 10ft
-    // closest close is 91 inches
-    // furthest close shot is 3ft 10in
+    // closest close is 3ft 10in inches
+    // furthest close shot is 91in
 
     public Shooter() {
         teamUtil.log("Constructing Shooter");
@@ -71,6 +80,7 @@ public class Shooter {
         aimer.setPosition(AIMER_CALIBRATE);
         pusher.setPower(0);
         pusher.calibrate();
+        pushOne();
     }
     public void outputTelemetry(){
         telemetry.addLine("Left velocity: "+leftFlywheel.getVelocity() +" Right velocity: "+rightFlywheel.getVelocity());
@@ -96,5 +106,33 @@ public class Shooter {
     }
     public void pushOne(){
         pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+    }
+
+
+    // for aimer:
+    // close: .000069913x + .218222
+    // far: .0000328084x + .415
+    // for v:
+    // close: 0.349956x + 391+1/9
+    // far: 0.131234x + 1300
+
+    // distances:
+    // 12.5ft for furthest
+    // closest long shot: 10ft
+    // closest close is 3ft 10in inches
+    // furthest close shot is 91in
+    public void adjustShooter(double distance){
+        double velocityNeeded;
+        double pitchNeeded;
+        if (distance>MID_DISTANCE_THRESHOLD){
+            velocityNeeded = 0.131234*distance + 1300;
+            pitchNeeded = .0000328084*distance + .415;
+        }else{
+            velocityNeeded= 0.349956*distance + 391.1111111;
+            pitchNeeded = .000069913*distance + .218222;
+        }
+        setShootSpeed(velocityNeeded);
+        aim(pitchNeeded);
+
     }
 }

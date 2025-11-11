@@ -12,6 +12,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
+import java.sql.Driver;
+
 @Config
 @TeleOp(name = "Teleop", group = "LinearOpMode")
 public class Teleop extends LinearOpMode {
@@ -19,6 +21,7 @@ public class Teleop extends LinearOpMode {
     Robot robot;
 
     boolean endgame = false;
+    boolean shootingMode = false;
     
     
     /*
@@ -56,7 +59,7 @@ public class Teleop extends LinearOpMode {
 
 
         robot = new Robot();
-        robot.initialize();
+        robot.initialize(false);
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         robot.drive.setHeading(0);
@@ -81,19 +84,18 @@ public class Teleop extends LinearOpMode {
             telemetry.addLine("Ready to start");
             telemetry.addLine("ALLIANCE : "+ teamUtil.alliance);
             telemetry.update();
+            */
         }
         
-         */
+
             //TODO: FIX ALL STATE MANAGEMENT
             waitForStart();
 
 
             while (opModeIsActive()) {
+                robot.drive.loop();
                 ////////// Drive
-                // Right bumper resets Heading
-                if (gamepad1.rightStickButtonWasReleased() && gamepad1.leftStickButtonWasReleased()) {
-                    robot.drive.setRobotPosition(0, 0, 0);
-                }
+
                 //robot.drive.setHeldHeading(robot.drive.getGoalHeading());
                 robot.drive.universalDriveJoystickV2(
                         gamepad1.left_stick_y * (teamUtil.alliance== teamUtil.Alliance.BLUE ? 1 : -1),
@@ -102,61 +104,67 @@ public class Teleop extends LinearOpMode {
                         gamepad1.right_trigger > .5,gamepad1.left_trigger > .5,
                         robot.drive.getHeadingODO());
 
-                if (gamepad1.leftBumperWasReleased()) {
-                    robot.intake.calibrate();
-                    robot.intake.elevator.setVelocity(0);
+                if(gamepad1.yWasReleased()){
+                    if(shootingMode == true){
+                        shootingMode = false;
+                    }else{
+                        shootingMode = true;
+                    }
+                }
+                if(shootingMode){
+                    robot.drive.setHeldHeading(robot.drive.getGoalHeading());
+                }
+                if(gamepad1.xWasReleased()){
+                    robot.drive.setRobotPosition(BasicDrive.RESET_X,BasicDrive.RESET_Y,0);
+                }
+                if(gamepad1.aWasReleased()){
+                    robot.drive.setRobotPosition(teamUtil.cacheX,teamUtil.cacheY,teamUtil.cacheHeading);
                 }
 
-                if(gamepad1.circleWasReleased()){
-                    robot.intake.intakeStop();
+                ////////////// SHOOTER ///////////////////////////
+
+                if(gamepad2.rightBumperWasReleased()){
+                    robot.shootAllArtifactsNoWait();
                 }
-                if(gamepad1.triangleWasReleased()){
-                    robot.intake.intakeIn();
+                if(gamepad2.bWasReleased()){
+                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
                 }
-                if(gamepad1.squareWasReleased()){
-                    robot.intake.intakeOut();
-                }if(gamepad1.crossWasReleased()){
-                    robot.intake.elevatorToFlippers();
-                }if(gamepad1.optionsWasReleased()){
-                    robot.intake.elevatorToFlippersNoWait();
+                if(gamepad2.xWasReleased()){
+                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
                 }
-                if(gamepad1.dpadUpWasReleased()){
-                    robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
-                    //robot.setFootPos(Robot.FOOT_EXTENDED_POS);
-                }if(gamepad1.dpadDownWasReleased()){
-                    robot.shooter.stopShooter();
-                    //robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
+                if(shootingMode){
+                    robot.shooter.adjustShooter(robot.drive.goalDistance());
                 }
-                if(gamepad1.dpadRightWasPressed()){
-                    robot.intake.unloadToShooter(true);
-                    //robot.shooter.aim(robot.shooter.currentAim()+.01);
-                }if(gamepad1.dpadLeftWasPressed()){
-                    //robot.shooter.aim(robot.shooter.currentAim()-.01);
-                }if(gamepad1.rightBumperWasPressed()){
-                    robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+
+
+                ///////////// ENDGAME //////////////////////////////
+
+                if(gamepad1.dpadDownWasReleased()){
+                    if(endgame){
+                        robot.setFootPos(robot.FOOT_EXTENDED_POS);
+                    }
+                    endgame = true;
                 }
+
+
+
+                ////////////// INTAKE ////////////////////////////
 
                 if(gamepad2.dpadUpWasReleased()){
-                    robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
+                    robot.intake.intakeStart();
                 }if(gamepad2.dpadDownWasReleased()){
-                    robot.shooter.stopShooter();
-                }if(gamepad2.dpadRightWasPressed()){
-                    robot.shooter.aim(robot.shooter.currentAim()+.01);
-                }if(gamepad2.dpadLeftWasPressed()){
-                    robot.shooter.aim(robot.shooter.currentAim()-.01);
-                }if(gamepad2.aWasPressed()){
-                    robot.shootAllArtifacts();
-                }if(gamepad2.xWasPressed()){
-                    robot.intake.elevatorToFlippers();
-                }if(gamepad2.leftBumperWasPressed()){
-                    robot.intake.intakeIn();
-                }if(gamepad2.rightBumperWasPressed()){
+                    robot.intake.intakeOut();
+                }if(gamepad2.dpadRightWasPressed()||gamepad2.dpadLeftWasPressed()){
                     robot.intake.intakeStop();
+                }
+
+                if(gamepad2.leftBumperWasReleased()){
+                    robot.intake.elevatorToFlippersNoWait();
                 }
 
                 robot.outputTelemetry();
 
-                robot.drive.loop();
+
                 //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
                 //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
                 //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
@@ -164,6 +172,14 @@ public class Teleop extends LinearOpMode {
 
                 telemetry.update();
             }
-        }
+
+        teamUtil.log("shutting down");
+
+        teamUtil.cacheHeading = robot.drive.getHeadingODO();
+        teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;
+        teamUtil.cacheX = robot.drive.oQlocalizer.posX_mm;
+
+
     }
+
 }

@@ -14,6 +14,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Config // Makes Static data members available in Dashboard
 public class BasicDrive{
+    private static final Logger log = LoggerFactory.getLogger(BasicDrive.class);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -117,6 +120,10 @@ public class BasicDrive{
     public static double GOAL_X = 1575; // For Decode season, field coordinates are 0,0 at center of field
     public static double GOAL_Y = 1575;
 
+    public static int RESET_X = -1537;
+    public static int RESET_Y = 229;
+
+
 
 
     /************************************************************************************************************/
@@ -168,7 +175,8 @@ public class BasicDrive{
 
     public void loop() { // Call this frequently so that odometry data is up to date
         teamUtil.robot.oq.readLocalizerDataAndAllEncoderData(oQlocalizer, oQencoders);
-        while (!oQlocalizer.crcOk && teamUtil.keepGoing(System.currentTimeMillis() + 10)) { // keep reading until we get good data
+        long currentTime = System.currentTimeMillis();
+        while (!oQlocalizer.crcOk && teamUtil.keepGoing(currentTime + 10)) { // keep reading until we get good data
             teamUtil.log("ERROR!------------------------------------------  BAD CRC from OctoQuad!");
             teamUtil.robot.oq.readLocalizerDataAndAllEncoderData(oQlocalizer, oQencoders);
         }
@@ -187,6 +195,7 @@ public class BasicDrive{
         telemetry.addData("Headings: ", "ODO: %.1f  To Goal: %.1f  Held: %.1f", getHeadingODO(), getGoalHeading(), heldHeading);
         String currents = String.format(Locale.US, "FR: %.0f, FL: %.0f, BR: %.0f, BL: %.0f" , fr.getCurrent(CurrentUnit.AMPS), fl.getCurrent(CurrentUnit.AMPS),br.getCurrent(CurrentUnit.AMPS), bl.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("CurrentDraw: ", currents);
+        telemetry.addData("Goal Distance: ", goalDistance());
 
         //teamUtil.log("FR: " + fr.getCurrent(CurrentUnit.AMPS) +" FL: " + fl.getCurrent(CurrentUnit.AMPS) + " BR: " + br.getCurrent(CurrentUnit.AMPS) + "BL" + bl.getCurrent(CurrentUnit.AMPS));
     }
@@ -2187,7 +2196,7 @@ public class BasicDrive{
 
         }
 
-        final float MAXROTATIONFACTOR = 0.8f;
+        final float MAXROTATIONFACTOR = 2f;
         if (Math.abs(rightJoyStickX) > DEADBAND) { // driver is turning the robot
             //old code
             //rotationAdjustment = (float) (rightJoyStickX * 0.525 * scaleAmount);
@@ -2332,5 +2341,19 @@ public class BasicDrive{
 
         teamUtil.log("Strafing Max Velocities FL:" + flmax + " FR:" + frmax + " BL:" + blmax + " BR:" + brmax);
     }
+
+    public double goalDistance(){
+        double goalDistance;
+        int multiplier = 1;
+        if(teamUtil.alliance == teamUtil.Alliance.RED){
+            multiplier= -1;
+        }
+        goalDistance = Math.sqrt(Math.pow((GOAL_X- oQlocalizer.posX_mm),2)+Math.pow(((multiplier*GOAL_Y- oQlocalizer.posY_mm)),2));
+        if(details){
+            teamUtil.log("Distance Calculated: " + goalDistance + " Multiplier: " + multiplier);
+        }
+        return  goalDistance;
+    }
+
 }
 
