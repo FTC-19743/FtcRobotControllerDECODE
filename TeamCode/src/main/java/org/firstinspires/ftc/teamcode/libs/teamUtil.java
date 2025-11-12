@@ -31,6 +31,8 @@ public class teamUtil {
     public static Alliance alliance = Alliance.RED;
     public enum Side {GOAL, HUMAN}
     public static Side SIDE = Side.GOAL;
+    public enum Pattern {PPG, PGP, GPP}
+    public static Pattern pattern = Pattern.PPG;
 
     public static Robot robot;
 

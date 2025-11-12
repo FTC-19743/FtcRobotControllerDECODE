@@ -59,7 +59,7 @@ public class TestAutoPaths extends LinearOpMode{
         }
 
         while (opModeIsActive()) {
-            telemetry.addLine("Alliance: " + teamUtil.alliance + " Side: " + teamUtil.SIDE);
+            telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + "PATTERN: " + teamUtil.pattern);
 
             if (gamepad1.left_stick_button) {
                 teamUtil.logSystemHealth();

@@ -159,7 +159,7 @@ public class Intake {
     }
     public void intakeStart(){
         intakeIn();
-        startDetector();
+        startDetector(false);
         left_flipper.setPosition(FLIPPER_CEILING);
         right_flipper.setPosition(FLIPPER_CEILING);
         middle_flipper.setPosition(FLIPPER_CEILING);
@@ -490,7 +490,7 @@ public class Intake {
 
     public void setBlinkinArtifact(ARTIFACT artifact){
         switch (artifact) {
-            case NONE: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.RED); break;
+            case NONE: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.EMPTY); break;
             case PURPLE: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.PURPLE); break;
             case GREEN: teamUtil.robot.blinkin.setSignal(Blinkin.Signals.GREEN); break;
         }
@@ -499,27 +499,36 @@ public class Intake {
     public static int FLASH_TIME = 100;
     public static int GAP_TIME = 100;
     public static int CYCLE_TIME = 500;
-    public void detectIntakeArtifacts() {
+    public void detectIntakeArtifacts(boolean colors) {
         while (!stopDetector.get()) {
             checkIntakeArtifacts();
-            setBlinkinArtifact(leftIntake);
-            teamUtil.pause(FLASH_TIME);
-            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-            teamUtil.pause(GAP_TIME);
-            setBlinkinArtifact(middleIntake);
-            teamUtil.pause(FLASH_TIME);
-            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-            teamUtil.pause(GAP_TIME);
-            setBlinkinArtifact(rightIntake);
-            teamUtil.pause(FLASH_TIME);
-            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-            teamUtil.pause(CYCLE_TIME);
+            if (colors) {
+                setBlinkinArtifact(leftIntake);
+                teamUtil.pause(FLASH_TIME);
+                teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                teamUtil.pause(GAP_TIME);
+                setBlinkinArtifact(middleIntake);
+                teamUtil.pause(FLASH_TIME);
+                teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                teamUtil.pause(GAP_TIME);
+                setBlinkinArtifact(rightIntake);
+                teamUtil.pause(FLASH_TIME);
+                teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                teamUtil.pause(CYCLE_TIME);
+            } else {
+                switch (intakeNum) {
+                    case 0 : teamUtil.robot.blinkin.setSignal(Blinkin.Signals.ZERO);break;
+                    case 1 : teamUtil.robot.blinkin.setSignal(Blinkin.Signals.ONE);break;
+                    case 2 : teamUtil.robot.blinkin.setSignal(Blinkin.Signals.TWO);break;
+                    case 3 : teamUtil.robot.blinkin.setSignal(Blinkin.Signals.THREE);break;
+                }
+            }
         }
         detecting.set(false);
         stopDetector.set(false);
     }
 
-    public void startDetector () {
+    public void startDetector (boolean colors) {
         if (detecting.get()) {
             teamUtil.log ("WARNING----------startDetector called while already detecting. Ignored");
         } else {
@@ -529,7 +538,7 @@ public class Intake {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    detectIntakeArtifacts();
+                    detectIntakeArtifacts(colors);
                 }
             });
             thread.start();
@@ -543,6 +552,7 @@ public class Intake {
         } else {
             stopDetector.set(true);
             teamUtil.log("Stopping Detector Thread");
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
         }
     }
 

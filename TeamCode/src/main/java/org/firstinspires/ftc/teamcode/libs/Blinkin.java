@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.libs;
 
+import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.BLUE;
+
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -19,9 +21,18 @@ public class Blinkin {
 
     public enum Signals{
         OFF,
+        EMPTY,
         PURPLE,
         GREEN,
         RED,
+        ZERO,
+        ONE,
+        TWO,
+        THREE,
+
+        AIMING,
+        READY_TO_SHOOT,
+
         FLASHING_RED,
         DARK_GREEN,
         YELLOW,
@@ -106,6 +117,49 @@ public class Blinkin {
                 blinkinLedDriver.setPattern(current);
                 break;
 
+            case EMPTY:
+                current = RevBlinkinLedDriver.BlinkinPattern.RED;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case GREEN:
+                current = RevBlinkinLedDriver.BlinkinPattern.GREEN;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case PURPLE:
+                current = RevBlinkinLedDriver.BlinkinPattern.VIOLET;
+                blinkinLedDriver.setPattern(current);
+                break;
+
+            case ZERO:
+                current = RevBlinkinLedDriver.BlinkinPattern.CP1_LIGHT_CHASE;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case ONE:
+                current = RevBlinkinLedDriver.BlinkinPattern.YELLOW;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case TWO:
+                current = RevBlinkinLedDriver.BlinkinPattern.BLUE;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case THREE:
+                current = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_FOREST_PALETTE; // CONFETTI? RAINBOW_WITH_GLITTER?
+                blinkinLedDriver.setPattern(current);
+                break;
+
+            case AIMING:
+                if (teamUtil.alliance == BLUE) {
+                    current = RevBlinkinLedDriver.BlinkinPattern.DARK_BLUE;
+                } else {
+                    current = RevBlinkinLedDriver.BlinkinPattern.DARK_RED;
+                }
+                blinkinLedDriver.setPattern(current);
+                break;
+            case READY_TO_SHOOT:
+                current = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_WITH_GLITTER; // CONFETTI? RAINBOW_WITH_GLITTER?
+                blinkinLedDriver.setPattern(current);
+                break;
+
             case GOTOSCORE_BLUE:
                 current = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_OCEAN_PALETTE;
                 blinkinLedDriver.setPattern(current);
@@ -133,18 +187,6 @@ public class Blinkin {
             case DARK_GREEN :
                 current = RevBlinkinLedDriver.BlinkinPattern.DARK_GREEN;
 
-                blinkinLedDriver.setPattern(current);
-                break;
-            case RED:
-                current = RevBlinkinLedDriver.BlinkinPattern.RED;
-                blinkinLedDriver.setPattern(current);
-                break;
-            case GREEN:
-                current = RevBlinkinLedDriver.BlinkinPattern.GREEN;
-                blinkinLedDriver.setPattern(current);
-                break;
-            case PURPLE:
-                current = RevBlinkinLedDriver.BlinkinPattern.VIOLET;
                 blinkinLedDriver.setPattern(current);
                 break;
 

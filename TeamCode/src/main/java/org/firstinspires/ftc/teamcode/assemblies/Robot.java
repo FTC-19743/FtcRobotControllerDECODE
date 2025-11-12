@@ -34,7 +34,7 @@ public class Robot {
     public Servo foot;
     private ColorSensor footColorSensor;
     public static double FOOT_CALIBRATE_POS = .1;
-    public static double FOOT_EXTENDED_POS = .8;
+    public static double FOOT_EXTENDED_POS = .6; // 6-7 seconds TODO: Maybe lower to closer to ground while setting up to save a second or two
 
     public static boolean details = false;
 
@@ -110,6 +110,7 @@ public class Robot {
     }
 
     public void setFootPos(double pos){
+        teamUtil.log("Setting Foot Position to: " + pos);
         foot.setPosition(pos);
     }
 
