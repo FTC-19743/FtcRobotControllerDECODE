@@ -135,15 +135,15 @@ public class Blinkin {
                 blinkinLedDriver.setPattern(current);
                 break;
             case ONE:
-                current = RevBlinkinLedDriver.BlinkinPattern.YELLOW;
+                current = RevBlinkinLedDriver.BlinkinPattern.WHITE;
                 blinkinLedDriver.setPattern(current);
                 break;
             case TWO:
-                current = RevBlinkinLedDriver.BlinkinPattern.BLUE;
+                current = RevBlinkinLedDriver.BlinkinPattern.YELLOW;
                 blinkinLedDriver.setPattern(current);
                 break;
             case THREE:
-                current = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_FOREST_PALETTE; // CONFETTI? RAINBOW_WITH_GLITTER?
+                current = RevBlinkinLedDriver.BlinkinPattern.COLOR_WAVES_FOREST_PALETTE; // CONFETTI? RAINBOW_WITH_GLITTER?
                 blinkinLedDriver.setPattern(current);
                 break;
 

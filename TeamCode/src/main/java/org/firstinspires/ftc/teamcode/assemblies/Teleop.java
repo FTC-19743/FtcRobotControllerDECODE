@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 //import org.firstinspires.ftc.teamcode.libs.Blinkin;
 
+import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 import java.sql.Driver;
@@ -107,9 +108,20 @@ public class Teleop extends LinearOpMode {
 
                 if(gamepad1.yWasReleased()){
                     if(shootingMode == true){
+                        robot.intake.startDetector(false);
                         shootingMode = false;
+                        robot.shooter.setShootSpeed(robot.shooter.IDLE_FLYWHEEL_VELOCITY);
                     }else{
+                        robot.intake.stopDetector();
                         shootingMode = true;
+
+                    }
+                }
+                if(shootingMode){
+                    if(robot.canShoot()){
+                        robot.blinkin.setSignal(Blinkin.Signals.READY_TO_SHOOT);
+                    }else{
+                        robot.blinkin.setSignal(Blinkin.Signals.AIMING);
                     }
                 }
                 if(shootingMode){
@@ -120,6 +132,18 @@ public class Teleop extends LinearOpMode {
                 }
                 if(gamepad1.aWasReleased()){
                     robot.drive.setRobotPosition(teamUtil.cacheX,teamUtil.cacheY,teamUtil.cacheHeading);
+                }
+                if(gamepad1.dpadUpWasReleased()){
+                    robot.drive.setRobotPosition(robot.drive.oQlocalizer.posX_mm,teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.RED_ALLIANCE_WALL : BasicDrive.BLUE_ALLIANCE_WALL,0);
+                }
+                if(gamepad1.dpadDownWasReleased()){
+                    robot.drive.setRobotPosition(robot.drive.oQlocalizer.posX_mm,teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.BLUE_ALLIANCE_WALL : BasicDrive.RED_ALLIANCE_WALL,0);
+                }
+                if(gamepad1.dpadRightWasReleased()){
+                    robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.SCORE_X : BasicDrive.AUDIENCE_X, robot.drive.oQlocalizer.posY_mm,0);
+                }
+                if(gamepad1.dpadLeftWasReleased()){
+                    robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.AUDIENCE_X : BasicDrive.SCORE_X, robot.drive.oQlocalizer.posY_mm,0);
                 }
 
                 ////////////// SHOOTER ///////////////////////////
@@ -134,7 +158,7 @@ public class Teleop extends LinearOpMode {
                     robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
                 }
                 if(shootingMode){
-                    robot.shooter.adjustShooter(robot.drive.goalDistance());
+                    robot.shooter.adjustShooterV2(robot.drive.goalDistance());
                 }
 
 
@@ -152,15 +176,17 @@ public class Teleop extends LinearOpMode {
                 ////////////// INTAKE ////////////////////////////
 
                 if(gamepad2.dpadUpWasReleased()){
-                    robot.intake.intakeStart();
+                    robot.intake.getReadyToIntakeNoWait();
                 }if(gamepad2.dpadDownWasReleased()){
                     robot.intake.intakeOut();
-                }if(gamepad2.dpadRightWasPressed()||gamepad2.dpadLeftWasPressed()){
+                }if(gamepad2.dpadLeftWasPressed()){
                     robot.intake.intakeStop();
+                }if(gamepad2.dpadRightWasPressed()){
+                    robot.intake.intakeStart();
                 }
 
                 if(gamepad2.leftBumperWasReleased()){
-                    robot.intake.elevatorToFlippersNoWait();
+                    robot.intake.elevatorToFlippersV2NoWait();
                 }
 
                 robot.outputTelemetry();

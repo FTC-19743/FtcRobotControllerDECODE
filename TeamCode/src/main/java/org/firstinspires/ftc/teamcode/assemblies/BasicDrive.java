@@ -131,6 +131,15 @@ public class BasicDrive{
     public static double STATIONARY_ROTATION_ADJUSTMENT_FACTOR = 4;
     public static float MIN_SPIN_POWER = 0.15f;
     public static double HEADING_STOP_THRESHOLD = 1;
+    public static double HEADING_CAN_SHOOT_THRESHOLD = 1;
+
+    public static int FAR_WALL_Y = 1537;
+    public static int SCORE_X = 1633;
+    public static int AUDIENCE_X = -1537;
+    public static int RED_ALLIANCE_WALL = 1537;
+    public static int BLUE_ALLIANCE_WALL = -1595;
+
+
 
 
 

@@ -42,7 +42,13 @@ public class Shooter {
     public static double CLOSE_CLOSE_VELOCITY = 800;
 
     public static double MID_DISTANCE_THRESHOLD = 2667;
+    public static double MID_SHORT_DISTANCE_THRESHOLD = 1400;
 
+    public static double VELOCITY_COMMANDED;
+    public static double VELOCITY_COMMANDED_THRESHOLD = 50;
+    public static double IDLE_FLYWHEEL_VELOCITY = 800;
+
+    /// /////////////OLD DATA////////////////////////
     // for aimer:
     // close: .000069913x + .218222
     // far: .0000328084x + .415
@@ -55,6 +61,18 @@ public class Shooter {
     // closest long shot: 10ft
     // closest close is 3ft 10in inches
     // furthest close shot is 91in
+
+    /// ////////////////NEW DATA////////////////////////////
+    // for aimer:
+    //close:0.000110345x + 0.20069
+    // for V:
+    // close: 0.334483x+498.96552
+
+    //distances:
+    //shortest short: 900 mm
+    //longest short: 2350 mm
+
+
 
     public Shooter() {
         teamUtil.log("Constructing Shooter");
@@ -135,4 +153,24 @@ public class Shooter {
         aim(pitchNeeded);
 
     }
+
+    public void adjustShooterV2(double distance){
+        double velocityNeeded;
+        double pitchNeeded;
+        if (distance<MID_SHORT_DISTANCE_THRESHOLD){
+            velocityNeeded = 0.000239375*Math.pow(distance,2) -0.431755*distance + 984.33854;
+            pitchNeeded = .000025*distance + 0.2775;
+        }else if (distance<MID_DISTANCE_THRESHOLD){
+            velocityNeeded = 0.000239375*Math.pow(distance,2) -0.431755*distance + 984.33854;
+            pitchNeeded = .000118464*distance + .18204;
+        }else{
+            velocityNeeded = 0.297372*distance + 472.75242;
+            pitchNeeded = 0.44;
+        }
+        VELOCITY_COMMANDED = velocityNeeded;
+        setShootSpeed(velocityNeeded);
+        aim(pitchNeeded);
+
+    }
+
 }

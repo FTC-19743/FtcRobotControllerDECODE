@@ -28,7 +28,7 @@ public class AxonPusher{
     public static long RUN_TO_ENCODER_PAUSE = 15;
     public static double RUN_TO_ENCODER_DRIFT = 0;
     public static float PUSH_SLOW_VELOCITY = .1f;
-    public static int PUSH_FAST_THRESHOLD = 3072;
+    public static int PUSH_FAST_THRESHOLD = 4100; //3172
     public static int PUSH_N_PAUSE = 300;
 
 

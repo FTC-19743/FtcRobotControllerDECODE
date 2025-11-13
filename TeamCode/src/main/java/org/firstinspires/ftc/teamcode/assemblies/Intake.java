@@ -422,7 +422,7 @@ public class Intake {
     }
     public static int UPPER_ALPHA_THRESHOLD = 25;
     public static double GREEN_THRESHOLD = 1.25;
-    public static int LEFT_ALPHA_THRESHOLD = 70;
+    public static int LEFT_ALPHA_THRESHOLD = 52;
 
     public ARTIFACT checkLoadedArtifact(ColorSensor sensor) {
         if(sensor.alpha() < UPPER_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
@@ -471,6 +471,7 @@ public class Intake {
         int green = (color >> 8)  & 0xFF;
         int blue  =  color        & 0xFF;
          */
+
         if(sensor.alpha() < LOWER_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
         if (sensor.red() > sensor.green() || sensor.blue() > sensor.green()) {return ARTIFACT.PURPLE;}
         return ARTIFACT.GREEN;

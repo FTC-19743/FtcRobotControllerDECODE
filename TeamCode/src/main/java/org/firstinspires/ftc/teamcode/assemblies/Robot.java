@@ -118,6 +118,17 @@ public class Robot {
 
     }
 
+    public boolean canShoot(){
+        if(Math.abs(shooter.rightFlywheel.getVelocity()-Shooter.VELOCITY_COMMANDED)<Shooter.VELOCITY_COMMANDED_THRESHOLD &&
+                Math.abs(shooter.leftFlywheel.getVelocity()-Shooter.VELOCITY_COMMANDED)<Shooter.VELOCITY_COMMANDED_THRESHOLD &&
+                Math.abs(drive.getHeadingODO()-drive.getGoalHeading())<BasicDrive.HEADING_CAN_SHOOT_THRESHOLD){
+            return true;
+
+        }else{
+            return false;
+        }
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Auto Code

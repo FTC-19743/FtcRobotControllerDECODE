@@ -68,6 +68,7 @@ public class CalibrateDrive extends LinearOpMode {
         Move_CMs_Test,
         Move_Encoder_Target_Test,
         Methods_Test,
+        Set_Wall_Values,
     Set_Drive_Powers};
     public static Ops AAOP = Ops.Test_Wiring;
 
@@ -90,7 +91,8 @@ public class CalibrateDrive extends LinearOpMode {
             case Brake_Test_Right : brakeTestRight();break;
             case Reverse_Test:  reverseTest();break;
             case Reverse_Test2: reverseTest2();break;
-            case Set_Drive_Powers: setMotorPowers();
+            case Set_Drive_Powers: setMotorPowers();break;
+            case Set_Wall_Values: resetWallODOValues();
 
 
         }
@@ -180,6 +182,8 @@ public class CalibrateDrive extends LinearOpMode {
                 testNewMethods();
             }else if (AAOP == Ops.Set_Drive_Powers){
                 setMotorPowers();
+            }else if (AAOP == Ops.Set_Wall_Values){
+                resetWallODOValues();
             }
             if(gamepad1.yWasReleased()){
                 if(!autoRotate){autoRotate = true;}
@@ -620,6 +624,21 @@ public class CalibrateDrive extends LinearOpMode {
             drive.setMotorPowers(0,0,0,0);
         }
 
+    }
+
+    public void resetWallODOValues(){
+        if(gamepad1.dpadUpWasReleased()){
+            robot.drive.setRobotPosition(robot.drive.oQlocalizer.posX_mm,teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.RED_ALLIANCE_WALL : BasicDrive.BLUE_ALLIANCE_WALL,0);
+        }
+        if(gamepad1.dpadDownWasReleased()){
+            robot.drive.setRobotPosition(robot.drive.oQlocalizer.posX_mm,teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.BLUE_ALLIANCE_WALL : BasicDrive.RED_ALLIANCE_WALL,0);
+        }
+        if(gamepad1.dpadRightWasReleased()){
+            robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.SCORE_X : BasicDrive.AUDIENCE_X, robot.drive.oQlocalizer.posY_mm,0);
+        }
+        if(gamepad1.dpadLeftWasReleased()){
+            robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.AUDIENCE_X : BasicDrive.SCORE_X, robot.drive.oQlocalizer.posY_mm,0);
+        }
     }
 
     public void TuneFrontBraking () {
