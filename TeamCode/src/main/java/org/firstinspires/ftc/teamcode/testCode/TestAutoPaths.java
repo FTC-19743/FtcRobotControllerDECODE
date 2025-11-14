@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
+import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.BLUE;
 import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.RED;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -21,6 +22,7 @@ public class TestAutoPaths extends LinearOpMode{
     Robot robot;
 
     static public boolean USE_ARMS = false;
+    public long elapsedTime = 0;
 
     public enum Ops {
         Goal_Side,
@@ -46,6 +48,7 @@ public class TestAutoPaths extends LinearOpMode{
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
+        teamUtil.alliance = BLUE;
 
         robot.calibrate();
         telemetry.addLine("Ready to start");
@@ -60,17 +63,27 @@ public class TestAutoPaths extends LinearOpMode{
 
         while (opModeIsActive()) {
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + "PATTERN: " + teamUtil.pattern);
+            telemetry.addLine("Testing: " + AA_Operation);
+            telemetry.addLine("Use Arms: "+ USE_ARMS);
+            telemetry.addLine("Last Op: "+ elapsedTime);
+            robot.drive.loop();
+            robot.drive.driveMotorTelemetry();
 
             if (gamepad1.left_stick_button) {
                 teamUtil.logSystemHealth();
             }
             if (gamepad1.leftBumperWasReleased()) {
+                robot.setStartLocalizedPosition();
+            }
+
+            if (gamepad1.rightBumperWasReleased()) {
                 if (teamUtil.alliance== RED) {
                     teamUtil.alliance = teamUtil.Alliance.BLUE;
                 } else {
                     teamUtil.alliance = RED;
                 }
             }
+
 
             switch (AA_Operation) {
                 case Goal_Side : testGoalSide();break;
@@ -91,19 +104,21 @@ public class TestAutoPaths extends LinearOpMode{
     }
 
     public void testGoalSide() {
-        robot.drive.driveMotorTelemetry();
         if(gamepad1.dpadUpWasReleased()){
+            long startTime = System.currentTimeMillis();
             robot.goalSide(USE_ARMS);
+            robot.drive.stopMotors();
+            elapsedTime = System.currentTimeMillis()-startTime;
         }
     }
 
     public void testHumanSide() {
-        robot.drive.driveMotorTelemetry();
+        long startTime = System.currentTimeMillis();
         if(gamepad1.dpadUpWasReleased()){
+            //robot.goalSide(USE_ARMS);
+            robot.drive.stopMotors();
+            elapsedTime = System.currentTimeMillis()-startTime;
         }
     }
-
-
-
 
 }

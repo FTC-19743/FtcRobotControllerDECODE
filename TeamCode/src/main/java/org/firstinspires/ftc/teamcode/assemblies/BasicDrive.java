@@ -203,6 +203,11 @@ public class BasicDrive{
     /************************************************************************************************************/
     // Telemetry
 
+    public void localizerTelemetry() {
+        loop();
+        String data = String.format(Locale.US, "Localizer X: %.0f, Y: %.0f, H: %.1f", (float) oQlocalizer.posX_mm, (float) oQlocalizer.posY_mm, Math.toDegrees(oQlocalizer.heading_rad));
+        telemetry.addData("ODO Position ", data);
+    }
     public void driveMotorTelemetry() {
         telemetry.addData("Encoders ", "FL:%d FR:%d BL:%d BR:%d X:%d Y%d",
                 fl.getCurrentPosition(), fr.getCurrentPosition(), bl.getCurrentPosition(), br.getCurrentPosition(), oQencoders.positions[DEADWHEEL_PORT_X], oQencoders.positions[DEADWHEEL_PORT_Y]);
