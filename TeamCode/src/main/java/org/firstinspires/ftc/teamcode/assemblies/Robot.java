@@ -342,11 +342,11 @@ public class Robot {
     public static double A07_PICKUP1_X = 400;
     public static double A07_PICKUP1_H = 0;
 
-    public static double A08_SHOOT1_Y = 634+140;
+    public static double A08_SHOOT1_Y = 634+140; // TODO: Reconcile this approach with the shooter pre-aim?
     public static double A08_SHOOT1_X = 617-140;
     public static double A08_SHOOT1_H = 45;
 
-    public static double A09_SHOOT1_Y = 460+140;
+    public static double A09_SHOOT1_Y = 460+140; // TODO: Reconcile this approach with the shooter pre-aim?
     public static double A09_SHOOT1_X = 440-140;
     public static double A09_SHOOT1_H = 45;
 
@@ -356,7 +356,7 @@ public class Robot {
         teamUtil.log("---------------- SHOT " + num);
         teamUtil.log("Target X: " + targetX + " Actual : " + drive.oQlocalizer.posX_mm + " Diff: " + Math.abs(targetX-drive.oQlocalizer.posX_mm));
         teamUtil.log("Target Y: " + targetY + " Actual : " + drive.oQlocalizer.posY_mm + " Diff: " + Math.abs(targetY-drive.oQlocalizer.posY_mm));
-        teamUtil.log("Target Distance: " + goalDistance + " Actual Distance: " + drive.robotGoalDistance() + " Diff: " + Math.abs(goalDistance-drive.robotGoalDistance()));
+        teamUtil.log("Target Distance: " + goalDistance + " Actual Distance: " + (int)drive.robotGoalDistance() + " Diff: " + (int)Math.abs(goalDistance-drive.robotGoalDistance()));
         teamUtil.log("Target Heading: " + goalHeading + " Actual Heading: " + drive.getHeadingODO() + " Diff: " + Math.abs(goalHeading-drive.getHeadingODO()));
     }
 
