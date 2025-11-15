@@ -6,14 +6,11 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 //import org.firstinspires.ftc.teamcode.libs.Blinkin;
 
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
-
-import java.sql.Driver;
 
 @Config
 @TeleOp(name = "Teleop", group = "LinearOpMode")
@@ -125,7 +122,7 @@ public class Teleop extends LinearOpMode {
                     }
                 }
                 if(shootingMode){
-                    robot.drive.setHeldHeading(robot.drive.getGoalHeading());
+                    robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
                 }
                 if(gamepad1.xWasReleased()){
                     robot.drive.setRobotPosition(BasicDrive.RESET_X,BasicDrive.RESET_Y,0);
@@ -158,7 +155,7 @@ public class Teleop extends LinearOpMode {
                     robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
                 }
                 if(shootingMode){
-                    robot.shooter.adjustShooterV2(robot.drive.goalDistance());
+                    robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
                 }
 
 

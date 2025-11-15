@@ -96,6 +96,7 @@ public class Shooter {
     }
     public void calibrate(){
         aimer.setPosition(AIMER_CALIBRATE);
+        teamUtil.pause (500); // wait for right pitch before moving pusher
         pusher.setPower(0);
         pusher.calibrate();
         pushOne();

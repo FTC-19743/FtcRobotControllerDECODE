@@ -172,6 +172,11 @@ public class Intake {
         intake.setPower(0);
     }
 
+    public void flippersToTransfer() {
+        left_flipper.setPosition(FLIPPER_TRANSFER);
+        right_flipper.setPosition(FLIPPER_TRANSFER);
+        middle_flipper.setPosition(FLIPPER_TRANSFER);
+    }
     //TODO FIX METHOD
     public void elevatorToFlippers(){
 

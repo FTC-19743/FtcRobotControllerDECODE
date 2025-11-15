@@ -190,7 +190,7 @@ public class CalibrateDrive extends LinearOpMode {
                 else{autoRotate = false;}
             }
             if(autoRotate){
-                robot.drive.setHeldHeading(robot.drive.getGoalHeading());
+                robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
             }
             drive.universalDriveJoystickV3(
                     gamepad1.left_stick_y * (teamUtil.alliance== teamUtil.Alliance.BLUE ? 1 : -1),

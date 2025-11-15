@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
+import static org.firstinspires.ftc.teamcode.libs.teamUtil.Pattern.GPP;
+import static org.firstinspires.ftc.teamcode.libs.teamUtil.Pattern.PGP;
+import static org.firstinspires.ftc.teamcode.libs.teamUtil.Pattern.PPG;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -9,7 +13,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
@@ -88,7 +91,7 @@ public class Robot {
 
     public void detectPattern () {
         // TODO: Get april tag detections and decide what we are looking at. Set Blinkin accordingly
-        teamUtil.pattern = teamUtil.Pattern.PGP;
+        teamUtil.pattern = PGP;
     }
     public void outputTelemetry() {
         //drive.driveMotorTelemetry();
@@ -126,15 +129,15 @@ public class Robot {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Shooter Code
 
+    public boolean shooterFlyWheelsReady() {
+        return Math.abs(shooter.rightFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD &&
+                Math.abs(shooter.leftFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD;
+    }
+    public boolean shooterHeadingReady() {
+        return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < BasicDrive.HEADING_CAN_SHOOT_THRESHOLD;
+    }
     public boolean canShoot(){
-        if(Math.abs(shooter.rightFlywheel.getVelocity()-Shooter.VELOCITY_COMMANDED)<Shooter.VELOCITY_COMMANDED_THRESHOLD &&
-                Math.abs(shooter.leftFlywheel.getVelocity()-Shooter.VELOCITY_COMMANDED)<Shooter.VELOCITY_COMMANDED_THRESHOLD &&
-                Math.abs(drive.getHeadingODO()-drive.getGoalHeading())<BasicDrive.HEADING_CAN_SHOOT_THRESHOLD){
-            return true;
-
-        }else{
-            return false;
-        }
+        return shooterFlyWheelsReady() && shooterHeadingReady();
     }
 
     public static long FIRST_UNLOAD_PAUSE = 400;
@@ -263,6 +266,33 @@ public class Robot {
         thread.start();
     }
 
+    // TODO: Maybe we can make this faster by knowing the full sequence and moving 2nd and 3rd shots into position earlier?
+    // TODO: (especially while driving into shooting position)
+    public boolean shootPatternAuto() {
+        drive.loop();
+        shooter.adjustShooterV2(drive.robotGoalDistance());
+        // TODO: Do we need a final spin to adjust heading if it is off?
+
+        // Wait for Flywheels to be ready
+        while (!shooterFlyWheelsReady() && teamUtil.keepGoing(3000)) {teamUtil.pause(100);}
+
+        if (teamUtil.pattern==PPG || teamUtil.pattern==PGP) {
+            shootArtifactColor(Intake.ARTIFACT.PURPLE);
+        } else {
+            shootArtifactColor(Intake.ARTIFACT.GREEN);
+        }
+        if (teamUtil.pattern==PPG || teamUtil.pattern==GPP) {
+            shootArtifactColor(Intake.ARTIFACT.PURPLE);
+        } else {
+            shootArtifactColor(Intake.ARTIFACT.GREEN);
+        }
+        if (teamUtil.pattern==PGP || teamUtil.pattern==GPP) {
+            shootArtifactColor(Intake.ARTIFACT.PURPLE);
+        } else {
+            shootArtifactColor(Intake.ARTIFACT.GREEN);
+        }
+        return true;
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -298,8 +328,9 @@ public class Robot {
 
     public static double A01_TILE_LENGTH = 610;
 
-    public static double A05_SHOOT1_Y = 880;
-    public static double A05_SHOOT1_X = 850;
+    public static double A05_DRIFT = 150;
+    public static double A05_SHOOT1_Y = 750;
+    public static double A05_SHOOT1_X = 750;
     public static double A05_SHOOT1_H = 45;
 
     public static double A06_SETUP1_Y = 1220-100;
@@ -307,8 +338,8 @@ public class Robot {
     public static double A06_SETUP1_H = 0;
 
     public static double A07_SETUP1_Y = 1220-50;
-    public static double A07_PICKUP1_Y = 1220;
-    public static double A07_PICKUP1_X = 350;
+    public static double A07_PICKUP1_Y = 1200;
+    public static double A07_PICKUP1_X = 400;
     public static double A07_PICKUP1_H = 0;
 
     public static double A08_SHOOT1_Y = 634+140;
@@ -319,29 +350,31 @@ public class Robot {
     public static double A09_SHOOT1_X = 440-140;
     public static double A09_SHOOT1_H = 45;
 
-    public static double B05_SHOOT1_Y = 483;
-    public static double B05_SHOOT1_X = 1397;
-    public static double B05_SHOOT1_H = 45; //TODO: FIND
 
-    public static double B06_SETUP1_Y = 1219;
-    public static double B06_SETUP1_X = -1320;
-    public static double B06_SETUP1_H = 0;
-
-    public static double B07_PICKUP1_Y = 1219;
-    public static double B07_PICKUP1_X = -1095;
-    public static double B07_PICKUP1_H = 0;
-
-
-
+    public void logShot(int num, int targetX, int targetY, int goalDistance, double goalHeading) {
+        drive.loop();
+        teamUtil.log("---------------- SHOT " + num);
+        teamUtil.log("Target X: " + targetX + " Actual : " + drive.oQlocalizer.posX_mm + " Diff: " + Math.abs(targetX-drive.oQlocalizer.posX_mm));
+        teamUtil.log("Target Y: " + targetY + " Actual : " + drive.oQlocalizer.posY_mm + " Diff: " + Math.abs(targetY-drive.oQlocalizer.posY_mm));
+        teamUtil.log("Target Distance: " + goalDistance + " Actual Distance: " + drive.robotGoalDistance() + " Diff: " + Math.abs(goalDistance-drive.robotGoalDistance()));
+        teamUtil.log("Target Heading: " + goalHeading + " Actual Heading: " + drive.getHeadingODO() + " Diff: " + Math.abs(goalHeading-drive.getHeadingODO()));
+    }
 
     public void goalSide(boolean useArms) {
+        double goalDistance = 0;
+
+        // Prep Shooter
+        goalDistance = drive.getGoalDistance((int)A05_SHOOT1_X, (int)A05_SHOOT1_Y);
+        if (useArms) shooter.adjustShooterV2(goalDistance);
 
         //Shoot Preloads
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X, A05_SHOOT1_Y, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT, A05_SHOOT1_Y+A05_DRIFT, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
+        logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int)goalDistance, A05_SHOOT1_H);
+
         if (useArms) {
-            shootAllArtifacts();
+            shootPatternAuto();
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
@@ -349,16 +382,21 @@ public class Robot {
 
         //Collect Set 1
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X, A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
         if (useArms) {
             intake.elevatorToFlippersV2NoWait();
         }
+        // Prep Shooter
+        goalDistance = drive.getGoalDistance((int)A08_SHOOT1_X, (int)A08_SHOOT1_Y);
+        if (useArms) shooter.adjustShooterV2(goalDistance);
         //Shoot Set 1
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X, A08_SHOOT1_Y, A08_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
+        logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int)goalDistance, A08_SHOOT1_H);
         if (useArms) {
-            shootAllArtifacts();
+            shootPatternAuto();
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
@@ -366,21 +404,31 @@ public class Robot {
 
         //Collect Set 2
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-A01_TILE_LENGTH, A07_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
         if (useArms) {
             intake.elevatorToFlippersV2NoWait();
         }
+        // Prep Shooter
+        goalDistance = drive.getGoalDistance((int)A09_SHOOT1_X, (int)A09_SHOOT1_Y);
+        if (useArms) shooter.adjustShooterV2(goalDistance);
 
         //Shoot Set 2
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
+        logShot(2, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
         if (useArms) {
-            shootAllArtifacts();
+            shootPatternAuto();
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
         }
+
+        shooter.stopShooter();
+        intake.stopDetector();
+        intake.intakeStop();
+
         if(true) return;
         //Collect Set 3
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-2*(A01_TILE_LENGTH), A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
@@ -403,34 +451,6 @@ public class Robot {
     public void humanSide(boolean useArms) {
     }
 
-
-    // Examples from last year's Sample Auto
-    // Move to first drop
-    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A04_READY_FOR_BUCKET_STRAFE,A04_READY_FOR_BUCKET_STRAIGHT,0,A04_END_VELOCITY,null,0, false,5000);
-    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET, A05_1_BUCKET_STRAFE, A05_1_BUCKET_STRAIGHT,A05_1_BUCKET_HEADING,A05_1_BUCKET_END_VELOCITY,null,0, false, 5000);
-    //drive.setMotorsActiveBrake();
-
-    // Move to pickup 1st sample
-    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A06_1_SAMPLE_PICKUP_STRAFE,A06_1_SAMPLE_PICKUP_STRAIGHT,A06_1_SAMPLE_PICKUP_RH,A00_END_VELOCITY_FOR_PICKUP,null,0,false,3000);
-    //drive.stopMotors();
-    //drive.waitForRobotToStop(1000);
-    //teamUtil.pause(A06_1_BRAKE_PAUSE);
-
-    // Grab and unload (counting on bucket to be at the bottom by the time we get there!
-    //boolean grabbedSample=intake.autoGoToSampleAndGrabV3(false,false,true,A12_SAMPLE_PICKUP_TIMEOUT);
-
-    // Move to pickup 2nd sample
-    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A08_2_SAMPLE_PICKUP_STRAFE,A08_2_SAMPLE_PICKUP_STRAIGHT,A08_2_SAMPLE_PICKUP_HEADING,A00_END_VELOCITY_FOR_PICKUP,null,0,false,3000);
-    //drive.stopMotors();
-    //drive.waitForRobotToStop(1000);
-    //teamUtil.pause(A06_1_BRAKE_PAUSE);
-
-    // Move to pickup 3rd sample
-    //drive.moveTo(A00_MAX_SPEED_NEAR_BUCKET,A10_3_SAMPLE_PICKUP_STRAFE,A10_3_SAMPLE_PICKUP_STRAIGHT,A10_3_SAMPLE_PICKUP_HEADING,A00_END_VELOCITY_FOR_PICKUP,null,0,false,3000);
-    // drive.stopMotors();
-    //drive.waitForRobotToStop(1000);
-    //teamUtil.pause(A06_1_BRAKE_PAUSE);
-    // Grab and unload (counting on bucket to be at the bottom by the time we get there!
 
 
 }

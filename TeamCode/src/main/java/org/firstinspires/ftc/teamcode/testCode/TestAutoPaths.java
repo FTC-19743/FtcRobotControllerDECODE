@@ -62,7 +62,7 @@ public class TestAutoPaths extends LinearOpMode{
         }
 
         while (opModeIsActive()) {
-            telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + "PATTERN: " + teamUtil.pattern);
+            telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + " PATTERN: " + teamUtil.pattern);
             telemetry.addLine("Testing: " + AA_Operation);
             telemetry.addLine("Use Arms: "+ USE_ARMS);
             telemetry.addLine("Last Op: "+ elapsedTime);
@@ -92,6 +92,9 @@ public class TestAutoPaths extends LinearOpMode{
             if(gamepad1.aWasReleased()){
                 robot.drive.setRobotPosition(RESET_X,RESET_Y,RESET_H);
             }
+            if(gamepad1.yWasReleased()){
+                robot.intake.flippersToTransfer();
+            }
 
             // Drawing stuff on the field
             TelemetryPacket packet = new TelemetryPacket();
@@ -109,6 +112,7 @@ public class TestAutoPaths extends LinearOpMode{
             robot.goalSide(USE_ARMS);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
+            teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
     }
 

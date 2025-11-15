@@ -215,10 +215,10 @@ public class BasicDrive{
         telemetry.addData("ODO Position ", data);
         String velocity = String.format(Locale.US, "Velocity X: %.0f, Y: %.0f, H: %.1f", (float) oQlocalizer.velX_mmS, (float) oQlocalizer.velY_mmS, Math.toDegrees(oQlocalizer.velHeading_radS));
         telemetry.addData("ODO Velocity ", velocity);
-        telemetry.addData("Headings: ", "ODO: %.1f  To Goal: %.1f  Held: %.1f", getHeadingODO(), getGoalHeading(), heldHeading);
+        telemetry.addData("Headings: ", "ODO: %.1f  To Goal: %.1f  Held: %.1f", getHeadingODO(), robotGoalHeading(), heldHeading);
         String currents = String.format(Locale.US, "FR: %.0f, FL: %.0f, BR: %.0f, BL: %.0f" , fr.getCurrent(CurrentUnit.AMPS), fl.getCurrent(CurrentUnit.AMPS),br.getCurrent(CurrentUnit.AMPS), bl.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("CurrentDraw: ", currents);
-        telemetry.addData("Goal Distance: ", goalDistance());
+        telemetry.addData("Goal Distance: ", robotGoalDistance());
 
         //teamUtil.log("FR: " + fr.getCurrent(CurrentUnit.AMPS) +" FL: " + fl.getCurrent(CurrentUnit.AMPS) + " BR: " + br.getCurrent(CurrentUnit.AMPS) + "BL" + bl.getCurrent(CurrentUnit.AMPS));
     }
@@ -411,14 +411,13 @@ public class BasicDrive{
         return angle;
     }
 
-    // Uses the robots current position (localizer) to determine field relative heading to center of goal
-    public double getGoalHeading(){
+    public double getGoalHeading(int x, int y) {
         double local_goal_y = GOAL_Y;
         if (teamUtil.alliance == RED){
             local_goal_y = -GOAL_Y;
         }
-        double offset_x = GOAL_X - oQlocalizer.posX_mm;
-        double offset_y = local_goal_y - oQlocalizer.posY_mm;
+        double offset_x = GOAL_X - x;
+        double offset_y = local_goal_y - y;
         if(offset_x == 0){
             if(offset_y > 0){
                 return 90;
@@ -432,6 +431,10 @@ public class BasicDrive{
         }
         raw_Angle = adjustAngle(raw_Angle);
         return raw_Angle;
+    }
+    // Uses the robots current position (localizer) to determine field relative heading to center of goal
+    public double robotGoalHeading(){
+        return getGoalHeading(oQlocalizer.posX_mm, oQlocalizer.posY_mm );
     }
 
 
@@ -2526,17 +2529,21 @@ public class BasicDrive{
         teamUtil.log("Strafing Max Velocities FL:" + flmax + " FR:" + frmax + " BL:" + blmax + " BR:" + brmax);
     }
 
-    public double goalDistance(){
+    public double getGoalDistance(int x, int y) {
         double goalDistance;
         int multiplier = 1;
         if(teamUtil.alliance == teamUtil.Alliance.RED){
             multiplier= -1;
         }
-        goalDistance = Math.sqrt(Math.pow((GOAL_X- oQlocalizer.posX_mm),2)+Math.pow(((multiplier*GOAL_Y- oQlocalizer.posY_mm)),2));
+        goalDistance = Math.sqrt(Math.pow((GOAL_X- x),2)+Math.pow(((multiplier*GOAL_Y- y)),2));
         if(details){
             teamUtil.log("Distance Calculated: " + goalDistance + " Multiplier: " + multiplier);
         }
         return  goalDistance;
+
+    }
+    public double robotGoalDistance(){
+        return getGoalDistance(oQlocalizer.posX_mm, oQlocalizer.posY_mm);
     }
 
 }
