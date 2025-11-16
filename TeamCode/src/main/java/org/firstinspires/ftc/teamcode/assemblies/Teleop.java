@@ -60,11 +60,17 @@ public class Teleop extends LinearOpMode {
         robot.initialize(false);
         //robot.initCV(enableLiveView);// TODO: false for competition
 
-        robot.drive.setHeading(0);
+        if(teamUtil.justRanAuto){
+            robot.drive.setRobotPosition(teamUtil.cacheX,teamUtil.cacheY,teamUtil.cacheHeading);
+        }else{
+            robot.drive.setHeading(0);
+
+            robot.calibrate();
+        }
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
 
-        robot.calibrate();
+
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
@@ -125,7 +131,7 @@ public class Teleop extends LinearOpMode {
                     robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
                 }
                 if(gamepad1.xWasReleased()){
-                    robot.drive.setRobotPosition(BasicDrive.RESET_X,BasicDrive.RESET_Y,0);
+                    robot.drive.setHeading(0);
                 }
                 if(gamepad1.aWasReleased()){
                     robot.drive.setRobotPosition(teamUtil.cacheX,teamUtil.cacheY,teamUtil.cacheHeading);
@@ -156,6 +162,13 @@ public class Teleop extends LinearOpMode {
                 }
                 if(shootingMode){
                     robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
+                }
+                if(gamepad2.yWasReleased()){
+                    robot.shooter.pushOne();
+                }
+                if(gamepad2.aWasReleased()){
+                    robot.shooter.pusher.calibrate();
+                    robot.shooter.pushOne();
                 }
 
 
@@ -193,6 +206,7 @@ public class Teleop extends LinearOpMode {
                 //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
                 //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
                 //telemetry.addLine("Hang Manual: " + hangManualControl);
+                telemetry.addLine("ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
 
                 telemetry.update();
             }

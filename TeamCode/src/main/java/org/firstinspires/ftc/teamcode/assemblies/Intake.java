@@ -79,7 +79,7 @@ public class Intake {
     //TODO FIND POSITIONS
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
     static public float FLIPPER_CEILING = 0.8f;
-    static public float FLIPPER_TRANSFER = 0.65f;
+    static public float FLIPPER_TRANSFER = 0.7f;
     static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
     static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
 

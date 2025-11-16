@@ -1,12 +1,16 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
+@Config
 
+@Autonomous(name = "Auto", group = "LinearOpMode")
 public class Auto extends LinearOpMode {
 
     Robot robot;
@@ -22,6 +26,7 @@ public class Auto extends LinearOpMode {
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
         robot.calibrate();
+        robot.intake.flippersToTransfer();
 
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
@@ -76,20 +81,17 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
-        while (!isStopRequested()) {
+        while (!isStarted()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
             teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
-            teamUtil.telemetry.addLine("Press A to Finish Setup");
+            teamUtil.telemetry.addLine("READY TO GO");
             teamUtil.telemetry.update();
         }
 
-        while (!opModeIsActive() && !isStopRequested()) {
-            robot.detectPattern();
-        }
         robot.stopCV();
         if (isStopRequested()) return;
 
@@ -112,12 +114,18 @@ public class Auto extends LinearOpMode {
                 robot.humanSide(true);
             }
             robot.drive.stopMotors();
+            robot.drive.waitForRobotToStop(1000);
             long endTime = System.currentTimeMillis();
             long elapsedTime = endTime - startTime;
             teamUtil.log("Elapsed Auto Time Without Wait At End: " + elapsedTime);
             robot.blinkin.setSignal(Blinkin.Signals.OFF);
             //while (opModeIsActive()) { }// don't kill opMode until the last possible moment to allow other threads to finish
+            teamUtil.pause(500);
+            robot.drive.loop();
 
+            teamUtil.cacheHeading = robot.drive.getHeadingODO();
+            teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;
+            teamUtil.cacheX = robot.drive.oQlocalizer.posX_mm;
             teamUtil.justRanAuto = true; // avoid recalibration at start of teleop
         }
     }

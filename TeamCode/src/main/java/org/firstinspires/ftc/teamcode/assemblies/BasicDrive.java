@@ -357,7 +357,7 @@ public class BasicDrive{
 
         while((Math.abs(xVelo)> STOP_VEL_THRESHOLD || Math.abs(yVelo)> STOP_VEL_THRESHOLD/*||hVelo>ANGLE_VELO_THRESHOLD*/) && teamUtil.keepGoing(timeOutTime)){
             teamUtil.pause(10);
-            if(details) teamUtil.log(String.format("xPos: %.0f xVel: %.2f yPos: %.0f yVel: %.2f hVel: %.2f", oQlocalizer.posX_mm, xVelo, oQlocalizer.posY_mm, yVelo , hVelo));
+            if(details) teamUtil.log(String.format("xPos: %.0f xVel: %.2f yPos: %.0f yVel: %.2f hVel: %.2f", (float) oQlocalizer.posX_mm, xVelo, (float) oQlocalizer.posY_mm, yVelo , hVelo));
             loop();
             xVelo = oQlocalizer.velX_mmS;
             yVelo = oQlocalizer.velY_mmS;
@@ -2075,6 +2075,7 @@ public class BasicDrive{
 
     /************************************************************************************************************/
     // Methods to turn the robot in place
+
 
     public void spinToHeading(double heading) {
         // moves at full speed then decelerates to spin

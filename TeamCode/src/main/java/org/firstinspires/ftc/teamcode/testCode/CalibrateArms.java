@@ -145,6 +145,9 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public void testCV () {
+        robot.testDetectPattern(aprilTag);
+
+
         if (gamepad1.dpadLeftWasReleased()) {
             visionPortal.setActiveCamera(webcamL);
         }

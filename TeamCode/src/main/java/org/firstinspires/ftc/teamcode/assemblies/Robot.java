@@ -19,7 +19,11 @@ import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Config
 public class Robot {
@@ -88,10 +92,111 @@ public class Robot {
     public void stopCV () {
         visionPortal.close();
     }
-
+    //
     public void detectPattern () {
         // TODO: Get april tag detections and decide what we are looking at. Set Blinkin accordingly
-        teamUtil.pattern = PGP;
+        int detectionNum;
+        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+        if(currentDetections.isEmpty()){
+            blinkin.setSignal(Blinkin.Signals.GOLD);
+            telemetry.addLine("Not Detecting Anything");
+        } else{
+            if(teamUtil.alliance == teamUtil.Alliance.BLUE){
+                int lowestYIndex=0;
+                double lowestY = 0;
+                for(int element = 0; element < currentDetections.size(); element++){
+                    if(currentDetections.get(element).center.y>lowestY){
+                        lowestYIndex = element;
+                        lowestY=currentDetections.get(element).center.y;
+                    }
+                }
+                if(details){
+                    teamUtil.log("Lowest Y" + lowestY);
+                }
+
+                detectionNum=currentDetections.get(lowestYIndex).id;
+            }
+            else{
+                int highestYIndex=0;
+                double highestY = 10000;
+                for(int element = 0; element < currentDetections.size(); element++){
+                    if(currentDetections.get(element).center.y<highestY){
+                        highestYIndex = element;
+                        highestY=currentDetections.get(element).center.y;
+                    }
+                }
+                if(details){
+                    teamUtil.log("Highest Y" + highestY);
+                }
+                detectionNum=currentDetections.get(highestYIndex).id;
+            }
+
+            if(detectionNum==23){
+                teamUtil.pattern = PPG;
+                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.PPG_BLUE : Blinkin.Signals.PPG_RED);
+            }else if(detectionNum==22){
+                teamUtil.pattern = PGP;
+                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.PGP_BLUE : Blinkin.Signals.PGP_RED);
+            }else{
+                teamUtil.pattern = GPP;
+                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.GPP_BLUE : Blinkin.Signals.GPP_RED);
+            }
+            telemetry.addLine("Detection ID: " + detectionNum);
+        }
+
+    }
+
+    public void testDetectPattern (AprilTagProcessor processor) {
+        // TODO: Get april tag detections and decide what we are looking at. Set Blinkin accordingly
+        int detectionNum;
+        List<AprilTagDetection> currentDetections = processor.getDetections();
+        if(currentDetections.isEmpty()){
+            blinkin.setSignal(Blinkin.Signals.GOLD);
+            telemetry.addLine("Not Detecting Anything");
+        } else{
+            if(teamUtil.alliance == teamUtil.Alliance.BLUE){
+                int lowestYIndex=0;
+                double lowestY = 0;
+                for(int element = 0; element < currentDetections.size(); element++){
+                    if(currentDetections.get(element).center.y>lowestY){
+                        lowestYIndex = element;
+                        lowestY=currentDetections.get(element).center.y;
+                    }
+                }
+                if(details){
+                    teamUtil.log("Lowest Y" + lowestY);
+                }
+
+                detectionNum=currentDetections.get(lowestYIndex).id;
+            }
+            else{
+                int highestYIndex=0;
+                double highestY = 10000;
+                for(int element = 0; element < currentDetections.size(); element++){
+                    if(currentDetections.get(element).center.y<highestY){
+                        highestYIndex = element;
+                        highestY=currentDetections.get(element).center.y;
+                    }
+                }
+                if(details){
+                    teamUtil.log("Highest Y" + highestY);
+                }
+                detectionNum=currentDetections.get(highestYIndex).id;
+            }
+
+            if(detectionNum==23){
+                teamUtil.pattern = PPG;
+                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.PPG_BLUE : Blinkin.Signals.PPG_RED);
+            }else if(detectionNum==22){
+                teamUtil.pattern = PGP;
+                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.PGP_BLUE : Blinkin.Signals.PGP_RED);
+            }else{
+                teamUtil.pattern = GPP;
+                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.GPP_BLUE : Blinkin.Signals.GPP_RED);
+            }
+            telemetry.addLine("Detection ID: " + detectionNum);
+        }
+
     }
     public void outputTelemetry() {
         //drive.driveMotorTelemetry();
@@ -271,6 +376,8 @@ public class Robot {
     public boolean shootPatternAuto() {
         drive.loop();
         shooter.adjustShooterV2(drive.robotGoalDistance());
+        drive.spinToHeading(drive.robotGoalHeading());
+        drive.stopMotors();
         // TODO: Do we need a final spin to adjust heading if it is off?
 
         // Wait for Flywheels to be ready
@@ -322,13 +429,18 @@ public class Robot {
     }
 
     public static double A00_MAX_SPEED_NEAR_GOAL = 1500;
-    public static double A00_SHOOT_END_VELOCITY = 1000;
+    public static double A00_SHOOT_END_VELOCITY = 300;
+    public static double A01_SHOOT_END_VELOCITY = 1000;
+    public static double A00_FINAL_END_VELOCITY = 300;
+
     public static double A00_PICKUP_VELOCITY = 1000;
     public static double A00_PICKUP_END_VELOCITY = 1000;
 
     public static double A01_TILE_LENGTH = 610;
 
-    public static double A05_DRIFT = 150;
+    public static double A05_DRIFT_1 = 50;
+    public static double A05_DRIFT_2 = 140;
+
     public static double A05_SHOOT1_Y = 750;
     public static double A05_SHOOT1_X = 750;
     public static double A05_SHOOT1_H = 45;
@@ -341,14 +453,17 @@ public class Robot {
     public static double A07_PICKUP1_Y = 1200;
     public static double A07_PICKUP1_X = 400;
     public static double A07_PICKUP1_H = 0;
+    public static double A07_END_PICKUP_X_ADJUSTMENT = 100;
 
-    public static double A08_SHOOT1_Y = 634+140; // TODO: Reconcile this approach with the shooter pre-aim?
-    public static double A08_SHOOT1_X = 617-140;
+
+    public static double A08_SHOOT1_Y = 634; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double A08_SHOOT1_X = 617;
     public static double A08_SHOOT1_H = 45;
 
-    public static double A09_SHOOT1_Y = 460+140; // TODO: Reconcile this approach with the shooter pre-aim?
-    public static double A09_SHOOT1_X = 440-140;
+    public static double A09_SHOOT1_Y = 460; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double A09_SHOOT1_X = 440;
     public static double A09_SHOOT1_H = 45;
+
 
 
     public void logShot(int num, int targetX, int targetY, int goalDistance, double goalHeading) {
@@ -368,7 +483,8 @@ public class Robot {
         if (useArms) shooter.adjustShooterV2(goalDistance);
 
         //Shoot Preloads
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT, A05_SHOOT1_Y+A05_DRIFT, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT_1, A05_SHOOT1_Y+A05_DRIFT_1, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
         logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int)goalDistance, A05_SHOOT1_H);
@@ -391,7 +507,7 @@ public class Robot {
         goalDistance = drive.getGoalDistance((int)A08_SHOOT1_X, (int)A08_SHOOT1_Y);
         if (useArms) shooter.adjustShooterV2(goalDistance);
         //Shoot Set 1
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X, A08_SHOOT1_Y, A08_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X-A05_DRIFT_2, A08_SHOOT1_Y+A05_DRIFT_2, A08_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
         logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int)goalDistance, A08_SHOOT1_H);
@@ -414,7 +530,8 @@ public class Robot {
         if (useArms) shooter.adjustShooterV2(goalDistance);
 
         //Shoot Set 2
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X-A05_DRIFT_2, A09_SHOOT1_Y+A05_DRIFT_2, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
+
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
         logShot(2, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
@@ -426,8 +543,19 @@ public class Robot {
         }
 
         shooter.stopShooter();
+
+        if (useArms) {
+            intake.intakeStart();
+        }
+
+        //Pick up last 3 balls
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-(2*A01_TILE_LENGTH)+A07_END_PICKUP_X_ADJUSTMENT, A07_SETUP1_Y, A06_SETUP1_H, A00_FINAL_END_VELOCITY,null,0,false,3000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-(2*A01_TILE_LENGTH), A07_PICKUP1_Y, (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+
+        drive.stopMotors();
         intake.stopDetector();
         intake.intakeStop();
+
 
         if(true) return;
         //Collect Set 3
@@ -437,7 +565,7 @@ public class Robot {
             intake.elevatorToFlippersV2NoWait();
         }
         //Shoot Set 3
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
         if (useArms) {

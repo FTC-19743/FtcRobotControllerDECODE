@@ -72,7 +72,14 @@ public class Blinkin {
 
         GOTOSCORE_BLUE,
         SINELON_RED,
-        SINELON_BLUE
+        SINELON_BLUE,
+        PGP_RED,
+        PPG_RED,
+        GPP_RED,
+        PGP_BLUE,
+        PPG_BLUE,
+        GPP_BLUE
+
 
     }
 
@@ -293,6 +300,33 @@ public class Blinkin {
                 current = RevBlinkinLedDriver.BlinkinPattern.RAINBOW_LAVA_PALETTE;
                 blinkinLedDriver.setPattern(current);
                 break;
+
+            case PGP_BLUE:
+                current = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_BLUE;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case PPG_BLUE:
+                current = RevBlinkinLedDriver.BlinkinPattern.BREATH_BLUE;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case GPP_BLUE:
+                current = RevBlinkinLedDriver.BlinkinPattern.BLUE;
+                blinkinLedDriver.setPattern(current);
+                break;
+
+            case PGP_RED:
+                current = RevBlinkinLedDriver.BlinkinPattern.HEARTBEAT_RED;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case PPG_RED:
+                current = RevBlinkinLedDriver.BlinkinPattern.BREATH_RED;
+                blinkinLedDriver.setPattern(current);
+                break;
+            case GPP_RED:
+                current = RevBlinkinLedDriver.BlinkinPattern.RED;
+                blinkinLedDriver.setPattern(current);
+                break;
+
         }
     }
 }
