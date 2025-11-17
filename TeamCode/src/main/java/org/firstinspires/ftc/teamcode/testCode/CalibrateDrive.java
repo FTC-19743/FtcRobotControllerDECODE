@@ -369,17 +369,17 @@ public class CalibrateDrive extends LinearOpMode {
 
 
     public void testSpins() {
-        if (gamepad1.dpad_up) {
-            drive.spinToHeading(0);
+        if (gamepad1.dpadUpWasReleased()) {
+            drive.spinToHeadingV2(botHeading,3000);
         }
-        if (gamepad1.dpad_down) {
-            drive.spinToHeading(180);
+        if (gamepad1.dpadDownWasReleased()) {
+            drive.spinToHeadingV2(180,3000);
         }
-        if (gamepad1.dpad_left) {
-            drive.spinToHeading(270);
+        if (gamepad1.dpadLeftWasReleased()) {
+            drive.spinToHeadingV2(270,3000);
         }
-        if (gamepad1.dpad_right) {
-            drive.spinToHeading(90);
+        if (gamepad1.dpadRightWasReleased()) {
+            drive.spinToHeadingV2(90,3000);
         }
     }
 

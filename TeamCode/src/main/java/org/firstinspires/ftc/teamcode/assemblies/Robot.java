@@ -235,6 +235,9 @@ public class Robot {
     // Shooter Code
 
     public boolean shooterFlyWheelsReady() {
+        if (details) {
+            teamUtil.log("shooterFlyWheelsReady Waiting: TVel: " + Shooter.VELOCITY_COMMANDED + " RVel: " + shooter.rightFlywheel.getVelocity() + " LVel: " + shooter.leftFlywheel.getVelocity());
+        }
         return Math.abs(shooter.rightFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD &&
                 Math.abs(shooter.leftFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD;
     }
@@ -374,14 +377,19 @@ public class Robot {
     // TODO: Maybe we can make this faster by knowing the full sequence and moving 2nd and 3rd shots into position earlier?
     // TODO: (especially while driving into shooting position)
     public boolean shootPatternAuto() {
+        teamUtil.log("shootPatternAuto");
         drive.loop();
         shooter.adjustShooterV2(drive.robotGoalDistance());
-        drive.spinToHeading(drive.robotGoalHeading());
+        drive.spinToHeadingV2(drive.robotGoalHeading(), 3000); // Will not change distance to target
         drive.stopMotors();
-        // TODO: Do we need a final spin to adjust heading if it is off?
 
         // Wait for Flywheels to be ready
-        while (!shooterFlyWheelsReady() && teamUtil.keepGoing(3000)) {teamUtil.pause(100);}
+        long now = System.currentTimeMillis();
+        long timeOutTime = System.currentTimeMillis() + 3000; // max time to wait for flywheels
+        while (!shooterFlyWheelsReady() && teamUtil.keepGoing(timeOutTime)) {
+            teamUtil.pause(100);
+        }
+        teamUtil.log("Waited " + (System.currentTimeMillis()-now) + "millisecs for flywheels");
 
         if (teamUtil.pattern==PPG || teamUtil.pattern==PGP) {
             shootArtifactColor(Intake.ARTIFACT.PURPLE);
@@ -398,6 +406,7 @@ public class Robot {
         } else {
             shootArtifactColor(Intake.ARTIFACT.GREEN);
         }
+        teamUtil.log("shootPatternAuto Finished");
         return true;
     }
 
@@ -444,6 +453,7 @@ public class Robot {
     public static double A05_SHOOT1_Y = 750;
     public static double A05_SHOOT1_X = 750;
     public static double A05_SHOOT1_H = 45;
+    public static double A05_SHOT1_VEL = 1200;
 
     public static double A06_SETUP1_Y = 1220-100;
     public static double A06_SETUP1_X = 670;
@@ -464,6 +474,12 @@ public class Robot {
     public static double A09_SHOOT1_X = 440;
     public static double A09_SHOOT1_H = 45;
 
+    public static double A90_PARK_DRIFT = 200;
+    public static double A90_PARK_X = 0 - A90_PARK_DRIFT;
+    public static double A90_PARK_END_VELOCITY = 2000;
+
+    public static double A99_GRAB_LAST_THREE_TIME = 4000;
+    public static double A99_PARK_TIME = 1500;
 
 
     public void logShot(int num, int targetX, int targetY, int goalDistance, double goalHeading) {
@@ -477,10 +493,16 @@ public class Robot {
 
     public void goalSide(boolean useArms) {
         double goalDistance = 0;
+        long startTime = System.currentTimeMillis();
+
 
         // Prep Shooter
-        goalDistance = drive.getGoalDistance((int)A05_SHOOT1_X, (int)A05_SHOOT1_Y);
-        if (useArms) shooter.adjustShooterV2(goalDistance);
+        goalDistance = drive.getGoalDistance((int)A05_SHOOT1_X, (int)A05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
+        if (useArms) {
+            //shooter.adjustShooterV2(goalDistance);
+            shooter.setShootSpeed(A05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
+            shooter.VELOCITY_COMMANDED = A05_SHOT1_VEL;
+        }
 
         //Shoot Preloads
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT_1, A05_SHOOT1_Y+A05_DRIFT_1, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
@@ -498,13 +520,13 @@ public class Robot {
 
         //Collect Set 1
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X, A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
         //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
         if (useArms) {
             intake.elevatorToFlippersV2NoWait();
         }
         // Prep Shooter
-        goalDistance = drive.getGoalDistance((int)A08_SHOOT1_X, (int)A08_SHOOT1_Y);
+        goalDistance = drive.getGoalDistance((int)A08_SHOOT1_X, (int)A08_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) shooter.adjustShooterV2(goalDistance);
         //Shoot Set 1
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X-A05_DRIFT_2, A08_SHOOT1_Y+A05_DRIFT_2, A08_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
@@ -520,13 +542,13 @@ public class Robot {
 
         //Collect Set 2
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-A01_TILE_LENGTH, A07_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
         //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
         if (useArms) {
             intake.elevatorToFlippersV2NoWait();
         }
         // Prep Shooter
-        goalDistance = drive.getGoalDistance((int)A09_SHOOT1_X, (int)A09_SHOOT1_Y);
+        goalDistance = drive.getGoalDistance((int)A09_SHOOT1_X, (int)A09_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) shooter.adjustShooterV2(goalDistance);
 
         //Shoot Set 2
@@ -534,7 +556,7 @@ public class Robot {
 
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
-        logShot(2, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
+        logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
         if (useArms) {
             shootPatternAuto();
             intake.intakeStart();
@@ -544,13 +566,33 @@ public class Robot {
 
         shooter.stopShooter();
 
+        if (System.currentTimeMillis()-startTime > 30000-A99_GRAB_LAST_THREE_TIME) {
+            teamUtil.log("OUT OF TIME, not grabbing last 3");
+            drive.stopMotors();
+            intake.stopDetector();
+            intake.intakeStop();
+            return;
+        }
+
         if (useArms) {
             intake.intakeStart();
         }
 
         //Pick up last 3 balls
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-(2*A01_TILE_LENGTH)+A07_END_PICKUP_X_ADJUSTMENT, A07_SETUP1_Y, A06_SETUP1_H, A00_FINAL_END_VELOCITY,null,0,false,3000);
-        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-(2*A01_TILE_LENGTH), A07_PICKUP1_Y, (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-(2*A01_TILE_LENGTH), A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+
+        if (System.currentTimeMillis()-startTime > 30000-A99_PARK_TIME) {
+            teamUtil.log("OUT OF TIME, not parking");
+            drive.stopMotors();
+            intake.stopDetector();
+            intake.intakeStop();
+            return;
+        }
+
+        drive.straightHoldingStrafeEncoder(A00_MAX_SPEED_NEAR_GOAL, A90_PARK_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A90_PARK_END_VELOCITY,false,null,0,2000);
+
+
 
         drive.stopMotors();
         intake.stopDetector();
@@ -558,12 +600,6 @@ public class Robot {
 
 
         if(true) return;
-        //Collect Set 3
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-2*(A01_TILE_LENGTH), A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-2*(A01_TILE_LENGTH), A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
-        if (useArms) {
-            intake.elevatorToFlippersV2NoWait();
-        }
         //Shoot Set 3
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();

@@ -88,10 +88,7 @@ public class BasicDrive{
     static public double ROTATION_ADJUST_FACTOR = 40; //was .02
     static public double SIDE_VECTOR_COEFFICIENT = .92;
     static public double FORWARD_VECTOR_COEFFICIENT = 1.08;
-    static public double SPIN_DECEL_THRESHOLD_DEGREES = 120; // Calibrated 11/2/24 (could be more aggresive?)
-    static public double SPIN_DRIFT_DEGREES = 1; // Calibrated 11/2/24
-    static public double SPIN_CRAWL_SPEED = 150; // Calibrated 11/2/24
-    static public double SPIN_CRAWL_DEGREES = 10; // Calibrated 11/2/24 (could be more aggresive?)
+
     static public boolean details = false;
     static public float STRAIGHT_HEADING_DECLINATION = 1f; // convert strafe encoder error into heading declination
     static public float STRAIGHT_MAX_DECLINATION = 27f; // don't veer off of straight more than this number of degrees
@@ -191,12 +188,27 @@ public class BasicDrive{
         teamUtil.robot.oq.resetLocalizerAndCalibrateIMU();
     }
 
+    public OctoQuadFWv3.LocalizerDataBlock stashedLocalizer = new OctoQuadFWv3.LocalizerDataBlock();
+    public void copyOctoData(OctoQuadFWv3.LocalizerDataBlock fromL, OctoQuadFWv3.LocalizerDataBlock toL) {
+        toL.posY_mm = fromL.posY_mm;
+        toL.posX_mm = fromL.posX_mm;
+        toL.heading_rad = fromL.heading_rad;
+        toL.velX_mmS = fromL.velX_mmS;
+        toL.velY_mmS = fromL.velY_mmS;
+    }
+    public static int OCTO_TIME_OUT = 30; // Up to this many milliseconds trying to get good data
     public void loop() { // Call this frequently so that odometry data is up to date
+        copyOctoData(oQlocalizer, stashedLocalizer);
         teamUtil.robot.oq.readLocalizerDataAndAllEncoderData(oQlocalizer, oQencoders);
-        long currentTime = System.currentTimeMillis();
-        while (!oQlocalizer.crcOk && teamUtil.keepGoing(currentTime + 10)) { // keep reading until we get good data
+        long timeOutTime = System.currentTimeMillis()+ OCTO_TIME_OUT;
+        while (!oQlocalizer.crcOk && teamUtil.keepGoing(timeOutTime)) { // keep reading until we get good data or run out of time
             teamUtil.log("ERROR!------------------------------------------  BAD CRC from OctoQuad!");
             teamUtil.robot.oq.readLocalizerDataAndAllEncoderData(oQlocalizer, oQencoders);
+        }
+        if (!oQlocalizer.crcOk) { // timed out
+            teamUtil.log("ERROR!------------------------------------------  Attempts to get good data from OctoQuad Timed out!");
+            teamUtil.log("ERROR!------------------------------------------  Using previous data");
+            copyOctoData(stashedLocalizer, oQlocalizer);
         }
     }
 
@@ -2075,7 +2087,11 @@ public class BasicDrive{
 
     /************************************************************************************************************/
     // Methods to turn the robot in place
-
+    static public double SPIN_DECEL_THRESHOLD_DEGREES = 120; // Calibrated 11/2/24 (could be more aggresive?)
+    static public double SPIN_DRIFT_DEGREES = 1.2; // Calibrated 11/2/24
+    static public double SPIN_CRAWL_SPEED = 150; // Calibrated 11/2/24
+    static public double SPIN_CRAWL_DEGREES = 10; // Calibrated 11/2/24 (could be more aggresive?)
+    static public double SPIN_NO_SPIN_THRESHOLD = .5; // Calibrated 11/2/24
 
     public void spinToHeading(double heading) {
         // moves at full speed then decelerates to spin
@@ -2103,9 +2119,6 @@ public class BasicDrive{
             teamUtil.log("turning left: " + rightCoefficient);
             teamUtil.log("current heading: " + currentHeading);
             teamUtil.log("heading goal: " + (heading + SPIN_DRIFT_DEGREES));
-        }
-        if (details) {
-            teamUtil.log("crossing 0/360 barrier");
         }
         while (Math.abs(currentHeading - heading) > SPIN_DECEL_THRESHOLD_DEGREES) {
             setMotorVelocities(leftCoefficient * velocity, rightCoefficient * velocity, leftCoefficient * velocity, rightCoefficient * velocity);
@@ -2156,7 +2169,114 @@ public class BasicDrive{
         setMotorPower(0);
     }
 
+    // TODO: This STILL doesn't work if you go through the 0/360 boundary. It may also have issues with a target heading of 0
+    // TODO: However it should work for other cases
+    public void spinToHeadingV2(double heading, long timeOut) {
+        teamUtil.log("spinToHeadingV2 with heading: " + heading);
+        long timeOutTime = System.currentTimeMillis() + timeOut;
+        double velocity = MAX_VELOCITY;
+        heading = adjustAngle(heading); // 0-360
+        double currentHeading = adjustAngle(getHeadingODO()) ; // 0-360
+        double leftCoefficient = 1;
+        double rightCoefficient = 1;
 
+        if (heading > currentHeading) { // determine spin direction (shortest distance)
+            if (heading - currentHeading < 180) {
+                leftCoefficient = -1;
+            } else {
+                rightCoefficient = -1;
+            }
+        } else {
+            if (currentHeading - heading < 180) {
+                rightCoefficient = -1;
+            } else {
+                leftCoefficient = -1;
+            }
+        }
+        if (leftCoefficient == -1 && heading < 180 && currentHeading > 180) { //spinning up (left) through 0/360 spot
+            heading = heading + 360;
+            teamUtil.log("Adjusted Heading to spin through 0/360 threshold. New Heading: " + heading);
+
+        } else if (rightCoefficient == -1 && currentHeading < 180 && heading > 180) { // spinning down (right) through 0/360 spot
+            heading = heading - 360;
+            teamUtil.log("Adjusted Heading to spin through 0/360 threshold. New Heading: " + heading);
+        }
+
+        double degreesRemaining = Math.abs(heading- currentHeading);
+
+        if (degreesRemaining < SPIN_NO_SPIN_THRESHOLD) {
+            teamUtil.log("Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining);
+            teamUtil.log("Not Spinning: " + degreesRemaining);
+            teamUtil.log("Finished spinToHeadingV2");
+            return;
+        }
+        setMotorsWithEncoder();
+
+        if (details) {
+            teamUtil.log("LCoef: " + leftCoefficient + " RCoef: " + rightCoefficient);
+            teamUtil.log("Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining);
+            teamUtil.log("Starting Max Velocity Phase");
+        }
+
+        // Max Velocity Phase
+        while (degreesRemaining > SPIN_DECEL_THRESHOLD_DEGREES && teamUtil.keepGoing(timeOutTime)) {
+            setMotorVelocities(leftCoefficient * velocity, rightCoefficient * velocity, leftCoefficient * velocity, rightCoefficient * velocity);
+            loop();
+            currentHeading = adjustAngle(getHeadingODO());
+            degreesRemaining = Math.abs(heading- currentHeading);
+            if (details) {
+                teamUtil.log("Spinning FAST - Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining + " Vel: " + velocity);
+            }
+        }
+        if (details) {
+            teamUtil.log("Finished Max velocity phase");
+            teamUtil.log("Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining);
+            teamUtil.log("Starting Deceleration Phase");
+
+        }
+
+        // Decel Phase
+        while (degreesRemaining > SPIN_CRAWL_DEGREES && teamUtil.keepGoing(timeOutTime)) {
+            loop();
+            currentHeading = adjustAngle(getHeadingODO());
+            degreesRemaining = Math.abs(heading- currentHeading);
+
+            velocity = ((MAX_VELOCITY - SPIN_CRAWL_SPEED) / (SPIN_DECEL_THRESHOLD_DEGREES - SPIN_CRAWL_DEGREES)) * (degreesRemaining - SPIN_DECEL_THRESHOLD_DEGREES) + MAX_VELOCITY; // linear
+            if (velocity < SPIN_CRAWL_SPEED) {
+                velocity = SPIN_CRAWL_SPEED;
+            }
+            setMotorVelocities(leftCoefficient * velocity, rightCoefficient * velocity, leftCoefficient * velocity, rightCoefficient * velocity);
+            if (details) {
+                teamUtil.log("Decelerating - Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining + " Vel: " + velocity);
+            }
+        }
+        if (details) {
+            teamUtil.log("Finished Deceleration phase");
+            teamUtil.log("Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining);
+            teamUtil.log("Starting Crawl Phase");
+        }
+
+        // Crawl Phase
+        while (teamUtil.keepGoing(timeOutTime) && ((leftCoefficient==1 && currentHeading > heading+SPIN_DRIFT_DEGREES) || (rightCoefficient==1 && currentHeading< heading-SPIN_DRIFT_DEGREES))){
+            loop();
+            currentHeading = adjustAngle(getHeadingODO());
+            degreesRemaining = Math.abs(heading- currentHeading);
+            velocity = SPIN_CRAWL_SPEED;
+            setMotorVelocities(leftCoefficient * velocity, rightCoefficient * velocity, leftCoefficient * velocity, rightCoefficient * velocity);
+            if (details) {
+                teamUtil.log("Crawling - Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining + " Vel: " + velocity);
+            }
+        }
+
+        if (details) {
+            teamUtil.log("Finished Crawl phase");
+            teamUtil.log("Heading: Current: " + currentHeading + " Target: " + heading + " Degrees Remaining: " + degreesRemaining);
+        }
+
+        setMotorsBrake();
+        setMotorPower(0);
+        teamUtil.log("Finished spinToHeadingV2");
+    }
 
     /************************************************************************************************************/
     //Methods to drive based on joystick values
@@ -2538,7 +2658,7 @@ public class BasicDrive{
         }
         goalDistance = Math.sqrt(Math.pow((GOAL_X- x),2)+Math.pow(((multiplier*GOAL_Y- y)),2));
         if(details){
-            teamUtil.log("Distance Calculated: " + goalDistance + " Multiplier: " + multiplier);
+            //teamUtil.log("Distance Calculated: " + goalDistance + " Multiplier: " + multiplier);
         }
         return  goalDistance;
 

@@ -32,7 +32,7 @@ public class CalibrateArms extends LinearOpMode {
 
     Robot robot;
     public static double VelocityIncrement = 100;
-    public static boolean adjustShootMode;
+    public static boolean adjustShootMode = false;
     public double CurrentPower = 0;
     public double currentRVelocity = 0;
     public double currentLVelocity = 0;
@@ -264,22 +264,22 @@ public class CalibrateArms extends LinearOpMode {
         }
     }
 
+    public static double SHOOTER_VELOCITY = 800;
     public void testShooter(){
         robot.drive.loop(); // get updated localizer data
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
+        telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
+        telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
 
         if(gamepad1.startWasReleased()){
-            if(adjustShootMode){
-                adjustShootMode=false;
-            }else{
-                adjustShootMode=true;
-            }
+            adjustShootMode= !adjustShootMode;
         }
-        robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
-
+        if (adjustShootMode) {
+            robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
+        }
         if(gamepad1.dpadUpWasReleased()){
-            robot.shooter.setShootSpeed(Shooter.SHOOTER_FAR_VELOCITY);
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
         }if(gamepad1.dpadDownWasReleased()){
             robot.shooter.stopShooter();
         }

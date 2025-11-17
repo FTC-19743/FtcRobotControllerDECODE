@@ -156,6 +156,7 @@ public class Shooter {
     }
 
     public void adjustShooterV2(double distance){
+        teamUtil.log("adjustShooterV2 to distance: " + distance);
         double velocityNeeded;
         double pitchNeeded;
         if (distance<MID_SHORT_DISTANCE_THRESHOLD){
@@ -171,6 +172,7 @@ public class Shooter {
         VELOCITY_COMMANDED = velocityNeeded;
         setShootSpeed(velocityNeeded);
         aim(pitchNeeded);
+        teamUtil.log("adjustShooterV2 Finished");
 
     }
 
