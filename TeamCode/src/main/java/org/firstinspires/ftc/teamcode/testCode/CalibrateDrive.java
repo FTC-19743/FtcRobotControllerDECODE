@@ -69,7 +69,8 @@ public class CalibrateDrive extends LinearOpMode {
         Move_Encoder_Target_Test,
         Methods_Test,
         Set_Wall_Values,
-    Set_Drive_Powers};
+        Set_Drive_Powers,
+        Test_Lift_Auto_Align};
     public static Ops AAOP = Ops.Test_Wiring;
 
 
@@ -184,6 +185,8 @@ public class CalibrateDrive extends LinearOpMode {
                 setMotorPowers();
             }else if (AAOP == Ops.Set_Wall_Values){
                 resetWallODOValues();
+            } else if (AAOP == Ops.Test_Lift_Auto_Align) {
+                testLiftAutoAlign();
             }
             if(gamepad1.yWasReleased()){
                 if(!autoRotate){autoRotate = true;}
@@ -222,6 +225,16 @@ public class CalibrateDrive extends LinearOpMode {
             //sleep(20);
         }
     }
+
+    public void testLiftAutoAlign() {
+        if (gamepad1.dpadDownWasReleased()) {
+            drive.heldHeading = teamUtil.alliance == teamUtil.Alliance.BLUE ? Robot.LIFT_AUTO_ALIGN_BLUE_HEADING : Robot.LIFT_AUTO_ALIGN_RED_HEADING;
+        }
+        if (gamepad1.dpadUpWasReleased()) {
+            robot.alignForLift();
+        }
+    }
+
     public void testNewMethods() {
 
     }

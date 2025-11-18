@@ -590,8 +590,8 @@ public class Robot {
             return;
         }
 
+        // Park in front of gate
         drive.straightHoldingStrafeEncoder(A00_MAX_SPEED_NEAR_GOAL, A90_PARK_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A90_PARK_END_VELOCITY,false,null,0,2000);
-
 
 
         drive.stopMotors();
@@ -615,7 +615,119 @@ public class Robot {
     public void humanSide(boolean useArms) {
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Auto Park Code
+    // This code assumes the robot is already at a specified heading (315 for BLUE, ??? for RED)
+    public static int LIFT_AUTO_ALIGN_VELOCITY = 200;
+    public static int LIFT_AUTO_ALIGN_BLUE_THRESHOLD = 2500;
+    public static int LIFT_AUTO_ALIGN_RED_THRESHOLD = 2500;
 
+
+    // Back up until robot sees a line then stop
+    public boolean alignForLift() {
+        drive.loop();
+        double robotHeading = drive.adjustAngle(drive.getHeadingODO());
+        teamUtil.log("alignForLift. Robot Heading: " + robotHeading );
+        long timeOutTime;
+
+        drive.movingAutonomously.set(true);
+        drive.manualInterrupt.set(false);
+
+        teamUtil.log("Moving to tape");
+        timeOutTime = System.currentTimeMillis() + 3000;
+        // Wait for robot to get over the tape
+        while ( ( (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() < LIFT_AUTO_ALIGN_BLUE_THRESHOLD) ||
+                (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() < LIFT_AUTO_ALIGN_RED_THRESHOLD) )
+                && teamUtil.keepGoing(timeOutTime) && !drive.manualInterrupt.get()) {
+            drive.loop();
+            drive.driveMotorsHeadingsFR(drive.adjustAngle(drive.getHeadingODO()+180), drive.getHeadingODO(), LIFT_AUTO_ALIGN_VELOCITY);
+        }
+        drive.stopMotors();
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("TIME OUT ---------------AlignForLift Timed Out looking for  tape");
+            drive.movingAutonomously.set(false);
+            drive.manualInterrupt.set(false);
+            return false;
+        }
+
+        return true;
+    }
+
+    public static int LIFT_AUTO_ALIGN_RED_HEADING = 45;
+    public static int LIFT_AUTO_ALIGN_RED_DRIVE_HEADING1 = 0;
+    public static int LIFT_AUTO_ALIGN_RED_DRIVE_HEADING2 = 270;
+    public static int LIFT_AUTO_ALIGN_BLUE_HEADING = 315;
+    public static int LIFT_AUTO_ALIGN_HEADING_ERROR_THRESHOLD = 5;
+    public static int LIFT_AUTO_ALIGN_BLUE_DRIVE_HEADING1 = 270;
+    public static int LIFT_AUTO_ALIGN_BLUE_DRIVE_HEADING2 = 180;
+    public static int LIFT_AUTO_ALIGN_BLUE_ON_THRESHOLD = 3500;
+    public static int LIFT_AUTO_ALIGN_BLUE_OFF_THRESHOLD = 2000;
+    public static int LIFT_AUTO_ALIGN_RED_ON_THRESHOLD = 3500;
+    public static int LIFT_AUTO_ALIGN_RED_OFF_THRESHOLD = 2000;
+
+    // Try to use both lines to align perfectly...TODO: Not really working yet
+    public boolean alignForLiftV2() {
+        drive.loop();
+        double robotHeading = drive.adjustAngle(drive.getHeadingODO());
+        teamUtil.log("alignForLift. Robot Heading: " + robotHeading );
+        long timeOutTime;
+
+        if (teamUtil.alliance== teamUtil.Alliance.BLUE && (Math.abs(robotHeading-LIFT_AUTO_ALIGN_BLUE_HEADING) > LIFT_AUTO_ALIGN_HEADING_ERROR_THRESHOLD) ||
+            teamUtil.alliance== teamUtil.Alliance.RED && (Math.abs(robotHeading-LIFT_AUTO_ALIGN_RED_HEADING) > LIFT_AUTO_ALIGN_HEADING_ERROR_THRESHOLD))
+        {
+            teamUtil.log("BAD HEADING for AlignForLift. Ignoring");
+            drive.movingAutonomously.set(false);
+            drive.manualInterrupt.set(false);
+            return false;
+        }
+        drive.movingAutonomously.set(true);
+        drive.manualInterrupt.set(false);
+
+        teamUtil.log("Moving to first tape");
+        timeOutTime = System.currentTimeMillis() + 3000;
+        // Wait for robot to get over the tape
+        while ( ( (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() < LIFT_AUTO_ALIGN_BLUE_ON_THRESHOLD) ||
+                  (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() < LIFT_AUTO_ALIGN_RED_ON_THRESHOLD) )
+                && teamUtil.keepGoing(timeOutTime) && !drive.manualInterrupt.get()) {
+            drive.loop();
+            if (teamUtil.alliance== teamUtil.Alliance.BLUE) {
+                drive.driveMotorsHeadingsFR(LIFT_AUTO_ALIGN_BLUE_DRIVE_HEADING1, LIFT_AUTO_ALIGN_BLUE_HEADING, LIFT_AUTO_ALIGN_VELOCITY);
+            } else {
+                drive.driveMotorsHeadingsFR(LIFT_AUTO_ALIGN_RED_DRIVE_HEADING1, LIFT_AUTO_ALIGN_RED_HEADING, LIFT_AUTO_ALIGN_VELOCITY);
+            }
+        }
+        drive.stopMotors();
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("TIME OUT ---------------AlignForLift Timed Out looking for first tape");
+            drive.movingAutonomously.set(false);
+            drive.manualInterrupt.set(false);
+            return false;
+        }
+        drive.waitForRobotToStop(1000);
+        teamUtil.log("Moving to second tape");
+
+        timeOutTime = System.currentTimeMillis() + 3000;
+        while ( ( (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() > LIFT_AUTO_ALIGN_BLUE_OFF_THRESHOLD) ||
+                (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() > LIFT_AUTO_ALIGN_RED_OFF_THRESHOLD) )
+                && teamUtil.keepGoing(timeOutTime) && !drive.manualInterrupt.get()) {
+            // Wait for robot to move off the end of the tape
+            drive.loop();
+            if (teamUtil.alliance== teamUtil.Alliance.BLUE) {
+                drive.driveMotorsHeadingsFR(LIFT_AUTO_ALIGN_BLUE_DRIVE_HEADING2, LIFT_AUTO_ALIGN_BLUE_HEADING, LIFT_AUTO_ALIGN_VELOCITY);
+            } else {
+                drive.driveMotorsHeadingsFR(LIFT_AUTO_ALIGN_RED_DRIVE_HEADING2, LIFT_AUTO_ALIGN_RED_HEADING, LIFT_AUTO_ALIGN_VELOCITY);
+            }
+        }
+        drive.stopMotors();
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("TIME OUT ---------------AlignForLift Timed Out looking for second tape");
+            drive.movingAutonomously.set(false);
+            drive.manualInterrupt.set(false);
+            return false;
+        }
+        return true;
+    }
 
 }
 
