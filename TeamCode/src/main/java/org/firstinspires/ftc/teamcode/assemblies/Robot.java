@@ -654,6 +654,21 @@ public class Robot {
         return true;
     }
 
+    public void alignForLiftNoWait(){
+        if (drive.movingAutonomously.get()) {
+            teamUtil.log("WARNING: Attempt to launch thread to alignForLift while in an autonmous moving operation. Ignored");
+            return;
+        }
+        teamUtil.log("Launching Thread to alignForLift");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                alignForLift();
+            }
+        });
+        thread.start();
+    }
+
     public static int LIFT_AUTO_ALIGN_RED_HEADING = 45;
     public static int LIFT_AUTO_ALIGN_RED_DRIVE_HEADING1 = 0;
     public static int LIFT_AUTO_ALIGN_RED_DRIVE_HEADING2 = 270;
