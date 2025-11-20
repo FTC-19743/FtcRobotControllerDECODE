@@ -126,13 +126,6 @@ public class Teleop extends LinearOpMode {
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);
                     }
                 }
-                if(endgameMode){
-                    if(robot.seeLine()){
-                        robot.blinkin.setSignal(Blinkin.Signals.SEE_LINE);
-                    }else{
-                        robot.blinkin.setSignal(Blinkin.Signals.OFF);
-                    }
-                }
                 if(shootingMode){
                     robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
                 }
@@ -154,13 +147,6 @@ public class Teleop extends LinearOpMode {
                 }
                 if(gamepad1.dpadLeftWasReleased()){
                     robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.AUDIENCE_X : BasicDrive.SCORE_X, robot.drive.oQlocalizer.posY_mm,0);
-                }
-                if(gamepad1.touchpadWasPressed()) {
-                    robot.drive.setHeldHeading(teamUtil.alliance == teamUtil.Alliance.BLUE ? 315 : 45);
-                }
-                if(gamepad1.psWasReleased()){
-                    robot.alignForLiftNoWait();
-                    endgameMode=true;
                 }
 
                 ////////////// SHOOTER ///////////////////////////
@@ -187,8 +173,26 @@ public class Teleop extends LinearOpMode {
 
 
                 ///////////// ENDGAME //////////////////////////////
+                if(gamepad1.touchpadWasPressed()) {
+                    robot.drive.setHeldHeading(teamUtil.alliance == teamUtil.Alliance.BLUE ? 315 : 45);
+                }
 
-
+                if(gamepad1.psWasReleased()){
+                    if (endgameMode) {  // press again to attempt auto align
+                        robot.alignForLiftNoWait();
+                    } else { // Press once to enter end game mode
+                        endgameMode=true;
+                        robot.intake.intakeStop();
+                        robot.shooter.setShootSpeed(0);
+                    }
+                }
+                if(endgameMode){
+                    if(robot.seeLine()){
+                        robot.blinkin.setSignal(Blinkin.Signals.SEE_LINE);
+                    }else{
+                        robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                    }
+                }
                 if(gamepad1.optionsWasReleased()&&endgameMode){
                     robot.setFootPos(Robot.FOOT_EXTENDED_POS);
                     robot.intake.intakeStop();
@@ -228,7 +232,7 @@ public class Teleop extends LinearOpMode {
                 //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
                 //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
                 //telemetry.addLine("Hang Manual: " + hangManualControl);
-                telemetry.addLine("ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
+                telemetry.addLine((endgameMode ? "ENDGAME ":"")+"ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
 
                 telemetry.update();
             }
