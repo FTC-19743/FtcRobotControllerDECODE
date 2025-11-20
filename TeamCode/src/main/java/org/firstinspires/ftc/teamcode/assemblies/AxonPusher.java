@@ -51,8 +51,24 @@ public class AxonPusher{
         teamUtil.robot.oq.setSingleEncoderDirection(ODO_PUSHER,  OctoQuadFWv3.EncoderDirection.FORWARD);
     }
 
+    public void calibrateNoWait() {
+        if (moving.get()) { // Pusher is already running in another thread
+            teamUtil.log("WARNING: Attempt to AxonPusher.calibrate while Pusher is moving--ignored");
+            return;
+        } else {
+            moving.set(true);
+            teamUtil.log("Launching Thread to AxonPusher.calibrate");
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    calibrate();
+                }
+            });
+            thread.start();
+        }
+    }
+
     public void calibrate() {
-        // TODO: make calibration based on the potentiometer to calibrate the octoquad position
         CALIBRATED = false;
         teamUtil.log("Calibrating Pusher");
         double currentPot = servoPot.getVoltage();

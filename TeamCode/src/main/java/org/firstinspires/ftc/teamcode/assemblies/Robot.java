@@ -491,6 +491,11 @@ public class Robot {
         teamUtil.log("Target Heading: " + goalHeading + " Actual Heading: " + drive.getHeadingODO() + " Diff: " + Math.abs(goalHeading-drive.getHeadingODO()));
     }
 
+    public boolean seeLine(){
+        return  (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() < LIFT_AUTO_ALIGN_BLUE_THRESHOLD) ||
+                (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() < LIFT_AUTO_ALIGN_RED_THRESHOLD);
+    }
+
     public void goalSide(boolean useArms) {
         double goalDistance = 0;
         long startTime = System.currentTimeMillis();
@@ -641,7 +646,7 @@ public class Robot {
                 (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() < LIFT_AUTO_ALIGN_RED_THRESHOLD) )
                 && teamUtil.keepGoing(timeOutTime) && !drive.manualInterrupt.get()) {
             drive.loop();
-            drive.driveMotorsHeadingsFR(drive.adjustAngle(drive.getHeadingODO()+180), drive.getHeadingODO(), LIFT_AUTO_ALIGN_VELOCITY);
+            drive.driveMotorsHeadingsFR(drive.getHeadingODO(), drive.getHeadingODO(), LIFT_AUTO_ALIGN_VELOCITY);
         }
         drive.stopMotors();
         if (System.currentTimeMillis() > timeOutTime) {
@@ -650,7 +655,7 @@ public class Robot {
             drive.manualInterrupt.set(false);
             return false;
         }
-
+        drive.movingAutonomously.set(false);
         return true;
     }
 

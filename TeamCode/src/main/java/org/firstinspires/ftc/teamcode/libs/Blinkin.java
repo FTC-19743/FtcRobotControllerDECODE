@@ -78,7 +78,8 @@ public class Blinkin {
         GPP_RED,
         PGP_BLUE,
         PPG_BLUE,
-        GPP_BLUE
+        GPP_BLUE,
+        SEE_LINE
 
 
     }
@@ -326,7 +327,10 @@ public class Blinkin {
                 current = RevBlinkinLedDriver.BlinkinPattern.RED;
                 blinkinLedDriver.setPattern(current);
                 break;
-
+            case SEE_LINE:
+                current = RevBlinkinLedDriver.BlinkinPattern.HOT_PINK;
+                blinkinLedDriver.setPattern(current);
+                break;
         }
     }
 }

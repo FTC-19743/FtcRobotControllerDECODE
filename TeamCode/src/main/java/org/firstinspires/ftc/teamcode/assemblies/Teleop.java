@@ -18,9 +18,7 @@ public class Teleop extends LinearOpMode {
 
     Robot robot;
 
-    boolean endgame = false;
     boolean shootingMode = false;
-    
     
     /*
     public void loopRunTimeCalculate(int loopNumber,boolean button){
@@ -69,6 +67,7 @@ public class Teleop extends LinearOpMode {
         }
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
+        boolean endgameMode = false;
 
 
         telemetry.addLine("Ready to start");
@@ -127,6 +126,13 @@ public class Teleop extends LinearOpMode {
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);
                     }
                 }
+                if(endgameMode){
+                    if(robot.seeLine()){
+                        robot.blinkin.setSignal(Blinkin.Signals.SEE_LINE);
+                    }else{
+                        robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                    }
+                }
                 if(shootingMode){
                     robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
                 }
@@ -143,10 +149,18 @@ public class Teleop extends LinearOpMode {
                     robot.drive.setRobotPosition(robot.drive.oQlocalizer.posX_mm,teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.BLUE_ALLIANCE_WALL : BasicDrive.RED_ALLIANCE_WALL,0);
                 }
                 if(gamepad1.dpadRightWasReleased()){
+                    gamepad1.rumble(250);
                     robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.SCORE_X : BasicDrive.AUDIENCE_X, robot.drive.oQlocalizer.posY_mm,0);
                 }
                 if(gamepad1.dpadLeftWasReleased()){
                     robot.drive.setRobotPosition(teamUtil.alliance == teamUtil.Alliance.BLUE ? BasicDrive.AUDIENCE_X : BasicDrive.SCORE_X, robot.drive.oQlocalizer.posY_mm,0);
+                }
+                if(gamepad1.touchpadWasPressed()) {
+                    robot.drive.setHeldHeading(teamUtil.alliance == teamUtil.Alliance.BLUE ? 315 : 45);
+                }
+                if(gamepad1.psWasReleased()){
+                    robot.alignForLiftNoWait();
+                    endgameMode=true;
                 }
 
                 ////////////// SHOOTER ///////////////////////////
@@ -164,24 +178,25 @@ public class Teleop extends LinearOpMode {
                     robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
                 }
                 if(gamepad2.yWasReleased()){
-                    robot.shooter.pushOne();
+                    robot.shooter.pushOneNoWait();
                 }
                 if(gamepad2.aWasReleased()){
-                    robot.shooter.pusher.calibrate();
-                    robot.shooter.pushOne();
+                    robot.shooter.pusher.calibrateNoWait();
+                    robot.shooter.pushOneNoWait();
                 }
 
 
                 ///////////// ENDGAME //////////////////////////////
 
-                if(gamepad1.dpadDownWasReleased()){
-                    if(endgame){
-                        robot.setFootPos(robot.FOOT_EXTENDED_POS);
-                    }
-                    endgame = true;
+
+                if(gamepad1.optionsWasReleased()&&endgameMode){
+                    robot.setFootPos(Robot.FOOT_EXTENDED_POS);
+                    robot.intake.intakeStop();
+                    robot.shooter.setShootSpeed(0);
                 }
-
-
+                if(gamepad1.shareWasReleased()&&endgameMode){
+                    robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
+                }
 
                 ////////////// INTAKE ////////////////////////////
 
@@ -193,6 +208,13 @@ public class Teleop extends LinearOpMode {
                     robot.intake.intakeStop();
                 }if(gamepad2.dpadRightWasPressed()){
                     robot.intake.intakeStart();
+                }
+                if(gamepad2.left_trigger > .8){
+                    robot.intake.flippersToTransfer();
+                    robot.intake.intakeOut();
+                    if(robot.intake.detecting.get()) {
+                        robot.intake.stopDetector();
+                    }
                 }
 
                 if(gamepad2.leftBumperWasReleased()){

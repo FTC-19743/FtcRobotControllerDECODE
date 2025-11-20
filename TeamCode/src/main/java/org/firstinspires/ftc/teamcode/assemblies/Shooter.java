@@ -126,6 +126,22 @@ public class Shooter {
     public void pushOne(){
         pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
     }
+    public void pushOneNoWait(){
+            if (pusher.moving.get()) { // Pusher is already running in another thread
+                teamUtil.log("WARNING: Attempt to AxonPusher.pushNNoWait while Pusher is moving--ignored");
+                return;
+            } else {
+                pusher.moving.set(true);
+                teamUtil.log("Launching Thread to AxonPusher.pushNNoWait");
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pushOne();
+                    }
+                });
+                thread.start();
+            }
+    }
 
 
     // for aimer:
@@ -156,7 +172,7 @@ public class Shooter {
     }
 
     public void adjustShooterV2(double distance){
-        teamUtil.log("adjustShooterV2 to distance: " + distance);
+        if(details)teamUtil.log("adjustShooterV2 to distance: " + distance);
         double velocityNeeded;
         double pitchNeeded;
         if (distance<MID_SHORT_DISTANCE_THRESHOLD){
@@ -172,7 +188,7 @@ public class Shooter {
         VELOCITY_COMMANDED = velocityNeeded;
         setShootSpeed(velocityNeeded);
         aim(pitchNeeded);
-        teamUtil.log("adjustShooterV2 Finished");
+        if(details)teamUtil.log("adjustShooterV2 Finished");
 
     }
 

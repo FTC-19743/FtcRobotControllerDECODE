@@ -28,7 +28,7 @@ public class teamUtil {
 
 
     public enum Alliance {RED, BLUE}
-    public static Alliance alliance = Alliance.RED;
+    public static Alliance alliance = Alliance.BLUE;
     public enum Side {GOAL, HUMAN}
     public static Side SIDE = Side.GOAL;
     public enum Pattern {PPG, PGP, GPP}

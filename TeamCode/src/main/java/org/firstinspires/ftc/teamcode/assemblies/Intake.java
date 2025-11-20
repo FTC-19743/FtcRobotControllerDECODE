@@ -328,7 +328,7 @@ public class Intake {
         });
         thread.start();
     }
-
+    public static long ELEVATOR_STARTUP_TIME = 250;
     public boolean elevatorToFlippersV2(){
         teamUtil.log("elevatorToFlippersV2NoWait");
 
@@ -352,7 +352,7 @@ public class Intake {
         elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         elevator.setPower(ELEVATOR_UP_POWER);
         long timeOutTime = System.currentTimeMillis()+ELEVATOR_UP_TIMEOUT;
-        teamUtil.pause(250); // allow time for elevator to get moving
+        teamUtil.pause(ELEVATOR_STARTUP_TIME); // allow time for elevator to get moving
         while(teamUtil.keepGoing(timeOutTime) && elevator.getVelocity() > ELEVATOR_UP_VELOCITY_THRESHOLD && elevator.getCurrentPosition()<ELEVATOR_UP_ENCODER){
             if (details) {
                 teamUtil.log("Elevator Pos: "+ elevator.getCurrentPosition() + " Vel: "+ elevator.getVelocity());
