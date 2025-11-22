@@ -109,16 +109,16 @@ public class Teleop extends LinearOpMode {
                         shootingMode);
 
                 if(gamepad1.yWasReleased()){
-                    if(shootingMode == true){
+                    if(shootingMode){
                         robot.intake.startDetector(false);
                         shootingMode = false;
                         robot.shooter.setShootSpeed(robot.shooter.IDLE_FLYWHEEL_VELOCITY);
                     }else{
                         robot.intake.stopDetector();
                         shootingMode = true;
-
                     }
                 }
+
                 if(shootingMode){
                     if(robot.canShoot()){
                         robot.blinkin.setSignal(Blinkin.Signals.READY_TO_SHOOT);
@@ -128,6 +128,13 @@ public class Teleop extends LinearOpMode {
                 }
                 if(shootingMode){
                     robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
+                }
+                if(gamepad1.rightBumperWasPressed() && gamepad1.leftBumperWasPressed()){
+                    if (teamUtil.alliance == teamUtil.Alliance.BLUE) {
+                        teamUtil.alliance = teamUtil.Alliance.RED;
+                    } else{
+                        teamUtil.alliance = teamUtil.Alliance.BLUE;
+                    }
                 }
                 if(gamepad1.xWasReleased()){
                     robot.drive.setHeading(0);
