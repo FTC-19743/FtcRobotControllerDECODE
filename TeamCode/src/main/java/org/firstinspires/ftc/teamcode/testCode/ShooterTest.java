@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -19,12 +20,14 @@ public class ShooterTest extends LinearOpMode {
     public static double PowerIncrement = 0.1;
     public static double VelocityIncrement = 100;
     public static double SmallVelocityIncrement  = 10;
+    public static double VELOCITY = 100;
     public static final float openPos = 0.39f;
     public static final float launchPos = 0.51f;
     public double CurrentPower = 0;
     public double currentRVelocity = 0;
     public double currentLVelocity = 0;
-    public static double shooterIncrement = 0.11;
+    public static double pusherIncrement = -0.11;
+    public static double pusherStart = .92;
     public static double shooterP = 50;
     public static double shooterI = 1;
     public static double shooterD = 0.5;
@@ -42,7 +45,9 @@ public class ShooterTest extends LinearOpMode {
         DcMotorEx motor = hardwareMap.get(DcMotorEx.class,"motor");
         DcMotorEx motorL = hardwareMap.get(DcMotorEx.class,"motorL");
         DcMotorEx motorR = hardwareMap.get(DcMotorEx.class,"motorR");
-
+        motorL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorR.setDirection(DcMotorSimple.Direction.REVERSE);
 
 
 
@@ -56,53 +61,54 @@ public class ShooterTest extends LinearOpMode {
             return;
         }
         pusher.setPosition(openPos);
-        teamUtil.log("PIDF coefficients: " + motorL.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER));
+        teamUtil.log("PIDF coefficients Initial: " + motorL.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER));
+        motorL.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+        motorR.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+        teamUtil.log("PIDF coefficients Set: " + motorL.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER));
+
         while (opModeIsActive()) {
-            motorL.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
-            motorR.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
             motor.setPower(CurrentPower);
-            //motorL.setPower(CurrentPower);
-            //motorR.setPower(-CurrentPower);
             motorL.setVelocity(currentLVelocity);
-            motorR.setVelocity(-currentRVelocity);
+            motorR.setVelocity(currentRVelocity);
             if(gamepad1.dpadUpWasReleased()){
-                CurrentPower+=PowerIncrement;
-                currentLVelocity+=VelocityIncrement;
+                currentLVelocity = VELOCITY;
+                currentRVelocity = VELOCITY;
             }
             if(gamepad1.dpadDownWasReleased()){
-                CurrentPower-=PowerIncrement;
-                currentLVelocity-=VelocityIncrement;
+                currentLVelocity = 0;
+                currentRVelocity = 0;
             }
             if(gamepad1.dpadRightWasReleased()){
-                CurrentPower+=PowerIncrement;
-                currentRVelocity+=VelocityIncrement;
+                //CurrentPower+=PowerIncrement;
+                //currentRVelocity+=VelocityIncrement;
             }
             if(gamepad1.dpadLeftWasReleased()){
-                CurrentPower-=PowerIncrement;
-                currentRVelocity-=VelocityIncrement;
+                //CurrentPower-=PowerIncrement;
+                //currentRVelocity-=VelocityIncrement;
             }
             if(gamepad1.aWasPressed()) {
-                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+                pusher.setPosition(pusher.getPosition()- pusherIncrement);
             }
             if(gamepad1.yWasPressed()) {
-                pusher.setPosition(pusher.getPosition()+shooterIncrement);
+                pusher.setPosition(pusher.getPosition()+ pusherIncrement);
+            }
+            if(gamepad1.xWasPressed()) {
+                pusher.setPosition(pusherStart);
             }
             if(gamepad1.bWasPressed()) {
-                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+                pusher.setPosition(pusher.getPosition()- pusherIncrement);
                 teamUtil.pause(pusherPause);
-                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+                pusher.setPosition(pusher.getPosition()- pusherIncrement);
                 teamUtil.pause(pusherPause);
-                pusher.setPosition(pusher.getPosition()-shooterIncrement);
+                pusher.setPosition(pusher.getPosition()- pusherIncrement);
             }
 
             TelemetryPacket packet = new TelemetryPacket();
             dashboard.sendTelemetryPacket(packet);
-            telemetry.addLine("Current Power: " + CurrentPower);
+            //telemetry.addLine("Current Power: " + CurrentPower);
             telemetry.addLine("currentVelocity: " + currentRVelocity + ", " + currentLVelocity);
             telemetry.addLine("ReportedVelocity: " + motorL.getVelocity()+", "+motorR.getVelocity());
-            telemetry.addData("Reported Left Velocity: " , motorL.getVelocity());
-            telemetry.addData("Reported Right Velocity: " , motorR.getVelocity());
-
+            telemetry.addData("Pusher: " , pusher.getPosition());
             telemetry.update();
         }
     }
