@@ -51,32 +51,27 @@ public class Intake {
     public int intakeNum = 0;
 
     //TODO FIND OUT
-    static public float ELEVATOR_TIC_PER_MM = 0000;
-    static public float MM_PER_ELEVATOR_TIC = 0000;
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
-
     static public int ELEVATOR_GROUND = 5;
-    static public int ELEVATOR_PRE_GROUND = 50;
-    static public int ELEVATOR_UP = 500;
-    static public int ELEVATOR_UP_THRESHOLD = 50;
-    static public int ELEVATOR_DOWN_THRESHOLD = 50;
-    static public int ELEVATOR_VELOCITY = 2000;
     static public long ELEVATOR_PAUSE_1 = 500;
     static public long ELEVATOR_PAUSE_2 = 500;
+    public static float ELEVATOR_UP_POWER = .5f;
+    public static float ELEVATOR_DOWN_POWER = -.5f;
+    public static int ELEVATOR_UP_TIMEOUT = 1500;
+    public static int ELEVATOR_DOWN_TIMEOUT = 1500;
+    public static int ELEVATOR_UP_VELOCITY_THRESHOLD = 400;
+    public static int ELEVATOR_DOWN_VELOCITY_THRESHOLD = -600;
 
-
-
-
-
-
-    //static public int ELEVATOR_TOLERANCE_RETRACT = 5;
+    public static int ELEVATOR_REVERSE_INTAKE_ENCODER = 140;
+    public static int ELEVATOR_UP_ENCODER = 440;
+    public static int ELEVATOR_DOWN_ENCODER = 130;
+    public static int ELEVATOR_UNLOAD_ENCODER = 460;
+    public static int ELEVATOR_HOLD_VELOCITY = 1500;
+    public static long ELEVATOR_STARTUP_TIME = 250;
 
     static public double INTAKE_IN_POWER = 0.7;
     static public double INTAKE_OUT_POWER = -0.7;
 
-
-
-    //TODO FIND POSITIONS
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
     static public float FLIPPER_CEILING = 0.8f;
     static public float FLIPPER_TRANSFER = 0.7f;
@@ -177,65 +172,6 @@ public class Intake {
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
     }
-    //TODO FIX METHOD
-    public void elevatorToFlippers(){
-
-        left_flipper.setPosition(FLIPPER_PRE_TRANSFER);
-        right_flipper.setPosition(FLIPPER_PRE_TRANSFER);
-        middle_flipper.setPosition(FLIPPER_PRE_TRANSFER);
-        teamUtil.pause(ELEVATOR_PAUSE_1);
-        elevator.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        elevator.setVelocity(ELEVATOR_VELOCITY);
-        elevator.setTargetPosition(ELEVATOR_UP);
-        while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_UP)>ELEVATOR_UP_THRESHOLD){ // TODO Add timeout and keepgoing check
-        }
-        left_flipper.setPosition(FLIPPER_TRANSFER);
-        right_flipper.setPosition(FLIPPER_TRANSFER);
-        middle_flipper.setPosition(FLIPPER_TRANSFER);
-        teamUtil.pause(ELEVATOR_PAUSE_2);
-
-        elevator.setTargetPosition(ELEVATOR_PRE_GROUND);
-        while(Math.abs(elevator.getCurrentPosition()-ELEVATOR_PRE_GROUND)>ELEVATOR_DOWN_THRESHOLD){ // TODO Add timeout and keepgoing check
-        }
-        elevator.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        elevator.setPower(ELEVATOR_CALIBRATE_POWER);
-        int lastelevatorPosition = elevator.getCurrentPosition();
-        teamUtil.pause(250);
-        while (elevator.getCurrentPosition() != lastelevatorPosition) { // TODO Add timeout and keepgoing check
-            lastelevatorPosition = elevator.getCurrentPosition();
-            if (details) teamUtil.log("Calibrate Intake: elevator: " + elevator.getCurrentPosition());
-            teamUtil.pause(50);
-        }
-        elevator.setPower(0);
-        intakeOut();
-        stopDetector();
-        elevatorMoving.set(false);
-    }
-    public void elevatorToFlippersNoWait(){
-        elevatorMoving.set(true);
-        teamUtil.log("Launching Thread to elevatorToFlippersNoWait.  Intake: moving = true");
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                elevatorToFlippers();
-            }
-        });
-        thread.start();
-    }
-
-    public static float ELEVATOR_UP_POWER = .75f;
-    public static float ELEVATOR_DOWN_POWER = -.75f;
-    public static int ELEVATOR_UP_TIMEOUT = 1500;
-    public static int ELEVATOR_DOWN_TIMEOUT = 1500;
-    public static int ELEVATOR_UP_VELOCITY_THRESHOLD = 400;
-    public static int ELEVATOR_DOWN_VELOCITY_THRESHOLD = -600;
-
-    public static int ELEVATOR_REVERSE_INTAKE_ENCODER = 140;
-    public static int ELEVATOR_UP_ENCODER = 440;
-    public static int ELEVATOR_DOWN_ENCODER = 130;
-    public static int ELEVATOR_UNLOAD_ENCODER = 460;
-    public static int ELEVATOR_HOLD_VELOCITY = 1500;
-
 
     public boolean elevatorToGroundV2() {
         teamUtil.log("elevatorToGroundV2.");
@@ -328,7 +264,7 @@ public class Intake {
         });
         thread.start();
     }
-    public static long ELEVATOR_STARTUP_TIME = 250;
+
     public boolean elevatorToFlippersV2(){
         teamUtil.log("elevatorToFlippersV2NoWait");
 

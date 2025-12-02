@@ -220,6 +220,21 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.elevator.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             robot.intake.elevator.setPower(0);
         }
+        if (gamepad1.bWasReleased()) {
+            robot.intake.calibrateElevators();
+        }
+        if (gamepad1.yWasReleased()) {
+            robot.intake.elevatorToFlippersV2();
+        }
+        if (gamepad1.aWasReleased()) {
+            robot.intake.elevatorToGroundV2();
+        }
+        if (gamepad1.rightBumperWasReleased()) {
+            robot.intake.intakeStop();
+        }
+        if (gamepad1.leftBumperWasReleased()) {
+            robot.intake.getReadyToIntake();
+        }
         telemetry.addData("Elevator Velocity", robot.intake.elevator.getVelocity());
         telemetry.addLine("Elevator Position: " + robot.intake.elevator.getCurrentPosition());
         telemetry.addLine("Elevator Velocity: " + robot.intake.elevator.getVelocity());
@@ -319,7 +334,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
         }
         if(gamepad1.xWasPressed()){
-            robot.intake.elevatorToFlippers();
+            robot.intake.elevatorToFlippersV2();
         }
         if(gamepad1.bWasPressed()) {
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1000);
