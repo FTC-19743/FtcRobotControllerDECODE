@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -17,6 +18,8 @@ public class Shooter {
     public DcMotorEx rightFlywheel;
     public AxonPusher pusher;
     private Servo aimer;
+    private DigitalChannel loadedSensor;
+    private Servo rgb1;
 
     public boolean details;
     public static float AIMER_CALIBRATE = .4f;
@@ -90,7 +93,8 @@ public class Shooter {
         rightFlywheel.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
         pusher.initialize();
         aimer = hardwareMap.get(Servo.class,"aimer");
-
+        loadedSensor = hardwareMap.get(DigitalChannel.class, "loaded");
+        loadedSensor.setMode(DigitalChannel.Mode.INPUT);
 
         teamUtil.log("Shooter Initialized");
     }
@@ -102,6 +106,7 @@ public class Shooter {
         pushOne();
     }
     public void outputTelemetry(){
+        telemetry.addLine("Loaded: "+loadedSensor.getState());
         telemetry.addLine("Left velocity: "+leftFlywheel.getVelocity() +" Right velocity: "+rightFlywheel.getVelocity());
         telemetry.addLine("Aimer position: "+aimer.getPosition());
         pusher.outputTelemetry();
@@ -113,6 +118,10 @@ public class Shooter {
     public void stopShooter(){
         leftFlywheel.setVelocity(0);
         rightFlywheel.setVelocity(0);
+    }
+
+    public boolean isLoaded() {
+        return loadedSensor.getState();
     }
 
     public void aim (double pos) {

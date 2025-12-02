@@ -47,6 +47,8 @@
             <LynxColorSensor name="lowermiddlecolorsensor" port="0" bus="2" />
             <LynxColorSensor name="lowerrightcolorsensor" port="0" bus="3" />
 
+            <DigitalDevice name="loaded" port="0" />
+
             <LynxEmbeddedIMU name="imu" port="0" bus="0" />
 
         </LynxModule>
