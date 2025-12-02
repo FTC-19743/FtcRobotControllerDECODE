@@ -1682,8 +1682,12 @@ public class BasicDrive{
         return distance;
     }
 
-    public static double POWER_DECEL_COEFF = .001;
-    public boolean moveToXHoldingStrafe(float power, double xTarget, double yTarget, int driveHeading, int robotHeading, float endPower, ActionCallback action, double actionTarget, long timeout) {
+    public static double HOLDING_LINE_MAX_DECLINATION = 45;
+    public static double HOLDING_LINE_DECLINATION_COEF = 2;
+    public static double HOLDING_LINE_MIN_END_VELOCITY = 200;
+    public static double HOLDING_LINE_DECL_COEF = 2;
+
+    public boolean moveToXHoldingLine(double velocity, double xTarget, double yTarget, int driveHeading, int robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         loop();
@@ -1694,27 +1698,27 @@ public class BasicDrive{
         }else{
             goingUp=false;
         }
-        if (endPower == 0) {
-            endPower = MIN_END_POWER;
+        if (endVelocity == 0) {
+            endVelocity = HOLDING_LINE_MIN_END_VELOCITY;
         }
         double totalTics = Math.abs(startEncoder-xTarget);
-        teamUtil.log("moveToXHoldingStrafe xTarget: " + xTarget +  " yTarget: " + yTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ oQlocalizer.posX_mm + " Starting Strafe Pos: "+ oQlocalizer.posY_mm + " Starting Heading:" + getHeadingODO());
+        teamUtil.log("moveToXHoldingLine xTarget: " + xTarget +  " yTarget: " + yTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Vel: " + velocity + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ oQlocalizer.posX_mm + " Starting Strafe Pos: "+ oQlocalizer.posY_mm + " Starting Heading:" + getHeadingODO());
         double distanceRemaining = Math.abs(xTarget - oQlocalizer.posX_mm);
         setMotorsWithEncoder();
         boolean actionDone = false;
         double currentPos;
         double adjustedDriveHeading;
-        float adjustedPower;
+        double adjustedVelocity;
 
         //-------ONLY a CRUISE PHASE (but with deceleration)
         while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
             loop();
             currentPos = oQlocalizer.posX_mm;
             distanceRemaining = (!goingUp) ? currentPos-xTarget : xTarget - currentPos;
-            adjustedPower = (float) MathUtils.clamp(distanceRemaining* +POWER_DECEL_COEFF + endPower,endPower, power);
-            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* STRAIGHT_HEADING_DECLINATION, -STRAIGHT_MAX_DECLINATION, STRAIGHT_MAX_DECLINATION);
-            if(details)teamUtil.log("Driving at Power: "+ adjustedPower + " Adjusted Drive Heading: " + adjustedDriveHeading + " X MMs Remaining: " + distanceRemaining);
-            driveMotorsHeadingsFRPower(adjustedDriveHeading, robotHeading, adjustedPower);
+            adjustedVelocity = Math.min(HOLDING_LINE_DECL_COEF * distanceRemaining+endVelocity, velocity);
+            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* HOLDING_LINE_DECLINATION_COEF, -HOLDING_LINE_MAX_DECLINATION, HOLDING_LINE_MAX_DECLINATION);
+            if(details)teamUtil.log("Driving at Vel: "+ adjustedVelocity + " Adjusted Drive Heading: " + adjustedDriveHeading + " X MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFR(adjustedDriveHeading, robotHeading, adjustedVelocity);
             if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
                 action.action();
                 actionDone=true;
@@ -1729,7 +1733,7 @@ public class BasicDrive{
         teamUtil.log("moveToXHoldingStrafe--Finished.  Current xPos:" + oQlocalizer.posX_mm + " Current yPos: "+ oQlocalizer.posY_mm);
         return true;
     }
-    public boolean moveToYHoldingLine(float power, double yTarget, double xTarget, int driveHeading, int robotHeading, float endPower, ActionCallback action, double actionTarget, long timeout) {
+    public boolean moveToYHoldingLine(double velocity, double yTarget, double xTarget, int driveHeading, int robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         loop();
@@ -1740,27 +1744,27 @@ public class BasicDrive{
         }else{
             goingUp=false;
         }
-        if (endPower == 0) {
-            endPower = MIN_END_POWER;
+        if (endVelocity == 0) {
+            endVelocity = HOLDING_LINE_MIN_END_VELOCITY;
         }
         double totalTics = Math.abs(startEncoder-yTarget);
-        teamUtil.log("moveToYHoldingLine yTarget: " + yTarget +  " xTarget: " + xTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Power: " + power + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ oQlocalizer.posX_mm + " Starting Strafe Pos: "+ oQlocalizer.posY_mm + " Starting Heading:" + getHeadingODO());
+        teamUtil.log("moveToYHoldingLine yTarget: " + yTarget +  " xTarget: " + xTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Vel: " + velocity + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ oQlocalizer.posX_mm + " Starting Strafe Pos: "+ oQlocalizer.posY_mm + " Starting Heading:" + getHeadingODO());
         double distanceRemaining = Math.abs(yTarget - oQlocalizer.posY_mm);
         setMotorsWithEncoder();
         boolean actionDone = false;
         double currentPos;
         double adjustedDriveHeading;
-        float adjustedPower;
+        double adjustedVelocity;
 
         //-------ONLY a CRUISE PHASE (but with deceleration)
         while ((distanceRemaining > 0) && teamUtil.keepGoing(timeoutTime)) {
             loop();
             currentPos = oQlocalizer.posY_mm;
             distanceRemaining = (!goingUp) ? currentPos-yTarget : yTarget - currentPos;
-            adjustedPower = (float) MathUtils.clamp(distanceRemaining* +POWER_DECEL_COEFF + endPower,endPower, power);
-            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* STRAIGHT_HEADING_DECLINATION, -STRAIGHT_MAX_DECLINATION, STRAIGHT_MAX_DECLINATION);
-            if(details)teamUtil.log("Driving at Power: "+ adjustedPower + " Adjusted Drive Heading: " + adjustedDriveHeading + " X MMs Remaining: " + distanceRemaining);
-            driveMotorsHeadingsFRPower(adjustedDriveHeading, robotHeading, adjustedPower);
+            adjustedVelocity = Math.min(HOLDING_LINE_DECL_COEF * distanceRemaining+endVelocity, velocity);
+            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* HOLDING_LINE_DECLINATION_COEF, -HOLDING_LINE_MAX_DECLINATION, HOLDING_LINE_MAX_DECLINATION);
+            if(details)teamUtil.log("Driving at Vel: "+ adjustedVelocity + " Adjusted Drive Heading: " + adjustedDriveHeading + " Y MMs Remaining: " + distanceRemaining);
+            driveMotorsHeadingsFR(adjustedDriveHeading, robotHeading, adjustedVelocity);
             if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
                 action.action();
                 actionDone=true;

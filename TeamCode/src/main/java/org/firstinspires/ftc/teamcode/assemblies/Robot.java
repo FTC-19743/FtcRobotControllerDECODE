@@ -22,7 +22,6 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Config
@@ -495,6 +494,139 @@ public class Robot {
     public boolean seeLine(){
         return  (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() > LIFT_AUTO_ALIGN_BLUE_THRESHOLD) ||
                 (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() > LIFT_AUTO_ALIGN_RED_THRESHOLD);
+    }
+
+    public void goalSideV2(boolean useArms) {
+        double nextGoalDistance = 0;
+        long startTime = System.currentTimeMillis();
+
+
+        // Prep Shooter
+        nextGoalDistance = drive.getGoalDistance((int)A05_SHOOT1_X, (int)A05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
+        if (useArms) {
+            //shooter.adjustShooterV2(goalDistance);
+            shooter.setShootSpeed(A05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
+            shooter.VELOCITY_COMMANDED = A05_SHOT1_VEL;
+        }
+
+        // Assume 600+600+900 for 3 color ordered shots
+        // Assume 1000 for 3 fast
+        //Shoot Preloads
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT_1, A05_SHOOT1_Y+A05_DRIFT_1, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
+
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int) nextGoalDistance, A05_SHOOT1_H);
+
+        if (useArms) {
+            shootPatternAuto();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
+
+        //Collect Set 2
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X, A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        if (useArms) {
+            intake.elevatorToFlippersV2NoWait();
+        }
+        // Prep Shooter
+        nextGoalDistance = drive.getGoalDistance((int)A08_SHOOT1_X, (int)A08_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
+        if (useArms) shooter.adjustShooterV2(nextGoalDistance);
+        //Shoot Set 2
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X-A05_DRIFT_2, A08_SHOOT1_Y+A05_DRIFT_2, A08_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int) nextGoalDistance, A08_SHOOT1_H);
+        if (useArms) {
+            shootPatternAuto();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
+
+        //Collect Set 3
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-A01_TILE_LENGTH, A07_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+        //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
+        if (useArms) {
+            intake.elevatorToFlippersV2NoWait();
+        }
+        // Prep Shooter
+        nextGoalDistance = drive.getGoalDistance((int)A09_SHOOT1_X, (int)A09_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
+        if (useArms) shooter.adjustShooterV2(nextGoalDistance);
+
+        //Shoot Set 3
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X-A05_DRIFT_2, A09_SHOOT1_Y+A05_DRIFT_2, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
+
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int) nextGoalDistance, A09_SHOOT1_H);
+        if (useArms) {
+            shootPatternAuto();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
+
+        shooter.stopShooter();
+
+        if (System.currentTimeMillis()-startTime > 30000-A99_GRAB_LAST_THREE_TIME) {
+            if (System.currentTimeMillis()-startTime > 30000-A99_MOVE_OFF_LINE_TIME) {
+                teamUtil.log("OUT OF TIME, shutting down");
+                drive.stopMotors();
+                intake.stopDetector();
+                intake.intakeStop();
+                shooter.stopShooter();
+                return;
+            } else {
+                teamUtil.log("NO TIME FOR LAST GRAB. Moving off of line");
+                intake.stopDetector();
+                intake.intakeStop();
+                shooter.stopShooter();
+                drive.moveToX(.7f,0,teamUtil.alliance== teamUtil.Alliance.RED ? 225 : 135, 0);
+                return;
+            }
+        }
+
+        if (useArms) {
+            intake.intakeStart();
+        }
+
+        //Pick up last 3 balls
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-(2*A01_TILE_LENGTH)+A07_END_PICKUP_X_ADJUSTMENT, A07_SETUP1_Y, A06_SETUP1_H, A00_FINAL_END_VELOCITY,null,0,false,3000);
+        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-(2*A01_TILE_LENGTH), A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
+
+        if (System.currentTimeMillis()-startTime > 30000-A99_PARK_TIME) {
+            teamUtil.log("OUT OF TIME, not parking");
+            drive.stopMotors();
+            intake.stopDetector();
+            intake.intakeStop();
+            shooter.stopShooter();
+            return;
+        }
+
+        // Park in front of gate
+        drive.straightHoldingStrafeEncoder(A00_MAX_SPEED_NEAR_GOAL, A90_PARK_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A90_PARK_END_VELOCITY,false,null,0,2000);
+
+        drive.stopMotors();
+        intake.stopDetector();
+        intake.intakeStop();
+        shooter.stopShooter();
+
+        if (true) return;
+        //Shoot Set 3
+        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
+        drive.stopMotors();
+        drive.waitForRobotToStop(1000);
+        if (useArms) {
+            shootAllArtifacts();
+            intake.intakeStart();
+        } else {
+            teamUtil.pause(2000);
+        }
     }
 
     public void goalSide(boolean useArms) {

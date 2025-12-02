@@ -8,8 +8,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Blinkin {
-    public RevBlinkinLedDriver blinkinLedDriver;
-    public RevBlinkinLedDriver.BlinkinPattern current;
+    private RevBlinkinLedDriver blinkinLedDriver;
+    private RevBlinkinLedDriver.BlinkinPattern current;
     private Telemetry telemetry;
     private HardwareMap hardwareMap;
 
@@ -18,6 +18,8 @@ public class Blinkin {
     ///////////////////////////////////////////////////////////////////////////////
     //these are the slightly useful constants for certain patterns
     public final double larsonScanner = -0.01;
+
+    public Signals currentSignal = Signals.OFF;
 
     public enum Signals{
         OFF,
@@ -118,6 +120,11 @@ public class Blinkin {
 
     public void setSignal(Signals signal){
         //teamUtil.log("Blinkin: " + signal);
+        if (signal == currentSignal) { // avoid cluttering logs with stupid RevBlinkinDriver messages
+            // Do nothing
+            return;
+        }
+        currentSignal = signal;
 
         switch(signal) {
             case OFF :

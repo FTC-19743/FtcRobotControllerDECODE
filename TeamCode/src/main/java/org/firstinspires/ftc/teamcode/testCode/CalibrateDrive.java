@@ -178,7 +178,7 @@ public class CalibrateDrive extends LinearOpMode {
             } else if (AAOP== Test_Power_Consumption) {
                 testPowerConsumption();
             } else if (AAOP==Ops.test_MoveToHolding) {
-                testMoveToHolding();
+                testMoveToHoldingLine();
             }else if (AAOP==Ops.Methods_Test) {
                 testNewMethods();
             }else if (AAOP == Ops.Set_Drive_Powers){
@@ -239,9 +239,14 @@ public class CalibrateDrive extends LinearOpMode {
 
     }
 
-    public void testMoveToHolding() {
-        if (gamepad1.dpad_up) {
-            drive.moveToXHoldingStrafe(testPower, botX, botY, (int) HEADING, (int) HELD_HEADING, testEndVelocity, null, 0, 3000);
+    public void testMoveToHoldingLine() {
+
+        if (gamepad1.dpadDownWasReleased()) {
+            drive.moveToXHoldingLine(testVelocity, botX, botY, (int) HEADING, (int) HELD_HEADING, testEndVelocity, null, 0, 3000);
+            drive.stopMotors();
+        }
+        if (gamepad1.dpadUpWasReleased()) {
+            drive.moveToYHoldingLine(testVelocity, botY, botX, (int) HEADING, (int) HELD_HEADING, testEndVelocity, null, 0, 3000);
             drive.stopMotors();
         }
     }
