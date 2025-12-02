@@ -50,7 +50,6 @@ public class Intake {
     public ARTIFACT leftLoad,rightLoad,middleLoad, leftIntake, middleIntake, rightIntake;
     public int intakeNum = 0;
 
-    //TODO FIND OUT
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
     static public int ELEVATOR_GROUND = 5;
     static public long ELEVATOR_PAUSE_1 = 500;
@@ -59,13 +58,13 @@ public class Intake {
     public static float ELEVATOR_DOWN_POWER = -.5f;
     public static int ELEVATOR_UP_TIMEOUT = 1500;
     public static int ELEVATOR_DOWN_TIMEOUT = 1500;
-    public static int ELEVATOR_UP_VELOCITY_THRESHOLD = 400;
-    public static int ELEVATOR_DOWN_VELOCITY_THRESHOLD = -600;
+    public static int ELEVATOR_UP_VELOCITY_THRESHOLD = 100;
+    public static int ELEVATOR_DOWN_VELOCITY_THRESHOLD = -100;
 
-    public static int ELEVATOR_REVERSE_INTAKE_ENCODER = 140;
-    public static int ELEVATOR_UP_ENCODER = 440;
-    public static int ELEVATOR_DOWN_ENCODER = 130;
-    public static int ELEVATOR_UNLOAD_ENCODER = 460;
+    public static int ELEVATOR_REVERSE_INTAKE_ENCODER = 85;
+    public static int ELEVATOR_UP_ENCODER = 135;
+    public static int ELEVATOR_DOWN_ENCODER = 50;
+    public static int ELEVATOR_UNLOAD_ENCODER = 166;
     public static int ELEVATOR_HOLD_VELOCITY = 1500;
     public static long ELEVATOR_STARTUP_TIME = 250;
 

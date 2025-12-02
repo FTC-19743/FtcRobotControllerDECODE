@@ -36,7 +36,7 @@ public class CalibrateArms extends LinearOpMode {
     public double CurrentPower = 0;
     public double currentRVelocity = 0;
     public double currentLVelocity = 0;
-    public float FLIPPER_TEST_VAL = 0f;
+    public static float FLIPPER_TEST_VAL = 0f;
 
     double aimerPosition = Shooter.AIMER_CALIBRATE;
     
@@ -242,7 +242,8 @@ public class CalibrateArms extends LinearOpMode {
 
     public void testIntake() {
         robot.intake.intakeTelemetry();
-        telemetry.addLine("Elevator Tolerance: " + robot.intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
+        //teamUtil.log("MIDDLE: " + robot.intake.middleLoad);
+        //telemetry.addLine("Elevator Tolerance: " + robot.intake.elevator.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
 
         if (gamepad1.rightBumperWasReleased()) {
             robot.intake.calibrate();
