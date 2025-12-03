@@ -1687,7 +1687,7 @@ public class BasicDrive{
     public static double HOLDING_LINE_MIN_END_VELOCITY = 200;
     public static double HOLDING_LINE_DECL_COEF = 2;
 
-    public boolean moveToXHoldingLine(double velocity, double xTarget, double yTarget, int driveHeading, int robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
+    public boolean moveToXHoldingLine(double velocity, double xTarget, double yTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         loop();
@@ -1730,10 +1730,10 @@ public class BasicDrive{
             stopMotors();
             return false;
         }
-        teamUtil.log("moveToXHoldingStrafe--Finished.  Current xPos:" + oQlocalizer.posX_mm + " Current yPos: "+ oQlocalizer.posY_mm);
+        teamUtil.log("moveToXHoldingLine--Finished.  Current xPos:" + oQlocalizer.posX_mm + " Current yPos: "+ oQlocalizer.posY_mm);
         return true;
     }
-    public boolean moveToYHoldingLine(double velocity, double yTarget, double xTarget, int driveHeading, int robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
+    public boolean moveToYHoldingLine(double velocity, double yTarget, double xTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         loop();
@@ -1780,7 +1780,21 @@ public class BasicDrive{
         return true;
     }
 
+    public boolean mirroredMoveToXHoldingLine(double velocity, double xTarget, double yTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
+        if (teamUtil.alliance==RED) {
+            return moveToXHoldingLine(velocity,xTarget, yTarget* -1, 360-driveHeading,360-robotHeading,endVelocity,action,actionTarget,timeout);
+        } else {
+            return moveToXHoldingLine(velocity,xTarget, yTarget, driveHeading,robotHeading,endVelocity,action,actionTarget,timeout);
+        }
+    }
 
+    public boolean mirroredMoveToYHoldingLine(double velocity, double yTarget, double xTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
+        if (teamUtil.alliance==RED) {
+            return moveToYHoldingLine(velocity, yTarget* -1, xTarget, 360-driveHeading,360-robotHeading,endVelocity,action,actionTarget,timeout);
+        } else {
+            return moveToYHoldingLine(velocity,yTarget, xTarget, driveHeading,robotHeading,endVelocity,action,actionTarget,timeout);
+        }
+    }
 
 
     public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){

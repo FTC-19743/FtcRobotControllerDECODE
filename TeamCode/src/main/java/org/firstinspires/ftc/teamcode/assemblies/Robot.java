@@ -496,22 +496,110 @@ public class Robot {
                 (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() > LIFT_AUTO_ALIGN_RED_THRESHOLD);
     }
 
+    public static double B00_MAX_SPEED = 2200;
+    public static double B00_CORNER_VELOCITY = 1800;
+    public static double B00_SHOOT_VELOCITY = 200;
+    public static double B00_PICKUP_VELOCITY = 2000;
+    public static double B00_PICKUP_END_VELOCITY = 2000;
+    public static double B01_TILE_LENGTH = 610;
+
+    public static double B05_DRIFT_1 = 50;
+    public static double B05_DRIFT_2 = 140;
+
+    public static double B05_SHOOT1_Y = 750;
+    public static double B05_SHOOT1_X = 750;
+    public static double B05_SHOOT1_H = 45;
+    public static double B05_SHOT1_VEL = 1200;
+
+    public static double B06_PICKUP1_Y = 1200;
+    public static double B06_SETUP_Y_DRIFT = 200;
+    public static double B06_SETUP1_Y = B06_PICKUP1_Y-B06_SETUP_Y_DRIFT;
+    public static double B06_SETUP1_X = 670;
+    public static double B06_SETUP1_DH = 90;
+    public static double B06_SETUP1_H = 0;
+    public static double B06_SETUP_END_VEL = B00_CORNER_VELOCITY;
+
+    public static double B07_PICKUP1_X = 400;
+    public static double B07_PICKUP1_H = 180;
+    public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
+
+
+    public static double B08_SHOOT1_Y = 634; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT1_X = 617;
+    public static double B08_SHOOT1_H = 45;
+
+    public static double B09_SHOOT1_Y = 460; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B09_SHOOT1_X = 440;
+    public static double B09_SHOOT1_H = 45;
+
+    public static double B90_PARK_DRIFT = 200;
+    public static double B90_PARK_X = 0 - A90_PARK_DRIFT;
+    public static double B90_PARK_END_VELOCITY = 2000;
+
+    public static double B00_FINAL_END_VELOCITY = 300;
+
+    public static double B99_GRAB_LAST_THREE_TIME = 4000;
+    public static double B99_PARK_TIME = 1500;
+    public static double B99_MOVE_OFF_LINE_TIME = 1500;
+
+    // Move while shooting adjusting robot heading and shooter as needed
+    // Assume 600+600+900 for 3 color ordered shots
+    // Assume 1000 for 3 fast
+    public boolean driveWhileShooting(boolean useArms, boolean pattern, double driveHeading, double velocity, long timeOut) {
+        teamUtil.log("driveWhileShooting driveH: " + driveHeading + " Vel: " + velocity);
+        long timeOutTime = System.currentTimeMillis() + timeOut;
+        long shot3Time = System.currentTimeMillis() + (pattern ? 2100 : 1100);
+
+        if (!useArms) {
+            blinkin.setSignal(Blinkin.Signals.GOLD);
+        }
+        while (teamUtil.keepGoing(timeOutTime)) {
+            drive.loop();
+            double shotHeading = drive.robotGoalHeading();
+            drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
+            // TODO: Need code in here to shoot all available artifacts either fast or in pattern order
+            if (System.currentTimeMillis() > shot3Time) {
+                break;
+            }
+        }
+        if (!useArms) {
+            blinkin.setSignal(Blinkin.Signals.OFF);
+        }
+        if (System.currentTimeMillis() <= timeOutTime) {
+            teamUtil.log("driveWhileShooting Finished");
+            return true;
+        } else {
+            teamUtil.log("driveWhileShooting TIMED OUT");
+            return false;
+        }
+    }
+
     public void goalSideV2(boolean useArms) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
 
 
         // Prep Shooter
-        nextGoalDistance = drive.getGoalDistance((int)A05_SHOOT1_X, (int)A05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
+        nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
             //shooter.adjustShooterV2(goalDistance);
-            shooter.setShootSpeed(A05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
-            shooter.VELOCITY_COMMANDED = A05_SHOT1_VEL;
+            shooter.setShootSpeed(B05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
+            shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
         }
 
-        // Assume 600+600+900 for 3 color ordered shots
-        // Assume 1000 for 3 fast
-        //Shoot Preloads
+
+        /////////////////////////////Shoot Preloads
+
+        // Drive fast to shooting zone
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B00_SHOOT_VELOCITY, null, 0, 2000)) return;
+        // Move back slowly (to hold shooting heading) while shooting
+        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,3000)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+
+        drive.stopMotors();
+        if (true) return;
+
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT_1, A05_SHOOT1_Y+A05_DRIFT_1, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
 
         drive.stopMotors();

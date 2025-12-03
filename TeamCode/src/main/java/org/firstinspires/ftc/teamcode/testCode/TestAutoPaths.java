@@ -48,7 +48,7 @@ public class TestAutoPaths extends LinearOpMode{
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
-        teamUtil.alliance = BLUE;
+        teamUtil.alliance = RED;
 
         robot.calibrate();
         telemetry.addLine("Ready to start");
@@ -110,6 +110,13 @@ public class TestAutoPaths extends LinearOpMode{
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
             robot.goalSide(USE_ARMS);
+            robot.drive.stopMotors();
+            elapsedTime = System.currentTimeMillis()-startTime;
+            teamUtil.log("---------- Elapsed Time: " + elapsedTime);
+        }
+        if(gamepad1.dpadDownWasReleased()){
+            long startTime = System.currentTimeMillis();
+            robot.goalSideV2(USE_ARMS);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);

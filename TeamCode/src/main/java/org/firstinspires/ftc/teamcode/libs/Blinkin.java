@@ -119,9 +119,10 @@ public class Blinkin {
     }
 
     public void setSignal(Signals signal){
-        //teamUtil.log("Blinkin: " + signal);
+        //teamUtil.log("Blinkin: current:" + currentSignal + " new:" + signal);
         if (signal == currentSignal) { // avoid cluttering logs with stupid RevBlinkinDriver messages
             // Do nothing
+            //teamUtil.log("Blinkin: not doing anything");
             return;
         }
         currentSignal = signal;
