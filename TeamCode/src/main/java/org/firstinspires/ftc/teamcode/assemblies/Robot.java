@@ -506,6 +506,7 @@ public class Robot {
     public static double B05_DRIFT_1 = 50;
     public static double B05_DRIFT_2 = 140;
 
+    public static double B05_SHOOT1_END_VEL = 400;
     public static double B05_SHOOT1_Y = 750;
     public static double B05_SHOOT1_X = 750;
     public static double B05_SHOOT1_H = 45;
@@ -518,19 +519,32 @@ public class Robot {
     public static double B06_SETUP1_DH = 90;
     public static double B06_SETUP1_H = 0;
     public static double B06_SETUP_END_VEL = B00_CORNER_VELOCITY;
+    public static long B06_SETUP1_PAUSE = 150;
 
     public static double B07_PICKUP1_X = 400;
     public static double B07_PICKUP1_H = 180;
     public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
 
+    public static double B08_SHOOT2_Y = 650; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT2_DRIFT = 200;
+    public static double B08_SHOOT2_X = 650;
+    public static double B08_SHOOT2_H = 45;
+    public static double B08_SHOOT2_DH = 315;
+    public static double B08_SHOOT2_END_VEL = 400;
 
-    public static double B08_SHOOT1_Y = 634; // TODO: Reconcile this approach with the shooter pre-aim?
-    public static double B08_SHOOT1_X = 617;
-    public static double B08_SHOOT1_H = 45;
+    public static double B08_SHOOT3_Y = B08_SHOOT2_Y; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT3_DRIFT = 100;
+    public static double B08_SHOOT3_X = B08_SHOOT2_X;
+    public static double B08_SHOOT3_H = B08_SHOOT2_H;
+    public static double B08_SHOOT3_DH = 340;
+    public static double B08_SHOOT3_END_VEL = 400;
 
-    public static double B09_SHOOT1_Y = 460; // TODO: Reconcile this approach with the shooter pre-aim?
-    public static double B09_SHOOT1_X = 440;
-    public static double B09_SHOOT1_H = 45;
+    public static double B08_SHOOT4_Y = B08_SHOOT3_Y; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT4_DRIFT = 100;
+    public static double B08_SHOOT4_X = B08_SHOOT3_X;
+    public static double B08_SHOOT4_H = B08_SHOOT3_H;
+    public static double B08_SHOOT4_DH = 350;
+    public static double B08_SHOOT4_END_VEL = 400;
 
     public static double B90_PARK_DRIFT = 200;
     public static double B90_PARK_X = 0 - A90_PARK_DRIFT;
@@ -577,6 +591,7 @@ public class Robot {
     public void goalSideV2(boolean useArms) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
+        double savedDeclination;
 
 
         // Prep Shooter
@@ -591,11 +606,23 @@ public class Robot {
         /////////////////////////////Shoot Preloads
 
         // Drive fast to shooting zone
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B00_SHOOT_VELOCITY, null, 0, 2000)) return;
-        // Move back slowly (to hold shooting heading) while shooting
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,3000)) return;
+
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        drive.stopMotors();
+        teamUtil.pause(B06_SETUP1_PAUSE);
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
+        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,3000)) return;
+
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT3_Y+B08_SHOOT3_DRIFT,B08_SHOOT3_X,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
+        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,3000)) return;
+
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT4_Y+B08_SHOOT4_DRIFT,B08_SHOOT4_X,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
+        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3000)) return;
 
         drive.stopMotors();
         if (true) return;
