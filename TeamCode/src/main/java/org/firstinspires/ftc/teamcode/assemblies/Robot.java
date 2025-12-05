@@ -43,6 +43,7 @@ public class Robot {
     public static double FOOT_EXTENDED_POS = .6; // 6-7 seconds TODO: Maybe lower to closer to ground while setting up to save a second or two
 
     public static boolean details = false;
+    public enum Location{LEFT, CENTER, RIGHT}; // correspond to the flippers (reversed if facing the robot)
 
     // Set teamUtil.theOpMode before calling
     public Robot() {
@@ -362,6 +363,80 @@ public class Robot {
 
     }
 
+    public void shootArtifactLocation(Robot.Location location){ //
+        teamUtil.log("shootArtifactLocation called");
+        // consider adding checks?
+        if(location == Robot.Location.CENTER){
+            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+            shooter.pushOne();
+        }else if(location == Robot.Location.LEFT){
+            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+            teamUtil.pause(EDGE_PUSHER_PAUSE);
+            shooter.pushOne();
+        }else{ // right
+            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+            teamUtil.pause(EDGE_PUSHER_PAUSE);
+            shooter.pushOne();
+        }
+        int ballCount = intake.loadedBallNum();
+        if(ballCount == 1){
+            intake.intakeStart();
+        }
+
+    }
+
+    public void autoShootArtifacts(teamUtil.Pattern loadPattern){
+        if(teamUtil.pattern == PPG){
+            if(loadPattern == teamUtil.Pattern.PPG){
+                shootArtifactLocation(Location.LEFT);
+                shootArtifactLocation(Location.CENTER);
+                shootArtifactLocation(Location.RIGHT); // green is right and last
+            }else if(loadPattern == teamUtil.Pattern.PGP){
+                shootArtifactLocation(Location.LEFT);
+                shootArtifactLocation(Location.RIGHT);
+                shootArtifactLocation(Location.CENTER); // green is center and last
+            }else{//gpp
+                shootArtifactLocation(Location.RIGHT);
+                shootArtifactLocation(Location.CENTER);
+                shootArtifactLocation(Location.LEFT); // green is left and last
+            }
+        }else if(teamUtil.pattern == PGP){
+            if(loadPattern == teamUtil.Pattern.PPG){
+                shootArtifactLocation(Location.LEFT);
+                shootArtifactLocation(Location.RIGHT); // green is right and center
+                shootArtifactLocation(Location.CENTER);
+            }else if(loadPattern == teamUtil.Pattern.PGP){
+                shootArtifactLocation(Location.LEFT);
+                shootArtifactLocation(Location.CENTER); // green is center and center
+                shootArtifactLocation(Location.RIGHT);
+            }else{//gpp
+                shootArtifactLocation(Location.RIGHT);
+                shootArtifactLocation(Location.LEFT); // green is left and center
+                shootArtifactLocation(Location.CENTER);
+            }
+        }else{ // GPP
+            if(loadPattern == teamUtil.Pattern.PPG){
+                shootArtifactLocation(Location.RIGHT); // green is right and first
+                shootArtifactLocation(Location.LEFT);
+                shootArtifactLocation(Location.CENTER);
+            }else if(loadPattern == teamUtil.Pattern.PGP){
+                shootArtifactLocation(Location.CENTER); // green is center and first
+                shootArtifactLocation(Location.LEFT);
+                shootArtifactLocation(Location.RIGHT);
+            }else{//gpp
+                shootArtifactLocation(Location.LEFT); // green is left and first
+                shootArtifactLocation(Location.RIGHT);
+                shootArtifactLocation(Location.CENTER);
+            }
+        }
+    }
+
     public void shootArtifactColorNoWait(Intake.ARTIFACT color){
         teamUtil.log("Launching Thread to shootArtifactColorNoWait");
         Thread thread = new Thread(new Runnable() {
@@ -375,7 +450,7 @@ public class Robot {
 
     // TODO: Maybe we can make this faster by knowing the full sequence and moving 2nd and 3rd shots into position earlier?
     // TODO: (especially while driving into shooting position)
-    public boolean shootPatternAuto() {
+    public boolean shootPatternAuto(teamUtil.Pattern loadPattern) {
         teamUtil.log("shootPatternAuto");
         drive.loop();
         shooter.adjustShooterV2(drive.robotGoalDistance());
@@ -386,27 +461,36 @@ public class Robot {
         long now = System.currentTimeMillis();
         long timeOutTime = System.currentTimeMillis() + 3000; // max time to wait for flywheels
         while (!shooterFlyWheelsReady() && teamUtil.keepGoing(timeOutTime)) {
-            teamUtil.pause(100);
+            teamUtil.pause(100); // TODO: shorten pause
         }
         teamUtil.log("Waited " + (System.currentTimeMillis()-now) + "millisecs for flywheels");
-
-        if (teamUtil.pattern==PPG || teamUtil.pattern==PGP) {
+        /*
+        if (teamUtil.loadPattern==PPG || teamUtil.loadPattern==PGP) {
             shootArtifactColor(Intake.ARTIFACT.PURPLE);
+            teamUtil.log("Shot purple");
         } else {
             shootArtifactColor(Intake.ARTIFACT.GREEN);
+            teamUtil.log("Shot green");
         }
-        if (teamUtil.pattern==PPG || teamUtil.pattern==GPP) {
+        if (teamUtil.loadPattern==PPG || teamUtil.loadPattern==GPP) {
             shootArtifactColor(Intake.ARTIFACT.PURPLE);
+            teamUtil.log("Shot purple");
         } else {
             shootArtifactColor(Intake.ARTIFACT.GREEN);
+            teamUtil.log("Shot green");
         }
-        if (teamUtil.pattern==PGP || teamUtil.pattern==GPP) {
+        if (teamUtil.loadPattern==PGP || teamUtil.loadPattern==GPP) {
             shootArtifactColor(Intake.ARTIFACT.PURPLE);
+            teamUtil.log("Shot purple");
         } else {
             shootArtifactColor(Intake.ARTIFACT.GREEN);
+            teamUtil.log("Shot green");
         }
         teamUtil.log("shootPatternAuto Finished");
+        */
+        autoShootArtifacts(loadPattern);
         return true;
+
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -789,7 +873,7 @@ public class Robot {
         logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int)goalDistance, A05_SHOOT1_H);
 
         if (useArms) {
-            shootPatternAuto();
+            shootPatternAuto(teamUtil.Pattern.PPG);
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
@@ -811,7 +895,11 @@ public class Robot {
         drive.waitForRobotToStop(1000);
         logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int)goalDistance, A08_SHOOT1_H);
         if (useArms) {
-            shootPatternAuto();
+            if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+                shootPatternAuto(teamUtil.Pattern.GPP);
+            }else{
+                shootPatternAuto(teamUtil.Pattern.PPG);
+            }
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
@@ -835,7 +923,7 @@ public class Robot {
         drive.waitForRobotToStop(1000);
         logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
         if (useArms) {
-            shootPatternAuto();
+            shootPatternAuto(teamUtil.Pattern.PGP); // middle needs no check
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
