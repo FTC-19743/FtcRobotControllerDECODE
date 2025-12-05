@@ -498,7 +498,7 @@ public class Robot {
 
     public static double B00_MAX_SPEED = 2200;
     public static double B00_CORNER_VELOCITY = 1800;
-    public static double B00_SHOOT_VELOCITY = 200;
+    public static double B00_SHOOT_VELOCITY = 100;
     public static double B00_PICKUP_VELOCITY = 2000;
     public static double B00_PICKUP_END_VELOCITY = 2000;
     public static double B01_TILE_LENGTH = 610;
@@ -507,8 +507,8 @@ public class Robot {
     public static double B05_DRIFT_2 = 140;
 
     public static double B05_SHOOT1_END_VEL = 400;
-    public static double B05_SHOOT1_Y = 750;
-    public static double B05_SHOOT1_X = 750;
+    public static double B05_SHOOT1_Y = 850;
+    public static double B05_SHOOT1_X = 850;
     public static double B05_SHOOT1_H = 45;
     public static double B05_SHOT1_VEL = 1200;
 
@@ -521,9 +521,12 @@ public class Robot {
     public static double B06_SETUP_END_VEL = B00_CORNER_VELOCITY;
     public static long B06_SETUP1_PAUSE = 150;
 
-    public static double B07_PICKUP1_X = 400;
+    public static double B07_PICKUP1_X = 420;
     public static double B07_PICKUP1_H = 180;
     public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
+    public static double B07_SETUP2_DH = 105;
+    public static double B07_SETUP_Y_DRIFT = 50;
+    public static double B07_SETUP2_Y = B06_PICKUP1_Y-B07_SETUP_Y_DRIFT;
 
     public static double B08_SHOOT2_Y = 650; // TODO: Reconcile this approach with the shooter pre-aim?
     public static double B08_SHOOT2_DRIFT = 200;
@@ -593,7 +596,7 @@ public class Robot {
         long startTime = System.currentTimeMillis();
         double savedDeclination;
 
-
+/*
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
@@ -601,27 +604,48 @@ public class Robot {
             shooter.setShootSpeed(B05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
             shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
         }
-
+*/
 
         /////////////////////////////Shoot Preloads
 
         // Drive fast to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
+        // Shoot preloads
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,3000)) return;
 
+        /////////////////////////////Intake 2nd group and shoot
+        // Setup to pickup group 2
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
-        drive.stopMotors();
+        drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
+        // Pickup group 2
+        if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        // Drive back to shooting zone
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
+        // shoot second set of balls
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,3000)) return;
 
+        /////////////////////////////Intake 3rd group and shoot
+        // Setup to pickup group 3
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_SETUP2_Y,B06_SETUP1_X-B01_TILE_LENGTH,B07_SETUP2_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        drive.stopMotors(); // help kill the sideways momentum
+        teamUtil.pause(B06_SETUP1_PAUSE);
+        // Pickup group 3
+        if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT3_Y+B08_SHOOT3_DRIFT,B08_SHOOT3_X,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
+        // Drive back to shooting zone
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
+        // shoot 3rd set of balls
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,3000)) return;
 
+        /////////////////////////////Intake 4th group and shoot
+        // pickup group 4
+        if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT4_Y+B08_SHOOT4_DRIFT,B08_SHOOT4_X,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
+        // Drive back to shooting zone
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
+        // shoot 4th set of balls
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3000)) return;
 
         drive.stopMotors();

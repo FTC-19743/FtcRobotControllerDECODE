@@ -1682,11 +1682,30 @@ public class BasicDrive{
         return distance;
     }
 
+    // return a value between straight and strafe that represents the proportion to which the heading is 0/180 (straight) or 90/270 (strafe)
+    public static double mapStraightStrafe(double heading, double straight, double strafe) {
+        double normalizedHeading = ((heading % 360) + 360) % 360;
+        double declination;
+        if (normalizedHeading <= 90) {
+            declination = normalizedHeading;
+        } else if (normalizedHeading <= 180) {
+            declination = 180 - normalizedHeading;
+        } else if (normalizedHeading <= 270) {
+            declination = normalizedHeading - 180;
+        } else {
+            declination = 360 - normalizedHeading;
+        }
+
+        //teamUtil.log("Mapped Value: " + (straight + ((strafe - straight) * (declination) / (90f))));
+        return straight + ((strafe - straight) * (declination) / (90f)); // linear proportion
+    }
+
     public static double HOLDING_LINE_MAX_DECLINATION = 45;
-    public static double HOLDING_LINE_DECLINATION_COEF_X = .75; // assumes robot is mostly moving straight
-    public static double HOLDING_LINE_DECLINATION_COEF_Y = .25; // assumes robot is mostly strafing
+    public static double HOLDING_LINE_DECLINATION_COEF_STRAIGHT = .25; // assumes robot is mostly moving straight
+    public static double HOLDING_LINE_DECLINATION_COEF_STRAFE = .15; // assumes robot is mostly strafing
     public static double HOLDING_LINE_MIN_END_VELOCITY = 200;
-    public static double HOLDING_LINE_DECL_COEF = 4;
+    public static double HOLDING_LINE_DECL_COEF_STRAIGHT = 2;
+    public static double HOLDING_LINE_DECL_COEF_STRAFE = 2.4;
 
     public boolean moveToXHoldingLine(double velocity, double xTarget, double yTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
         long startTime = System.currentTimeMillis();
@@ -1694,6 +1713,7 @@ public class BasicDrive{
         loop();
         double startEncoder = oQlocalizer.posX_mm;
         boolean goingUp;
+        //TODO: Detect a drive heading that is incompatible with encoder readings and fail out (e.g. drive heading of 0 with x target < x start)  Fix Y version as well.
         if(xTarget-startEncoder >=0){
             goingUp = true;
         }else{
@@ -1716,8 +1736,8 @@ public class BasicDrive{
             loop();
             currentPos = oQlocalizer.posX_mm;
             distanceRemaining = (!goingUp) ? currentPos-xTarget : xTarget - currentPos;
-            adjustedVelocity = Math.min(HOLDING_LINE_DECL_COEF * distanceRemaining+endVelocity, velocity);
-            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* HOLDING_LINE_DECLINATION_COEF_X, -HOLDING_LINE_MAX_DECLINATION, HOLDING_LINE_MAX_DECLINATION);
+            adjustedVelocity = Math.min(mapStraightStrafe(robotHeading - driveHeading, HOLDING_LINE_DECL_COEF_STRAIGHT, HOLDING_LINE_DECL_COEF_STRAFE) * distanceRemaining+endVelocity, velocity);
+            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm) * mapStraightStrafe(robotHeading - driveHeading, HOLDING_LINE_DECLINATION_COEF_STRAIGHT, HOLDING_LINE_DECLINATION_COEF_STRAFE), -HOLDING_LINE_MAX_DECLINATION, HOLDING_LINE_MAX_DECLINATION);
             if(details)teamUtil.log("Driving at Vel: "+ adjustedVelocity + " Adjusted Drive Heading: " + adjustedDriveHeading + " X MMs Remaining: " + distanceRemaining);
             driveMotorsHeadingsFR(adjustedDriveHeading, robotHeading, adjustedVelocity);
             if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
@@ -1762,8 +1782,8 @@ public class BasicDrive{
             loop();
             currentPos = oQlocalizer.posY_mm;
             distanceRemaining = (!goingUp) ? currentPos-yTarget : yTarget - currentPos;
-            adjustedVelocity = Math.min(HOLDING_LINE_DECL_COEF * distanceRemaining+endVelocity, velocity);
-            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* HOLDING_LINE_DECLINATION_COEF_Y, -HOLDING_LINE_MAX_DECLINATION, HOLDING_LINE_MAX_DECLINATION);
+            adjustedVelocity = Math.min(mapStraightStrafe(robotHeading - driveHeading, HOLDING_LINE_DECL_COEF_STRAIGHT, HOLDING_LINE_DECL_COEF_STRAFE) * distanceRemaining+endVelocity, velocity);
+            adjustedDriveHeading = driveHeading - MathUtils.clamp(distanceToLine(xTarget, yTarget, driveHeading, oQlocalizer.posX_mm, oQlocalizer.posY_mm)* mapStraightStrafe(robotHeading - driveHeading, HOLDING_LINE_DECLINATION_COEF_STRAIGHT, HOLDING_LINE_DECLINATION_COEF_STRAFE), -HOLDING_LINE_MAX_DECLINATION, HOLDING_LINE_MAX_DECLINATION);
             if(details)teamUtil.log("Driving at Vel: "+ adjustedVelocity + " Adjusted Drive Heading: " + adjustedDriveHeading + " Y MMs Remaining: " + distanceRemaining);
             driveMotorsHeadingsFR(adjustedDriveHeading, robotHeading, adjustedVelocity);
             if(action!=null&&!actionDone&&((goingUp&&currentPos>=actionTarget)||(!goingUp&&currentPos<=actionTarget))){
