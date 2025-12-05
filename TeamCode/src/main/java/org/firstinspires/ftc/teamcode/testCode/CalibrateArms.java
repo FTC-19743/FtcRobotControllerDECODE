@@ -248,9 +248,7 @@ public class CalibrateArms extends LinearOpMode {
         if (gamepad1.rightBumperWasReleased()) {
             robot.intake.calibrate();
             robot.intake.elevator.setVelocity(0);
-        }
-        if(gamepad1.dpadUpWasReleased()){
-            robot.intake.elevatorToFlippersV2NoWait();
+
         }
         if(gamepad1.dpadDownWasReleased()){
             robot.intake.getReadyToIntakeNoWait();

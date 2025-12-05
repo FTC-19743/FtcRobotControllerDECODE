@@ -56,7 +56,6 @@ public class AxonPusher{
             teamUtil.log("WARNING: Attempt to AxonPusher.calibrate while Pusher is moving--ignored");
             return;
         } else {
-            moving.set(true);
             teamUtil.log("Launching Thread to AxonPusher.calibrate");
             Thread thread = new Thread(new Runnable() {
                 @Override
@@ -151,7 +150,7 @@ public class AxonPusher{
     public int nextEncoderTarget(int currentEncoder){
         float distanceFromStart = currentEncoder - ENCODER_LOAD_POSITION_1;
         float pushesFromStart = distanceFromStart/((float)REV_ENCODER_TICS_PER_REVOLUTION/2);
-        return ((int)pushesFromStart+1)*(REV_ENCODER_TICS_PER_REVOLUTION/2)+ENCODER_LOAD_POSITION_1; // TODO: fix if the pusher is just behind the target
+        return (Math.round(pushesFromStart+1)*(REV_ENCODER_TICS_PER_REVOLUTION/2)+ENCODER_LOAD_POSITION_1); // TODO: fix if the pusher is just behind the target
     }
 
     public void pushN(int num, float velocity, long timeout) {

@@ -180,16 +180,24 @@ public class Shooter {
 
     }
 
+    public static double A09_VELOCITY_A = 0.000239375;
+    public static double A09_VELOCITY_B = -0.431755;
+    public static double A09_VELOCITY_C = 984.33854;
+    public static double A09_SHORT_AIM_M = .000025;
+    public static double A09_SHORT_AIM_B = .2775;
+    public static double A09_LONG_AIM_M = .000118464;
+    public static double A09_LONG_AIM_B = .18204;
+
     public void adjustShooterV2(double distance){
         if(details)teamUtil.log("adjustShooterV2 to distance: " + distance);
         double velocityNeeded;
         double pitchNeeded;
         if (distance<MID_SHORT_DISTANCE_THRESHOLD){
-            velocityNeeded = 0.000239375*Math.pow(distance,2) -0.431755*distance + 984.33854;
-            pitchNeeded = .000025*distance + 0.2775;
+            velocityNeeded =A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
+            pitchNeeded = A09_SHORT_AIM_M*distance + A09_SHORT_AIM_B;
         }else if (distance<MID_DISTANCE_THRESHOLD){
-            velocityNeeded = 0.000239375*Math.pow(distance,2) -0.431755*distance + 984.33854;
-            pitchNeeded = .000118464*distance + .18204;
+            velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
+            pitchNeeded = A09_LONG_AIM_M*distance + A09_LONG_AIM_B;
         }else{
             velocityNeeded = 0.297372*distance + 472.75242;
             pitchNeeded = 0.44;

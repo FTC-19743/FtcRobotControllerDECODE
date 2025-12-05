@@ -658,7 +658,7 @@ public class Robot {
         logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int) nextGoalDistance, A05_SHOOT1_H);
 
         if (useArms) {
-            shootPatternAuto();
+            //shootPatternAuto();
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
@@ -680,7 +680,7 @@ public class Robot {
         drive.waitForRobotToStop(1000);
         logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int) nextGoalDistance, A08_SHOOT1_H);
         if (useArms) {
-            shootPatternAuto();
+            //shootPatternAuto();
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);
@@ -704,7 +704,7 @@ public class Robot {
         drive.waitForRobotToStop(1000);
         logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int) nextGoalDistance, A09_SHOOT1_H);
         if (useArms) {
-            shootPatternAuto();
+            //shootPatternAuto();
             intake.intakeStart();
         } else {
             teamUtil.pause(2000);

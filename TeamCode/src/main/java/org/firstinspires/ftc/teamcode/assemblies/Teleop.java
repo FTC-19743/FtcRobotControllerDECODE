@@ -240,6 +240,7 @@ public class Teleop extends LinearOpMode {
                 //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
                 //telemetry.addLine("Hang Manual: " + hangManualControl);
                 telemetry.addLine((endgameMode ? "ENDGAME ":"")+"ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
+                telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "Red" : "Blue"));
 
                 telemetry.update();
             }

@@ -27,7 +27,6 @@ public class Auto extends LinearOpMode {
         teamUtil.justRanCalibrateRobot = false;
         robot.calibrate();
         robot.intake.flippersToTransfer();
-
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Press Bumpers To Change Alliance");
@@ -84,6 +83,7 @@ public class Auto extends LinearOpMode {
         while (!isStarted()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Green goes on the power switch side");
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
