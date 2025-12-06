@@ -606,7 +606,17 @@ public class Robot {
     public static long B06_SETUP1_PAUSE = 150;
 
     public static double B07_PICKUP1_X = 420;
+    public static double B07_PICKUP_RAMP_END_VEL = 750;
     public static double B07_PICKUP1_H = 180;
+    public static double B07_RAMP_VELOCITY = 600;
+    public static double B07_RAMP_Y = B06_PICKUP1_Y+190;
+    public static double B07_RAMP_X = 200;
+    public static double B07_RAMP_X_DRIFT = 100;
+    public static double B07_RAMP_H = 90;
+    public static double B07_RAMP_FY = B06_PICKUP1_Y;
+    public static double B07_RAMP_FH = 270;
+    public static long B07_RAMP_TIMEOUT = 1000;
+
     public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
     public static double B07_SETUP2_DH = 105;
     public static double B07_SETUP_Y_DRIFT = 50;
@@ -675,6 +685,9 @@ public class Robot {
         }
     }
 
+    public static boolean emptyRamp = true;
+    public static int emptyRampPause = 2000;
+
     public void goalSideV2(boolean useArms) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
@@ -690,8 +703,8 @@ public class Robot {
         }
 */
 
-        /////////////////////////////Shoot Preloads
-
+        /////////////////////////////Shoot Preloads (Group 1)
+        teamUtil.log("==================== Preloads ================");
         // Drive fast to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
         // Shoot preloads
@@ -699,12 +712,28 @@ public class Robot {
 
         /////////////////////////////Intake 2nd group and shoot
         // Setup to pickup group 2
+        teamUtil.log("==================== Group 2 ================");
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 2
         if (useArms) { intake.intakeIn(); }
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        if (emptyRamp) {
+            teamUtil.log("==================== Empty Ramp ");
+
+            // Pickup 2nd set of artifacts, slowing at end
+            if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
+            // push the gate allowing for timeout
+            drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, 0, null, 0, B07_RAMP_TIMEOUT);
+            drive.stopMotors();
+            if (useArms) { intake.intakeStop(); }
+            teamUtil.pause(emptyRampPause);
+            // get clear of 3rd group before rotating
+            if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_RAMP_FY, B07_RAMP_X + B07_RAMP_X_DRIFT, B07_RAMP_FH, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        } else {
+            // pickup 2nd set of artifacts
+            if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        }
         // Drive back to shooting zone
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         // shoot second set of balls
@@ -712,6 +741,7 @@ public class Robot {
 
         /////////////////////////////Intake 3rd group and shoot
         // Setup to pickup group 3
+        teamUtil.log("==================== Group 3 ================");
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_SETUP2_Y,B06_SETUP1_X-B01_TILE_LENGTH,B07_SETUP2_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
@@ -725,6 +755,7 @@ public class Robot {
 
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
+        teamUtil.log("==================== Group 4 ================");
         if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
         // Drive back to shooting zone
@@ -732,9 +763,25 @@ public class Robot {
         // shoot 4th set of balls
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3000)) return;
 
+        /////////////////////////////Park
+        teamUtil.log("==================== Park ================");
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        drive.stopMotors(); // help kill the sideways momentum
+        teamUtil.pause(B06_SETUP1_PAUSE);
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
+
+
+
+        drive.stopMotors();
+        intake.stopDetector();
+        intake.intakeStop();
+        shooter.stopShooter();
+
+
         drive.stopMotors();
         if (true) return;
 
+        ////////////////////////////////  OLD CODE ///////////////////
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT_1, A05_SHOOT1_Y+A05_DRIFT_1, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
 
         drive.stopMotors();
