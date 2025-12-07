@@ -29,10 +29,24 @@ public class Shooter {
     public static double SHOOTER_FAR_VELOCITY = 1300;
     public static float PUSHER_VELOCITY = .5f;
 
+    //Old flywheel values pidf
+    /*
     public static double shooterP = 50;
     public static double shooterI = 1;
     public static double shooterD = 0.8;
     public static double shooterF = 0;
+
+     */
+
+    //THESE are the PIDF numbers to get the flywheels from 0 to 900 fast
+
+    public static double shooterP = 50;
+    public static double shooterI = 4.6;
+    public static double shooterD = 4;
+    public static double shooterF = 0;
+
+
+
 
     public static float AIMER_FAR_LONG = .540f; // far from long
     public static float AIMER_CLOSE_LONG = .515f; // closest from long
@@ -102,7 +116,7 @@ public class Shooter {
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
         pusher.setPower(0);
-        pusher.calibrate();
+        pusher.calibrate(500);
         pushOne();
     }
     public void outputTelemetry(){
@@ -206,7 +220,6 @@ public class Shooter {
         setShootSpeed(velocityNeeded);
         aim(pitchNeeded);
         if(details)teamUtil.log("adjustShooterV2 Finished");
-
     }
 
 }

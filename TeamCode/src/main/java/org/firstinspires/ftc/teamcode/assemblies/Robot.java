@@ -278,6 +278,7 @@ public class Robot {
                 teamUtil.pause((long)(EDGE_PUSHER_PAUSE*(1-TWO_BALL_EDGE_PORTION)));
                 intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
                 teamUtil.pause((long)(EDGE_PUSHER_PAUSE*TWO_BALL_EDGE_PORTION));
+                teamUtil.log("shootAllArtifacts: Moved left and right flippers");
                 shooter.pusher.pushNNoWait(2, AxonPusher.RTP_MAX_VELOCITY, 1000);
             }if(loadedArtifacts[0] == Intake.ARTIFACT.NONE){
                 intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
@@ -286,6 +287,7 @@ public class Robot {
                 intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
                 shooter.pusher.pushNNoWait(2, AxonPusher.RTP_MAX_VELOCITY, 1250);
                 intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+                teamUtil.log("shootAllArtifacts: Moved middle and right flippers");
             }else{
                 intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
                 intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
@@ -304,6 +306,7 @@ public class Robot {
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(SECOND_UNLOAD_PAUSE);
             intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+            teamUtil.log("shootAllArtifacts: Moved left and middle flippers");
         }
         intake.intakeIn();
         teamUtil.log("shootAllArtifacts finished");
@@ -344,18 +347,21 @@ public class Robot {
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
             shooter.pushOne();
+            teamUtil.log("shootArtifactColor: Moved middle flipper");
         }else if(color == loadedArtifacts[0]){
             intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
+            teamUtil.log("shootArtifactColor: Moved left flipper");
         }else{
             intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
+            teamUtil.log("shootArtifactColor: Moved right flipper");
         }
         if(ballCount == 1){
             intake.intakeStart();
@@ -371,18 +377,21 @@ public class Robot {
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
             shooter.pushOne();
+            teamUtil.log("shootArtifactLocation: Moved middle flipper");
         }else if(location == Robot.Location.LEFT){
             intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
+            teamUtil.log("shootArtifactLocation: Moved left flipper");
         }else{ // right
             intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
+            teamUtil.log("shootArtifactLocation: Moved right flipper");
         }
         int ballCount = intake.loadedBallNum();
         if(ballCount == 1){

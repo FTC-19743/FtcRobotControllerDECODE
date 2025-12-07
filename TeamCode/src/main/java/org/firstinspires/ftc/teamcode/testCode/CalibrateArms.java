@@ -281,10 +281,11 @@ public class CalibrateArms extends LinearOpMode {
     public static double SHOOTER_VELOCITY = 800;
     public void testShooter(){
         robot.drive.loop(); // get updated localizer data
-        robot.shooter.outputTelemetry();
-        robot.drive.driveMotorTelemetry();
+        telemetry.addData("AdjustShootMode: " , adjustShootMode);
         telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
         telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
+        robot.shooter.outputTelemetry();
+        robot.drive.driveMotorTelemetry();
 
         if(gamepad1.startWasReleased()){
             adjustShootMode= !adjustShootMode;
@@ -310,24 +311,34 @@ public class CalibrateArms extends LinearOpMode {
         if(gamepad1.yWasPressed()){
             robot.shootAllArtifacts();
         }
+        if(gamepad1.bWasPressed()){ // Time pusher
+            robot.shootAllArtifacts();
+            long startTime = System.currentTimeMillis();
+            robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
+            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity) {} // detect contact between flywheels and ball
+            teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
+        }
 
     }
-    
+
+    public static double SHOOTER_OVERSHOOT = 200;
+    public static long SHOOTER_RAMP_PAUSE = 200;
     public void shooterPIDF(){
-        robot.shooter.leftFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
-        robot.shooter.rightFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
+        if (gamepad1.startWasReleased()) {
+            robot.shooter.leftFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
+            robot.shooter.rightFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
+        }
         //robot.shooter.leftFlywheel.setPower(CurrentPower);
         //rightFlywheel.setPower(-CurrentPower);
-        robot.shooter.leftFlywheel.setVelocity(currentLVelocity);
-        robot.shooter.rightFlywheel.setVelocity(-currentRVelocity);
-        if(gamepad1.dpadUpWasReleased()){
-            currentLVelocity+=VelocityIncrement;
 
-            currentRVelocity-=VelocityIncrement;
-        }
-        if(gamepad1.dpadDownWasReleased()){
-            currentRVelocity+=VelocityIncrement;
-            currentLVelocity-=VelocityIncrement;
+        if(gamepad1.dpadUpWasReleased()){
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY+SHOOTER_OVERSHOOT);
+            teamUtil.pause(SHOOTER_RAMP_PAUSE); // TODO: Or wait until reported velocity is near target?
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
+
+        }if(gamepad1.dpadDownWasReleased()){
+            robot.shooter.stopShooter();
         }
         if(gamepad1.aWasReleased()){
             robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
@@ -346,7 +357,8 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine("ReportedVelocity: " + robot.shooter.leftFlywheel.getVelocity()+", "+robot.shooter.rightFlywheel.getVelocity());
         telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
         telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
-        telemetry.addData("zero", 0);
+        telemetry.addData("Target ", SHOOTER_VELOCITY);
+        telemetry.addData("Over Shoot ", SHOOTER_OVERSHOOT);
         telemetry.addLine("Aimer Position: "+robot.shooter.currentAim());
     }
 }
