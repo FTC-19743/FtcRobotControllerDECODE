@@ -221,5 +221,27 @@ public class Shooter {
         aim(pitchNeeded);
         if(details)teamUtil.log("adjustShooterV2 Finished");
     }
+    public void adjustShooterV3(double distance, double velocity){
+        double minV = 0; // insert the functions here
+        double maxV = 0;
+        if(velocity == 0) {
+            if (VELOCITY_COMMANDED > maxV || VELOCITY_COMMANDED < minV) { // not within thresholds
+                if (Math.abs(VELOCITY_COMMANDED - maxV) > Math.abs(VELOCITY_COMMANDED - minV)) { // closer to max then min
+                    setShootSpeed(maxV);
+                } else {
+                    setShootSpeed(minV);
+                }
+            }
+        }else{
+            if(VELOCITY_COMMANDED != velocity) {
+                setShootSpeed(velocity);
+            }
+        }
+        double angle = 0; // insert function
+        aim(angle);
+    }
 
+    public void adjustShooterV3(double distance){
+        adjustShooterV3(distance, 0);
+    }
 }
