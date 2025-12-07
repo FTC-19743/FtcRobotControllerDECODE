@@ -174,7 +174,7 @@ public class Teleop extends LinearOpMode {
                     robot.shooter.pushOneNoWait();
                 }
                 if(gamepad2.aWasReleased()){
-                    robot.shooter.pusher.calibrateNoWait(500);
+                    robot.shooter.pusher.calibrateNoWait();
                     robot.shooter.pushOneNoWait();
                 }
 

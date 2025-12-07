@@ -306,7 +306,7 @@ public class Robot {
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
             teamUtil.pause(SECOND_UNLOAD_PAUSE);
             intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
-            teamUtil.log("shootAllArtifacts: Moved left and middle flippers");
+            teamUtil.log("shootAllArtifacts: Moved all flippers");
         }
         intake.intakeIn();
         teamUtil.log("shootAllArtifacts finished");
@@ -321,6 +321,43 @@ public class Robot {
             }
         });
         thread.start();
+    }
+
+    public void autoShootAllArtifactsNoWait(){
+        teamUtil.log("Launching Thread to shootAllArtifactsNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                autoShootAllArtifacts();
+            }
+        });
+        thread.start();
+    }
+
+    public void autoShootAllArtifacts(){
+        intake.checkLoadedArtifacts();
+        int ballCount = intake.loadedBallNum();
+        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
+        if(ballCount == 0){
+            teamUtil.log("shootAllArtifacts called without loaded artifacts");
+            return;
+        }
+        teamUtil.log("shootAllArtifacts starting with "+ballCount+" balls");
+
+        intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+        intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+        intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+
+        teamUtil.pause(FIRST_UNLOAD_PAUSE);
+        intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+        teamUtil.log("Shot 1 "+ shootIfCan());
+        intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+        teamUtil.pause(SECOND_UNLOAD_PAUSE);
+        teamUtil.log("Shot 2 "+ shootIfCan());
+        intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+        teamUtil.pause(SECOND_UNLOAD_PAUSE);
+        teamUtil.log("Shot 3 "+ shootIfCan());
+        teamUtil.log("autoShootAllArtifacts: Moved all flippers");
     }
 
     public static long EDGE_PUSHER_PAUSE = 700;
@@ -502,6 +539,28 @@ public class Robot {
 
     }
 
+    public boolean shootIfCan(){
+        if(!shooterHeadingReady()){
+            return false;
+        }
+        double distance = drive.getGoalDistance(drive.oQlocalizer.posX_mm, drive.oQlocalizer.posY_mm);
+        double velocity = shooter.leftFlywheel.getVelocity();
+        if(shooter.calculateMinSpeed(distance) > velocity){
+            return false;
+        }
+        if(shooter.calculateMaxSpeed(distance) < velocity){
+            return false;
+        }
+        if(!shooter.isLoaded()){
+            return false;
+        }
+        if(!shooter.pusher.moving.get()) { // dont change the aim more when shooting
+            shooter.changeAim(distance, velocity);
+            shooter.pushOneNoWait();
+        }
+        return true;
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Auto Code
@@ -603,7 +662,7 @@ public class Robot {
     public static double B05_SHOOT1_Y = 850;
     public static double B05_SHOOT1_X = 850;
     public static double B05_SHOOT1_H = 45;
-    public static double B05_SHOT1_VEL = 1200;
+    public static double B05_SHOT1_VEL = 860;
 
     public static double B06_PICKUP1_Y = 1200;
     public static double B06_SETUP_Y_DRIFT = 200;
@@ -678,6 +737,7 @@ public class Robot {
             double shotHeading = drive.robotGoalHeading();
             drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
             // TODO: Need code in here to shoot all available artifacts either fast or in pattern order
+            autoShootAllArtifactsNoWait();
             if (System.currentTimeMillis() > shot3Time) {
                 break;
             }
@@ -702,15 +762,15 @@ public class Robot {
         long startTime = System.currentTimeMillis();
         double savedDeclination;
 
-/*
+
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
             //shooter.adjustShooterV2(goalDistance);
             shooter.setShootSpeed(B05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
-            shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
+            Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
         }
-*/
+
 
         /////////////////////////////Shoot Preloads (Group 1)
         teamUtil.log("==================== Preloads ================");
@@ -735,6 +795,7 @@ public class Robot {
             // push the gate allowing for timeout
             drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, 0, null, 0, B07_RAMP_TIMEOUT);
             drive.stopMotors();
+            intake.elevatorToFlippersV2NoWait();
             if (useArms) { intake.intakeStop(); }
             teamUtil.pause(emptyRampPause);
             // get clear of 3rd group before rotating
@@ -757,6 +818,7 @@ public class Robot {
         // Pickup group 3
         if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        intake.elevatorToFlippersV2NoWait();
         // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
         // shoot 3rd set of balls
@@ -767,6 +829,7 @@ public class Robot {
         teamUtil.log("==================== Group 4 ================");
         if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        intake.elevatorToFlippersV2NoWait();
         // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         // shoot 4th set of balls

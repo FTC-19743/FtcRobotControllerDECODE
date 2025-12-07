@@ -116,7 +116,7 @@ public class Shooter {
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
         pusher.setPower(0);
-        pusher.calibrate(500);
+        pusher.calibrate();
         pushOne();
     }
     public void outputTelemetry(){
@@ -221,27 +221,44 @@ public class Shooter {
         aim(pitchNeeded);
         if(details)teamUtil.log("adjustShooterV2 Finished");
     }
-    public void adjustShooterV3(double distance, double velocity){
-        double minV = 0; // insert the functions here
-        double maxV = 0;
-        if(velocity == 0) {
-            if (VELOCITY_COMMANDED > maxV || VELOCITY_COMMANDED < minV) { // not within thresholds
-                if (Math.abs(VELOCITY_COMMANDED - maxV) > Math.abs(VELOCITY_COMMANDED - minV)) { // closer to max then min
-                    setShootSpeed(maxV);
-                } else {
-                    setShootSpeed(minV);
-                }
-            }
-        }else{
-            if(VELOCITY_COMMANDED != velocity) {
-                setShootSpeed(velocity);
-            }
-        }
-        double angle = 0; // insert function
+
+    public static double minSpeedA = 0.0000490408;
+    public static double minSpeedB = 0.0601474;
+    public static double minSpeedC = 638.0056;
+
+    public static double maxSpeedA = -0.000206498;
+    public static double maxSpeedB = 1.31176;
+    public static double maxSpeedC = -274.98039;
+
+    public double calculateMinSpeed(double distance){
+        return minSpeedA * distance * distance + minSpeedB * distance + minSpeedC;
+    }
+    public double calculateMaxSpeed(double distance){
+        return maxSpeedA * distance * distance + maxSpeedB * distance + maxSpeedC;
+    }
+
+    public static double pitchA = 0.012;
+    public static double pitchB = 0.0000044767;
+    public static double pitchC = 0.000457262;
+    public static double pitchD = -8.07697e-8;
+    public static double pitchE = -3.01755e-7;
+    public static double pitchF = 2.67729e-7;
+
+    public double calculatePitch(double distance, double velocity) {
+        return pitchA - pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
+    }
+
+    public void changeAim(double distance, double velocity){ // account for robot velocity?
+        double angle = calculatePitch(distance, velocity);
         aim(angle);
     }
 
-    public void adjustShooterV3(double distance){
-        adjustShooterV3(distance, 0);
+    public boolean canWeShoot(double distance, double velocity){ // TODO: consider adding heading check?
+        double minV = calculateMinSpeed(distance);
+        double maxV = calculateMaxSpeed(distance);
+        if (velocity > maxV || velocity < minV) { // not within thresholds
+            return false;
+        }
+        return true;
     }
 }
