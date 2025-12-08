@@ -21,6 +21,7 @@
 
 package org.firstinspires.ftc.teamcode.testCode.OQ;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -31,6 +32,8 @@ import org.firstinspires.ftc.teamcode.libs.OctoQuadFWv3;
  * OctoQuad FTC Edition MK2
  */
 @TeleOp(name = "Heading Calibrate", group = "OQ")
+@Disabled
+
 public class HeadingScalarCalibrator extends LinearOpMode
 {
     OctoQuadFWv3 oq;

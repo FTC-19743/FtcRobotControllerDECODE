@@ -24,6 +24,7 @@ import android.graphics.Bitmap;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.RobotLog;
@@ -35,7 +36,7 @@ import org.firstinspires.ftc.teamcode.libs.LimeLightTool;
  * This OpMode illustrates how to use the LimelightImageTools
  */
 @TeleOp(name = "LL Tools Test", group = "Sensor")
-//@Disabled
+@Disabled
 public class LimeLightToolTest extends LinearOpMode {
 
 

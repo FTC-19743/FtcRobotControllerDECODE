@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.slappyCode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -9,6 +10,8 @@ import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 
 @TeleOp(name="CandyBot", group="Robot")
+@Disabled
+
 public class CandyBot extends LinearOpMode {
 
     /* Declare OpMode members. */
