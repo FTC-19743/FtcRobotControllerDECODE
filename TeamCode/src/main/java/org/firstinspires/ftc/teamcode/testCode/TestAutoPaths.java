@@ -109,7 +109,7 @@ public class TestAutoPaths extends LinearOpMode{
     public void testGoalSide() {
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
-            robot.goalSide(USE_ARMS);
+            robot.goalSideV2(USE_ARMS);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);

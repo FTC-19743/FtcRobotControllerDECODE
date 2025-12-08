@@ -43,7 +43,6 @@ public class Robot {
     public static double FOOT_EXTENDED_POS = .6; // 6-7 seconds TODO: Maybe lower to closer to ground while setting up to save a second or two
 
     public static boolean details = false;
-    public enum Location{LEFT, CENTER, RIGHT}; // correspond to the flippers (reversed if facing the robot)
 
     // Set teamUtil.theOpMode before calling
     public Robot() {
@@ -253,7 +252,7 @@ public class Robot {
     public static double TWO_BALL_EDGE_PORTION = 1f/4;
 
     public void shootAllArtifacts(){
-        intake.checkLoadedArtifacts();
+        intake.detectLoadedArtifacts();
         int ballCount = intake.loadedBallNum();
         Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
         if(ballCount == 0){
@@ -335,7 +334,7 @@ public class Robot {
     }
 
     public void autoShootAllArtifacts(){
-        intake.checkLoadedArtifacts();
+        intake.detectLoadedArtifacts();
         int ballCount = intake.loadedBallNum();
         Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
         if(ballCount == 0){
@@ -364,7 +363,7 @@ public class Robot {
 
     public void shootArtifactColor(Intake.ARTIFACT color){
         teamUtil.log("shootArtifactColor called");
-        intake.checkLoadedArtifacts();
+        intake.detectLoadedArtifacts();
         int ballCount = intake.loadedBallNum();
         Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
         if(color == Intake.ARTIFACT.NONE){
@@ -406,16 +405,16 @@ public class Robot {
 
     }
 
-    public void shootArtifactLocation(Robot.Location location){ //
+    public void shootArtifactLocation(Intake.Location location){ //
         teamUtil.log("shootArtifactLocation called");
         // consider adding checks?
-        if(location == Robot.Location.CENTER){
+        if(location == Intake.Location.CENTER){
             intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
             shooter.pushOne();
             teamUtil.log("shootArtifactLocation: Moved middle flipper");
-        }else if(location == Robot.Location.LEFT){
+        }else if(location == Intake.Location.LEFT){
             intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
@@ -437,48 +436,91 @@ public class Robot {
 
     }
 
+    public static Intake.Location[][][][][] loadMap;
+    static {
+        loadMap = new Intake.Location[3][3][3][3][3];
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][1] = Intake.Location.CENTER;
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][2] = Intake.Location.LEFT;
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][3] = Intake.Location.RIGHT;
+
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.LEFT;
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.RIGHT;
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.CENTER;
+
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.CENTER;
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.RIGHT;
+        loadMap[PPG.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.LEFT;
+
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][1] = Intake.Location.CENTER;
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][2] = Intake.Location.RIGHT;
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][3] = Intake.Location.LEFT;
+
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.LEFT;
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.CENTER;
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.RIGHT;
+
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.CENTER;
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.LEFT;
+        loadMap[PGP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.RIGHT;
+
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][1] = Intake.Location.RIGHT;
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][2] = Intake.Location.CENTER;
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][3] = Intake.Location.LEFT;
+
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.CENTER;
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.LEFT;
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.RIGHT;
+
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.LEFT;
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.CENTER;
+        loadMap[GPP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.RIGHT;
+    }
+    public Intake.Location nextLoad(int num) {
+        return loadMap[teamUtil.pattern.ordinal()][intake.leftLoad.ordinal()][intake.middleLoad.ordinal()][intake.rightLoad.ordinal()][num];
+    }
+    
     public void autoShootArtifacts(teamUtil.Pattern loadPattern){
         if(teamUtil.pattern == PPG){
             if(loadPattern == teamUtil.Pattern.PPG){
-                shootArtifactLocation(Location.LEFT);
-                shootArtifactLocation(Location.CENTER);
-                shootArtifactLocation(Location.RIGHT); // green is right and last
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.CENTER);
+                shootArtifactLocation(Intake.Location.RIGHT); // green is right and last
             }else if(loadPattern == teamUtil.Pattern.PGP){
-                shootArtifactLocation(Location.LEFT);
-                shootArtifactLocation(Location.RIGHT);
-                shootArtifactLocation(Location.CENTER); // green is center and last
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER); // green is center and last
             }else{//gpp
-                shootArtifactLocation(Location.RIGHT);
-                shootArtifactLocation(Location.CENTER);
-                shootArtifactLocation(Location.LEFT); // green is left and last
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER);
+                shootArtifactLocation(Intake.Location.LEFT); // green is left and last
             }
         }else if(teamUtil.pattern == PGP){
             if(loadPattern == teamUtil.Pattern.PPG){
-                shootArtifactLocation(Location.LEFT);
-                shootArtifactLocation(Location.RIGHT); // green is right and center
-                shootArtifactLocation(Location.CENTER);
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.RIGHT); // green is right and center
+                shootArtifactLocation(Intake.Location.CENTER);
             }else if(loadPattern == teamUtil.Pattern.PGP){
-                shootArtifactLocation(Location.LEFT);
-                shootArtifactLocation(Location.CENTER); // green is center and center
-                shootArtifactLocation(Location.RIGHT);
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.CENTER); // green is center and center
+                shootArtifactLocation(Intake.Location.RIGHT);
             }else{//gpp
-                shootArtifactLocation(Location.RIGHT);
-                shootArtifactLocation(Location.LEFT); // green is left and center
-                shootArtifactLocation(Location.CENTER);
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.LEFT); // green is left and center
+                shootArtifactLocation(Intake.Location.CENTER);
             }
         }else{ // GPP
             if(loadPattern == teamUtil.Pattern.PPG){
-                shootArtifactLocation(Location.RIGHT); // green is right and first
-                shootArtifactLocation(Location.LEFT);
-                shootArtifactLocation(Location.CENTER);
+                shootArtifactLocation(Intake.Location.RIGHT); // green is right and first
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.CENTER);
             }else if(loadPattern == teamUtil.Pattern.PGP){
-                shootArtifactLocation(Location.CENTER); // green is center and first
-                shootArtifactLocation(Location.LEFT);
-                shootArtifactLocation(Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER); // green is center and first
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.RIGHT);
             }else{//gpp
-                shootArtifactLocation(Location.LEFT); // green is left and first
-                shootArtifactLocation(Location.RIGHT);
-                shootArtifactLocation(Location.CENTER);
+                shootArtifactLocation(Intake.Location.LEFT); // green is left and first
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER);
             }
         }
     }
@@ -539,26 +581,91 @@ public class Robot {
 
     }
 
+    // Loads the next Artifact into the shooter in a separate thread
+    public void loadPatternShotNoWait(int num) {
+        teamUtil.log("Launching Thread to loadPatternShotNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                intake.unloadServo(nextLoad(num));
+            }
+        });
+        thread.start();
+    }
+
+    public void logShot(double flyWheelVelocity) {
+        drive.loop();
+        double goalDistance = drive.robotGoalDistance();
+        double midSpeed = shooter.calculateMidSpeed(goalDistance);
+        teamUtil.log("----------------------------------- SHOT " );
+        teamUtil.log("------------ Robot X: " + drive.oQlocalizer.posX_mm + " Y: " + drive.oQlocalizer.posY_mm + " Goal Distance: " + goalDistance);
+        teamUtil.log("------------ Target Heading: " + drive.robotGoalHeading() + " Actual Heading: " + drive.getHeadingODO() + " Diff: " + Math.abs(drive.robotGoalHeading()-drive.getHeadingODO()));
+        teamUtil.log("------------ Actual Flywheel: " + flyWheelVelocity + " Aimer Pitch: " + shooter.currentAim());
+        teamUtil.log("------------ Ideal Flywheel: " + midSpeed + " Aimer Pitch: " + shooter.calculatePitch(goalDistance, midSpeed));
+    }
+
+    // Checks a number of conditions to make sure we can shoot and then launches if possible
+    // Returns true if it did shoot, false otherwise
     public boolean shootIfCan(){
-        if(!shooterHeadingReady()){
-            return false;
-        }
-        double distance = drive.getGoalDistance(drive.oQlocalizer.posX_mm, drive.oQlocalizer.posY_mm);
-        double velocity = shooter.leftFlywheel.getVelocity();
-        if(shooter.calculateMinSpeed(distance) > velocity){
-            return false;
-        }
-        if(shooter.calculateMaxSpeed(distance) < velocity){
-            return false;
-        }
+        // Don't attempt to shoot if we are currently shooting
+        if (shooter.pusher.moving.get()) return false;
+
+        // Don't attempt to shoot if our heading is not accurate enough
+        if(!shooterHeadingReady()) return false;
+
+        // Don't attempt to shoot if there is no ball in the shooter
         if(!shooter.isLoaded()){
             return false;
         }
-        if(!shooter.pusher.moving.get()) { // dont change the aim more when shooting
-            shooter.changeAim(distance, velocity);
-            shooter.pushOneNoWait();
-        }
+
+        double goalDistance = drive.robotGoalDistance();
+        double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
+
+        // Don't attempt to shoot if flywheel speed is not in acceptable range
+        if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
+
+        // Adjust the pitch of the shooter to match distance and flywheel velocity
+        shooter.changeAim(goalDistance, flyWheelVelocity);
+
+        // Launch it
+        shooter.pushOneNoWait();
+        logShot(flyWheelVelocity);
         return true;
+    }
+
+    // Move while shooting adjusting robot heading and shooter as needed
+    // Assume 600+600+900 for 3 color ordered shots
+    // Assume 1000 for 3 fast
+    public boolean driveWhileShooting(boolean useArms, boolean pattern, double driveHeading, double velocity, long timeOut) {
+        teamUtil.log("driveWhileShooting driveH: " + driveHeading + " Vel: " + velocity);
+        long timeOutTime = System.currentTimeMillis() + timeOut;
+        long shot3Time = System.currentTimeMillis() + (pattern ? 2100 : 1100);
+        int numShots = 0;
+
+        blinkin.setSignal(Blinkin.Signals.GOLD);
+        while (teamUtil.keepGoing(timeOutTime) && numShots < 3) {
+            drive.loop();
+            double shotHeading = drive.robotGoalHeading();
+            drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
+            if (useArms) {
+                if (shootIfCan()) { // TODO: What if the flipper in the middle hasn't let go of the ball yet?
+                    numShots++;
+                    if (numShots < 3) {
+                        loadPatternShotNoWait(numShots+1); // load the next shot
+                    }
+                }
+            } else if (System.currentTimeMillis() > shot3Time) {
+                break;
+            }
+        }
+        blinkin.setSignal(Blinkin.Signals.OFF);
+        if (System.currentTimeMillis() <= timeOutTime) {
+            teamUtil.log("driveWhileShooting Finished");
+            return true;
+        } else {
+            teamUtil.log("driveWhileShooting TIMED OUT");
+            return false;
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -588,60 +695,9 @@ public class Robot {
         }
     }
 
-    public static double A00_MAX_SPEED_NEAR_GOAL = 1500;
-    public static double A00_SHOOT_END_VELOCITY = 300;
-    public static double A01_SHOOT_END_VELOCITY = 1000;
-    public static double A00_FINAL_END_VELOCITY = 300;
-
-    public static double A00_PICKUP_VELOCITY = 1000;
-    public static double A00_PICKUP_END_VELOCITY = 1000;
-
-    public static double A01_TILE_LENGTH = 610;
-
-    public static double A05_DRIFT_1 = 50;
-    public static double A05_DRIFT_2 = 140;
-
-    public static double A05_SHOOT1_Y = 750;
-    public static double A05_SHOOT1_X = 750;
-    public static double A05_SHOOT1_H = 45;
-    public static double A05_SHOT1_VEL = 1200;
-
-    public static double A06_SETUP1_Y = 1220-100;
-    public static double A06_SETUP1_X = 670;
-    public static double A06_SETUP1_H = 0;
-
-    public static double A07_SETUP1_Y = 1220-50;
-    public static double A07_PICKUP1_Y = 1200;
-    public static double A07_PICKUP1_X = 400;
-    public static double A07_PICKUP1_H = 0;
-    public static double A07_END_PICKUP_X_ADJUSTMENT = 100;
 
 
-    public static double A08_SHOOT1_Y = 634; // TODO: Reconcile this approach with the shooter pre-aim?
-    public static double A08_SHOOT1_X = 617;
-    public static double A08_SHOOT1_H = 45;
 
-    public static double A09_SHOOT1_Y = 460; // TODO: Reconcile this approach with the shooter pre-aim?
-    public static double A09_SHOOT1_X = 440;
-    public static double A09_SHOOT1_H = 45;
-
-    public static double A90_PARK_DRIFT = 200;
-    public static double A90_PARK_X = 0 - A90_PARK_DRIFT;
-    public static double A90_PARK_END_VELOCITY = 2000;
-
-    public static double A99_GRAB_LAST_THREE_TIME = 4000;
-    public static double A99_PARK_TIME = 1500;
-    public static double A99_MOVE_OFF_LINE_TIME = 1500;
-
-
-    public void logShot(int num, int targetX, int targetY, int goalDistance, double goalHeading) {
-        drive.loop();
-        teamUtil.log("---------------- SHOT " + num);
-        teamUtil.log("Target X: " + targetX + " Actual : " + drive.oQlocalizer.posX_mm + " Diff: " + Math.abs(targetX-drive.oQlocalizer.posX_mm));
-        teamUtil.log("Target Y: " + targetY + " Actual : " + drive.oQlocalizer.posY_mm + " Diff: " + Math.abs(targetY-drive.oQlocalizer.posY_mm));
-        teamUtil.log("Target Distance: " + goalDistance + " Actual Distance: " + (int)drive.robotGoalDistance() + " Diff: " + (int)Math.abs(goalDistance-drive.robotGoalDistance()));
-        teamUtil.log("Target Heading: " + goalHeading + " Actual Heading: " + drive.getHeadingODO() + " Diff: " + Math.abs(goalHeading-drive.getHeadingODO()));
-    }
 
     public boolean seeLine(){
         return  (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() > LIFT_AUTO_ALIGN_BLUE_THRESHOLD) ||
@@ -690,69 +746,31 @@ public class Robot {
     public static double B07_SETUP_Y_DRIFT = 50;
     public static double B07_SETUP2_Y = B06_PICKUP1_Y-B07_SETUP_Y_DRIFT;
 
-    public static double B08_SHOOT2_Y = 650; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT2_Y = 650;
     public static double B08_SHOOT2_DRIFT = 200;
     public static double B08_SHOOT2_X = 650;
     public static double B08_SHOOT2_H = 45;
     public static double B08_SHOOT2_DH = 315;
     public static double B08_SHOOT2_END_VEL = 400;
 
-    public static double B08_SHOOT3_Y = B08_SHOOT2_Y; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT3_Y = B08_SHOOT2_Y;
     public static double B08_SHOOT3_DRIFT = 100;
     public static double B08_SHOOT3_X = B08_SHOOT2_X;
     public static double B08_SHOOT3_H = B08_SHOOT2_H;
     public static double B08_SHOOT3_DH = 340;
     public static double B08_SHOOT3_END_VEL = 400;
 
-    public static double B08_SHOOT4_Y = B08_SHOOT3_Y; // TODO: Reconcile this approach with the shooter pre-aim?
+    public static double B08_SHOOT4_Y = B08_SHOOT3_Y;
     public static double B08_SHOOT4_DRIFT = 100;
     public static double B08_SHOOT4_X = B08_SHOOT3_X;
     public static double B08_SHOOT4_H = B08_SHOOT3_H;
     public static double B08_SHOOT4_DH = 350;
     public static double B08_SHOOT4_END_VEL = 400;
 
-    public static double B90_PARK_DRIFT = 200;
-    public static double B90_PARK_X = 0 - A90_PARK_DRIFT;
-    public static double B90_PARK_END_VELOCITY = 2000;
-
-    public static double B00_FINAL_END_VELOCITY = 300;
-
     public static double B99_GRAB_LAST_THREE_TIME = 4000;
     public static double B99_PARK_TIME = 1500;
     public static double B99_MOVE_OFF_LINE_TIME = 1500;
 
-    // Move while shooting adjusting robot heading and shooter as needed
-    // Assume 600+600+900 for 3 color ordered shots
-    // Assume 1000 for 3 fast
-    public boolean driveWhileShooting(boolean useArms, boolean pattern, double driveHeading, double velocity, long timeOut) {
-        teamUtil.log("driveWhileShooting driveH: " + driveHeading + " Vel: " + velocity);
-        long timeOutTime = System.currentTimeMillis() + timeOut;
-        long shot3Time = System.currentTimeMillis() + (pattern ? 2100 : 1100);
-
-        if (!useArms) {
-            blinkin.setSignal(Blinkin.Signals.GOLD);
-        }
-        while (teamUtil.keepGoing(timeOutTime)) {
-            drive.loop();
-            double shotHeading = drive.robotGoalHeading();
-            drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
-            // TODO: Need code in here to shoot all available artifacts either fast or in pattern order
-            autoShootAllArtifactsNoWait();
-            if (System.currentTimeMillis() > shot3Time) {
-                break;
-            }
-        }
-        if (!useArms) {
-            blinkin.setSignal(Blinkin.Signals.OFF);
-        }
-        if (System.currentTimeMillis() <= timeOutTime) {
-            teamUtil.log("driveWhileShooting Finished");
-            return true;
-        } else {
-            teamUtil.log("driveWhileShooting TIMED OUT");
-            return false;
-        }
-    }
 
     public static boolean emptyRamp = true;
     public static int emptyRampPause = 2000;
@@ -762,13 +780,15 @@ public class Robot {
         long startTime = System.currentTimeMillis();
         double savedDeclination;
 
+        intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
 
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
             //shooter.adjustShooterV2(goalDistance);
-            shooter.setShootSpeed(B05_SHOT1_VEL); // PID loop is taking a long time to spin up and stabilize at these lower speeds (720->812)
+            shooter.setShootSpeed(B05_SHOT1_VEL);
             Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
+            loadPatternShotNoWait(1); // get the first ARTIFACT in the shooter
         }
 
 
@@ -803,10 +823,18 @@ public class Robot {
         } else {
             // pickup 2nd set of artifacts
             if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+            intake.elevatorToFlippersV2NoWait(); // TODO: Do we need to give the intake a bit more time before activating elevator?
+        }
+        // Manually set what is loaded in intake
+        if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+            intake.setLoadedArtifacts(teamUtil.Pattern.GPP);
+        }else{
+            intake.setLoadedArtifacts(teamUtil.Pattern.PPG);
         }
         // Drive back to shooting zone
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         // shoot second set of balls
+        loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,3000)) return;
 
         /////////////////////////////Intake 3rd group and shoot
@@ -817,9 +845,12 @@ public class Robot {
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 3
         if (useArms) { intake.intakeIn(); }
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
-        intake.elevatorToFlippersV2NoWait();
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        intake.elevatorToFlippersV2NoWait(); // TODO: Do we need to give the intake a bit more time before activating elevator?
+        // Manually set what is loaded in intake
+        intake.setLoadedArtifacts(teamUtil.Pattern.PGP);
         // Drive back to shooting zone
+        loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
         // shoot 3rd set of balls
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,3000)) return;
@@ -828,11 +859,18 @@ public class Robot {
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
         if (useArms) { intake.intakeIn(); }
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-A01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
         intake.elevatorToFlippersV2NoWait();
+        // Manually set what is loaded in intake
+        if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+            intake.setLoadedArtifacts(teamUtil.Pattern.PPG);
+        }else{
+            intake.setLoadedArtifacts(teamUtil.Pattern.GPP);
+        }
         // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         // shoot 4th set of balls
+        loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
         if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3000)) return;
 
         /////////////////////////////Park
@@ -842,135 +880,62 @@ public class Robot {
         teamUtil.pause(B06_SETUP1_PAUSE);
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
 
-
-
+        /////////////////////////////Wrap up
         drive.stopMotors();
         intake.stopDetector();
         intake.intakeStop();
         shooter.stopShooter();
-
-
-        drive.stopMotors();
-        if (true) return;
-
-        ////////////////////////////////  OLD CODE ///////////////////
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A05_SHOOT1_X+A05_DRIFT_1, A05_SHOOT1_Y+A05_DRIFT_1, A05_SHOOT1_H, A00_SHOOT_END_VELOCITY,null,0,false,3000);
-
-        drive.stopMotors();
-        drive.waitForRobotToStop(1000);
-        logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int) nextGoalDistance, A05_SHOOT1_H);
-
-        if (useArms) {
-            //shootPatternAuto();
-            intake.intakeStart();
-        } else {
-            teamUtil.pause(2000);
-        }
-
-        //Collect Set 2
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X, A06_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
-        //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
-        if (useArms) {
-            intake.elevatorToFlippersV2NoWait();
-        }
-        // Prep Shooter
-        nextGoalDistance = drive.getGoalDistance((int)A08_SHOOT1_X, (int)A08_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
-        if (useArms) shooter.adjustShooterV2(nextGoalDistance);
-        //Shoot Set 2
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X-A05_DRIFT_2, A08_SHOOT1_Y+A05_DRIFT_2, A08_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
-        drive.stopMotors();
-        drive.waitForRobotToStop(1000);
-        logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int) nextGoalDistance, A08_SHOOT1_H);
-        if (useArms) {
-            //shootPatternAuto();
-            intake.intakeStart();
-        } else {
-            teamUtil.pause(2000);
-        }
-
-        //Collect Set 3
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-A01_TILE_LENGTH, A07_SETUP1_Y, A06_SETUP1_H, A00_PICKUP_VELOCITY,null,0,false,3000);
-        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
-        //drive.mirroredMoveTo(A00_PICKUP_VELOCITY, A07_PICKUP1_X-A01_TILE_LENGTH, A07_PICKUP1_Y, A07_PICKUP1_H, A00_PICKUP_END_VELOCITY,null,0,false,3000);
-        if (useArms) {
-            intake.elevatorToFlippersV2NoWait();
-        }
-        // Prep Shooter
-        nextGoalDistance = drive.getGoalDistance((int)A09_SHOOT1_X, (int)A09_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
-        if (useArms) shooter.adjustShooterV2(nextGoalDistance);
-
-        //Shoot Set 3
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X-A05_DRIFT_2, A09_SHOOT1_Y+A05_DRIFT_2, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
-
-        drive.stopMotors();
-        drive.waitForRobotToStop(1000);
-        logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int) nextGoalDistance, A09_SHOOT1_H);
-        if (useArms) {
-            //shootPatternAuto();
-            intake.intakeStart();
-        } else {
-            teamUtil.pause(2000);
-        }
-
-        shooter.stopShooter();
-
-        if (System.currentTimeMillis()-startTime > 30000-A99_GRAB_LAST_THREE_TIME) {
-            if (System.currentTimeMillis()-startTime > 30000-A99_MOVE_OFF_LINE_TIME) {
-                teamUtil.log("OUT OF TIME, shutting down");
-                drive.stopMotors();
-                intake.stopDetector();
-                intake.intakeStop();
-                shooter.stopShooter();
-                return;
-            } else {
-                teamUtil.log("NO TIME FOR LAST GRAB. Moving off of line");
-                intake.stopDetector();
-                intake.intakeStop();
-                shooter.stopShooter();
-                drive.moveToX(.7f,0,teamUtil.alliance== teamUtil.Alliance.RED ? 225 : 135, 0);
-                return;
-            }
-        }
-
-        if (useArms) {
-            intake.intakeStart();
-        }
-
-        //Pick up last 3 balls
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A06_SETUP1_X-(2*A01_TILE_LENGTH)+A07_END_PICKUP_X_ADJUSTMENT, A07_SETUP1_Y, A06_SETUP1_H, A00_FINAL_END_VELOCITY,null,0,false,3000);
-        drive.straightHoldingStrafeEncoder(A00_PICKUP_VELOCITY, A07_PICKUP1_X-(2*A01_TILE_LENGTH), A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A00_PICKUP_END_VELOCITY,false,null,0,2000);
-
-        if (System.currentTimeMillis()-startTime > 30000-A99_PARK_TIME) {
-            teamUtil.log("OUT OF TIME, not parking");
-            drive.stopMotors();
-            intake.stopDetector();
-            intake.intakeStop();
-            shooter.stopShooter();
-            return;
-        }
-
-        // Park in front of gate
-        drive.straightHoldingStrafeEncoder(A00_MAX_SPEED_NEAR_GOAL, A90_PARK_X, A07_PICKUP1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1), (int)A07_PICKUP1_H,A90_PARK_END_VELOCITY,false,null,0,2000);
-
-        drive.stopMotors();
-        intake.stopDetector();
-        intake.intakeStop();
-        shooter.stopShooter();
-
-        if (true) return;
-        //Shoot Set 3
-        drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A09_SHOOT1_X, A09_SHOOT1_Y, A09_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
-        drive.stopMotors();
-        drive.waitForRobotToStop(1000);
-        if (useArms) {
-            shootAllArtifacts();
-            intake.intakeStart();
-        } else {
-            teamUtil.pause(2000);
-        }
     }
 
+
+    ///  ///////////////////////////////////////////////////////
+    /// // OLD CODE
+    ///
+    /*
+    public static double A00_MAX_SPEED_NEAR_GOAL = 1500;
+    public static double A00_SHOOT_END_VELOCITY = 300;
+    public static double A01_SHOOT_END_VELOCITY = 1000;
+    public static double A00_FINAL_END_VELOCITY = 300;
+
+    public static double A00_PICKUP_VELOCITY = 1000;
+    public static double A00_PICKUP_END_VELOCITY = 1000;
+
+    public static double A01_TILE_LENGTH = 610;
+
+    public static double A05_DRIFT_1 = 50;
+    public static double A05_DRIFT_2 = 140;
+
+    public static double A05_SHOOT1_Y = 750;
+    public static double A05_SHOOT1_X = 750;
+    public static double A05_SHOOT1_H = 45;
+    public static double A05_SHOT1_VEL = 1200;
+
+    public static double A06_SETUP1_Y = 1220-100;
+    public static double A06_SETUP1_X = 670;
+    public static double A06_SETUP1_H = 0;
+
+    public static double A07_SETUP1_Y = 1220-50;
+    public static double A07_PICKUP1_Y = 1200;
+    public static double A07_PICKUP1_X = 400;
+    public static double A07_PICKUP1_H = 0;
+    public static double A07_END_PICKUP_X_ADJUSTMENT = 100;
+
+
+    public static double A08_SHOOT1_Y = 634;
+    public static double A08_SHOOT1_X = 617;
+    public static double A08_SHOOT1_H = 45;
+
+    public static double A09_SHOOT1_Y = 460;
+    public static double A09_SHOOT1_X = 440;
+    public static double A09_SHOOT1_H = 45;
+
+    public static double A90_PARK_DRIFT = 200;
+    public static double A90_PARK_X = 0 - A90_PARK_DRIFT;
+    public static double A90_PARK_END_VELOCITY = 2000;
+
+    public static double A99_GRAB_LAST_THREE_TIME = 4000;
+    public static double A99_PARK_TIME = 1500;
+    public static double A99_MOVE_OFF_LINE_TIME = 1500;
     public void goalSide(boolean useArms) {
         double goalDistance = 0;
         long startTime = System.currentTimeMillis();
@@ -989,7 +954,7 @@ public class Robot {
 
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
-        logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int)goalDistance, A05_SHOOT1_H);
+        //logShot(1, (int)A05_SHOOT1_X, (int)A05_SHOOT1_Y, (int)goalDistance, A05_SHOOT1_H);
 
         if (useArms) {
             shootPatternAuto(teamUtil.Pattern.PPG);
@@ -1012,7 +977,7 @@ public class Robot {
         drive.mirroredMoveTo(A00_MAX_SPEED_NEAR_GOAL, A08_SHOOT1_X-A05_DRIFT_2, A08_SHOOT1_Y+A05_DRIFT_2, A08_SHOOT1_H, A01_SHOOT_END_VELOCITY,null,0,false,3000);
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
-        logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int)goalDistance, A08_SHOOT1_H);
+        //logShot(2, (int)A08_SHOOT1_X, (int)A08_SHOOT1_Y, (int)goalDistance, A08_SHOOT1_H);
         if (useArms) {
             if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
                 shootPatternAuto(teamUtil.Pattern.GPP);
@@ -1040,7 +1005,7 @@ public class Robot {
 
         drive.stopMotors();
         drive.waitForRobotToStop(1000);
-        logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
+        //logShot(3, (int)A09_SHOOT1_X, (int)A09_SHOOT1_Y, (int)goalDistance, A09_SHOOT1_H);
         if (useArms) {
             shootPatternAuto(teamUtil.Pattern.PGP); // middle needs no check
             intake.intakeStart();
@@ -1105,6 +1070,8 @@ public class Robot {
             teamUtil.pause(2000);
         }
     }
+*/
+
 
     public void humanSide(boolean useArms) {
     }

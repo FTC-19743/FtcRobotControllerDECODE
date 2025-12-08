@@ -46,6 +46,7 @@ public class Intake {
     public AtomicBoolean detecting = new AtomicBoolean(false);
     public AtomicBoolean stopDetector = new AtomicBoolean(false);
 
+    public enum Location{LEFT, CENTER, RIGHT}; // correspond to the flippers (reversed if facing the robot)
     public enum ARTIFACT {NONE, GREEN, PURPLE};
     public ARTIFACT leftLoad,rightLoad,middleLoad, leftIntake, middleIntake, rightIntake;
     public int intakeNum = 0;
@@ -76,6 +77,8 @@ public class Intake {
     static public float FLIPPER_TRANSFER = 0.7f;
     static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
     static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
+    public static long FLIPPER_UNLOAD_PAUSE = 400;
+
 
 
     public Intake() {
@@ -142,7 +145,7 @@ public class Intake {
         telemetry.addLine("Intake elevator Position: " + elevator.getCurrentPosition());
         telemetry.addData("UpperSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftTopColorSensor), formatSensor(middleTopColorSensor), formatSensor(rightTopColorSensor));
         telemetry.addData("LowerSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftLowerColorSensor), formatSensor(middleLowerColorSensor), formatSensor(rightLowerColorSensor));
-        checkLoadedArtifacts();
+        detectLoadedArtifacts();
         checkIntakeArtifacts();
         telemetry.addLine("Loaded: L:" + leftLoad.toString() + "  M:" + middleLoad.toString() + "  R:" + rightLoad.toString());
         telemetry.addLine("Intake: Num:" + intakeNum + " L:" + leftIntake.toString() + "  M:" + middleIntake.toString() + "  R:" + rightIntake.toString());
@@ -170,6 +173,29 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
+    }
+
+    // Flip the specified servo to unload, wait and then bring it back to ceiling
+    // Long running operation! Use in seperate thread or loose control for FLIPPER_UNLOAD_PAUSE!
+    public void unloadServo(Location location) {
+        teamUtil.log("UnloadServo: " + location);
+        Servo flipper;
+        switch (location) {
+            case LEFT:
+                flipper = left_flipper;
+                break;
+            case CENTER:
+                flipper = middle_flipper;
+                break;
+            case RIGHT:
+                flipper = right_flipper;
+                break;
+            default:
+                flipper = middle_flipper;
+        }
+        flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+        teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+        flipper.setPosition(FLIPPER_CEILING);
     }
 
     public boolean elevatorToGroundV2() {
@@ -364,7 +390,7 @@ public class Intake {
     public static double GREEN_THRESHOLD = 1.25;
     public static int LEFT_ALPHA_THRESHOLD = 52;
 
-    public ARTIFACT checkLoadedArtifact(ColorSensor sensor) {
+    public ARTIFACT detectLoadedArtifact(ColorSensor sensor) {
         if(sensor.alpha() < UPPER_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
         if(sensor == leftTopColorSensor && sensor.alpha() < LEFT_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
         if((float) sensor.green()/ (float) sensor.alpha() > GREEN_THRESHOLD){return ARTIFACT.GREEN;}
@@ -374,7 +400,7 @@ public class Intake {
     public static int LOWER_ALPHA_THRESHOLD = 75;
 
     public int loadedBallNum(){
-        checkLoadedArtifacts();
+        detectLoadedArtifacts();
         int loadedBalls = 0;
         if(leftLoad != ARTIFACT.NONE){
             loadedBalls++;
@@ -416,10 +442,16 @@ public class Intake {
         if (sensor.red() > sensor.green() || sensor.blue() > sensor.green()) {return ARTIFACT.PURPLE;}
         return ARTIFACT.GREEN;
     }
-    public void checkLoadedArtifacts () {
-        leftLoad = checkLoadedArtifact(leftTopColorSensor);
-        middleLoad = checkLoadedArtifact(middleTopColorSensor);
-        rightLoad = checkLoadedArtifact(rightTopColorSensor);
+    public void setLoadedArtifacts(teamUtil.Pattern pattern) {
+        leftLoad = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.PGP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
+        middleLoad = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
+        rightLoad = (pattern == teamUtil.Pattern.PGP || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
+    }
+
+    public void detectLoadedArtifacts() {
+        leftLoad = detectLoadedArtifact(leftTopColorSensor);
+        middleLoad = detectLoadedArtifact(middleTopColorSensor);
+        rightLoad = detectLoadedArtifact(rightTopColorSensor);
     }
 
     public void checkIntakeArtifacts () {

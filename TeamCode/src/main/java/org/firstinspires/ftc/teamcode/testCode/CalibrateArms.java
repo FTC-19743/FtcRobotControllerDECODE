@@ -284,14 +284,14 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addData("AdjustShootMode: " , adjustShootMode);
         telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
         telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
-        telemetry.addData("Can we shoot?: " , robot.shooter.canWeShoot(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        telemetry.addData("Can we shoot?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
 
         if(gamepad1.startWasReleased()){
             adjustShootMode= !adjustShootMode;
         }
-        if (adjustShootMode && robot.shooter.canWeShoot(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity())) {
+        if (adjustShootMode && robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity())) {
             //robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
             robot.shooter.changeAim(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity());
         }

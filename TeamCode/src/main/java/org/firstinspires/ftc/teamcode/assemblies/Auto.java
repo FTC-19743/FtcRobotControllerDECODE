@@ -109,7 +109,7 @@ public class Auto extends LinearOpMode {
             //teamUtil.pause(delay);
 
             if (teamUtil.SIDE == teamUtil.Side.GOAL) {
-                robot.goalSide(true);
+                robot.goalSideV2(true);
             } else {
                 robot.humanSide(true);
             }

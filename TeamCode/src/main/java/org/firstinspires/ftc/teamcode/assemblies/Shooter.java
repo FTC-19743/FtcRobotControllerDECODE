@@ -236,6 +236,9 @@ public class Shooter {
     public double calculateMaxSpeed(double distance){
         return maxSpeedA * distance * distance + maxSpeedB * distance + maxSpeedC;
     }
+    public double calculateMidSpeed(double distance){
+        return (calculateMinSpeed(distance) + calculateMaxSpeed(distance) ) / 2;
+    }
 
     public static double pitchA = 0.012;
     public static double pitchB = 0.0000044767;
@@ -253,7 +256,7 @@ public class Shooter {
         aim(angle);
     }
 
-    public boolean canWeShoot(double distance, double velocity){ // TODO: consider adding heading check?
+    public boolean flywheelSpeedOK(double distance, double velocity){ // TODO: consider adding heading check?
         double minV = calculateMinSpeed(distance);
         double maxV = calculateMaxSpeed(distance);
         if (velocity > maxV || velocity < minV) { // not within thresholds
