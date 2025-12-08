@@ -124,9 +124,9 @@ public class AxonPusher{
     public void runToEncoderPosition (double target, float velocity, long timeOut) {
         timedOut.set(false);
         moving.set(true);
-        teamUtil.log("Pusher Run to Position Target Encoder : " + (int)target);
+        //teamUtil.log("Pusher Run to Position Target Encoder : " + (int)target);
         runToTargetEncoder(target, velocity, timeOut);
-        teamUtil.log("Pusher Run to Position Target Encoder Finished at : " + (int)getPositionEncoder());
+        //teamUtil.log("Pusher Run to Position Target Encoder Finished at : " + (int)getPositionEncoder());
     }
 
 
@@ -157,7 +157,7 @@ public class AxonPusher{
         moving.set(true);
         teamUtil.log("PushN starting");
         for(int i = 0;i < num;i++){// todo: fix timeout to be for all of them instead of individually
-            runToEncoderPosition(nextEncoderTarget(getPositionEncoder())-PUSH_FAST_THRESHOLD, PUSH_SLOW_VELOCITY, timeout); // slow velocity to make the ball not hit the roof
+            //runToEncoderPosition(nextEncoderTarget(getPositionEncoder())-PUSH_FAST_THRESHOLD, PUSH_SLOW_VELOCITY, timeout); // slow velocity to make the ball not hit the roof
             runToEncoderPosition(nextEncoderTarget(getPositionEncoder()), velocity, timeout);// consider making velocity proportional to distance
             if(timedOut.get()){
                 teamUtil.log("PushN timed out");
@@ -168,6 +168,8 @@ public class AxonPusher{
             }
         }
         moving.set(false);
+        teamUtil.log("PushN Finished--Moving set to False");
+
     }
 
     public void pushNNoWait(int num, float velocity, long timeout) {
