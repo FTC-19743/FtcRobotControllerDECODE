@@ -83,6 +83,10 @@ public class TestAutoPaths extends LinearOpMode{
                     teamUtil.alliance = RED;
                 }
             }
+            if (gamepad1.right_trigger > .5) {
+                while (gamepad1.right_trigger > .5) {}
+                USE_ARMS = !USE_ARMS;
+            }
 
 
             switch (AA_Operation) {

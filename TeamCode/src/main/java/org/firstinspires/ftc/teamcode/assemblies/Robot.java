@@ -474,6 +474,9 @@ public class Robot {
         loadMap[GPP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][1] = Intake.Location.LEFT;
         loadMap[GPP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][2] = Intake.Location.CENTER;
         loadMap[GPP.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][3] = Intake.Location.RIGHT;
+
+        // Any lookup in this array using ARTIFACT.NONE.ordinal() will hit the zero entry for column 2-4 which will be zero, which is Intake.Location.LEFT
+        // We could add a NONE value to the Location enum and set all these to NONE to make this a bit cleaner
     }
     public Intake.Location nextLoad(int num) {
         return loadMap[teamUtil.pattern.ordinal()][intake.leftLoad.ordinal()][intake.middleLoad.ordinal()][intake.rightLoad.ordinal()][num];
@@ -582,15 +585,23 @@ public class Robot {
     }
 
     // Loads the next Artifact into the shooter in a separate thread
-    public void loadPatternShotNoWait(int num) {
+    public boolean loadPatternShotNoWait(int num) {
+        Intake.Location location = nextLoad(num);
+        if ((location== Intake.Location.LEFT && intake.leftLoad == Intake.ARTIFACT.NONE) ||
+            (location== Intake.Location.CENTER && intake.middleLoad == Intake.ARTIFACT.NONE) ||
+            (location== Intake.Location.RIGHT && intake.rightLoad == Intake.ARTIFACT.NONE)) { // nothing loaded in the next flipper to unload
+                teamUtil.log ("Empty Flipper, not unloading");
+                return false;
+        }
         teamUtil.log("Launching Thread to loadPatternShotNoWait");
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                intake.unloadServo(nextLoad(num));
+                intake.unloadServo(location);
             }
         });
         thread.start();
+        return true;
     }
 
     public void logShot(double flyWheelVelocity) {
@@ -633,13 +644,15 @@ public class Robot {
         return true;
     }
 
+    public static long AUTO_PATTERN_SHOT_LOAD_LIMIT = 1000; // Skip shot if it takes longer than this to load it into shooter
     // Move while shooting adjusting robot heading and shooter as needed
-    // Assume 600+600+900 for 3 color ordered shots
-    // Assume 1000 for 3 fast
-    public boolean driveWhileShooting(boolean useArms, boolean pattern, double driveHeading, double velocity, long timeOut) {
+    // TODO: Empty shooter at end if somehow it is still loaded
+    public boolean driveWhileShooting(boolean useArms, double driveHeading, double velocity, long timeOut) {
         teamUtil.log("driveWhileShooting driveH: " + driveHeading + " Vel: " + velocity);
         long timeOutTime = System.currentTimeMillis() + timeOut;
-        long shot3Time = System.currentTimeMillis() + (pattern ? 2100 : 1100);
+        long nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT;
+        long shot3Time =  2100;
+        boolean loadingNextShot = false;
         int numShots = 0;
 
         blinkin.setSignal(Blinkin.Signals.GOLD);
@@ -648,14 +661,34 @@ public class Robot {
             double shotHeading = drive.robotGoalHeading();
             drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
             if (useArms) {
-                if (shootIfCan()) { // TODO: What if the flipper in the middle hasn't let go of the ball yet?
+                if (shootIfCan()) { // TODO: What if the flipper in the middle hasn't let go of the ball yet? Might be able to solve this by backing up unload position on middle flipper only
+                    nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++;
                     if (numShots < 3) {
-                        loadPatternShotNoWait(numShots+1); // load the next shot
+                        while (numShots < 3) {
+                            if (loadPatternShotNoWait(numShots+1)) { // something to load
+                                break;
+                            }
+                            numShots++; // skip the last load (nothing in flipper
+                            teamUtil.log ("Nothing to load--Skipping Shot " + numShots);
+                        }
+                    }
+                } else if (System.currentTimeMillis() > nextShotTimeLimit) { // Taking too long to load for some unknown reason
+                    nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
+                    numShots++; // Move on to the next shot
+                    teamUtil.log("------- Took Too long to load shot " + numShots + ". Moving on to next");
+                    if (numShots < 3) {
+                        while (numShots < 3) {
+                            if (loadPatternShotNoWait(numShots+1)) { // something to load
+                                break;
+                            }
+                            numShots++; // skip the last load (nothing in flipper
+                            teamUtil.log ("Nothing to load--Skipping Shot " + numShots);
+                        }
                     }
                 }
             } else if (System.currentTimeMillis() > shot3Time) {
-                break;
+                    break;
             }
         }
         blinkin.setSignal(Blinkin.Signals.OFF);
@@ -797,7 +830,11 @@ public class Robot {
         // Drive fast to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
         // Shoot preloads
-        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,3000)) return;
+        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,3000)) return;
+
+        drive.stopMotors();
+        shooter.stopShooter();
+        if (true) return;
 
         /////////////////////////////Intake 2nd group and shoot
         // Setup to pickup group 2
@@ -835,7 +872,7 @@ public class Robot {
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         // shoot second set of balls
         loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
-        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,3000)) return;
+        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,3000)) return;
 
         /////////////////////////////Intake 3rd group and shoot
         // Setup to pickup group 3
@@ -853,7 +890,7 @@ public class Robot {
         loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
         // shoot 3rd set of balls
-        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,3000)) return;
+        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,3000)) return;
 
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
@@ -871,7 +908,7 @@ public class Robot {
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         // shoot 4th set of balls
         loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
-        if (!driveWhileShooting(useArms, true, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3000)) return;
+        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3000)) return;
 
         /////////////////////////////Park
         teamUtil.log("==================== Park ================");
