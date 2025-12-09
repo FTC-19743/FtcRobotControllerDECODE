@@ -256,7 +256,7 @@ public class Shooter {
         aim(angle);
     }
 
-    public boolean flywheelSpeedOK(double distance, double velocity){ // TODO: consider adding heading check?
+    public boolean flywheelSpeedOK(double distance, double velocity){
         double minV = calculateMinSpeed(distance);
         double maxV = calculateMaxSpeed(distance);
         if (velocity > maxV || velocity < minV) { // not within thresholds

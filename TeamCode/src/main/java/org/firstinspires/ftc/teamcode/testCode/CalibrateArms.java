@@ -145,8 +145,7 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public void testCV () {
-        robot.testDetectPattern(aprilTag);
-
+        robot.detectPattern();
 
         if (gamepad1.dpadLeftWasReleased()) {
             visionPortal.setActiveCamera(webcamL);
@@ -224,7 +223,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.calibrateElevators();
         }
         if (gamepad1.yWasReleased()) {
-            robot.intake.elevatorToFlippersV2();
+            robot.intake.elevatorToFlippersV2(true);
         }
         if (gamepad1.aWasReleased()) {
             robot.intake.elevatorToGroundV2();
@@ -348,7 +347,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
         }
         if(gamepad1.xWasPressed()){
-            robot.intake.elevatorToFlippersV2();
+            robot.intake.elevatorToFlippersV2(true);
         }
         if(gamepad1.bWasPressed()) {
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1000);

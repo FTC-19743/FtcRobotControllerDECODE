@@ -46,7 +46,7 @@ public class Intake {
     public AtomicBoolean detecting = new AtomicBoolean(false);
     public AtomicBoolean stopDetector = new AtomicBoolean(false);
 
-    public enum Location{LEFT, CENTER, RIGHT}; // correspond to the flippers (reversed if facing the robot)
+    public enum Location{LEFT, CENTER, RIGHT, NONE}; // correspond to the flippers (reversed if facing the robot)
     public enum ARTIFACT {NONE, GREEN, PURPLE};
     public ARTIFACT leftLoad,rightLoad,middleLoad, leftIntake, middleIntake, rightIntake;
     public int intakeNum = 0;
@@ -175,27 +175,52 @@ public class Intake {
         middle_flipper.setPosition(FLIPPER_TRANSFER);
     }
 
-    // Flip the specified servo to unload, wait and then bring it back to ceiling
-    // Long running operation! Use in seperate thread or loose control for FLIPPER_UNLOAD_PAUSE!
-    public void unloadServo(Location location) {
+    public boolean servoPositionIs(Servo servo, float pos) {
+        return Math.abs(servo.getPosition()-pos)<.001;
+    }
+    // Unload the specified servo.
+    // If the ARTIFACT is still in the intake, it will flip the specified servo to unload, wait and then bring it back to ceiling
+    // If the ARTIFACT was previously pinned in the shooter, it will release it and move the flipper back to ceiling
+    // if nextLocation is not NONE, that servo will pin its ARTIFACT and leave it in that state to be released later
+    // Long running operation! Use in separate thread if you need control!
+    public void unloadServo(Location location, Location nextLocation) {
         teamUtil.log("UnloadServo: " + location);
-        Servo flipper;
         switch (location) {
             case LEFT:
-                flipper = left_flipper;
-                break;
-            case CENTER:
-                flipper = middle_flipper;
+                if (servoPositionIs(left_flipper,FLIPPER_TRANSFER)) {
+                    left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                }
+                left_flipper.setPosition(FLIPPER_CEILING);
+                if (nextLocation==Location.RIGHT) {
+                    right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                }
                 break;
             case RIGHT:
-                flipper = right_flipper;
+                if (servoPositionIs(right_flipper,FLIPPER_TRANSFER)) {
+                    right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                }
+                right_flipper.setPosition(FLIPPER_CEILING);
+                if (nextLocation==Location.LEFT) {
+                    left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                }
+                break;
+            case CENTER:
+                if (servoPositionIs(middle_flipper,FLIPPER_TRANSFER)) {
+                    middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                }
+                middle_flipper.setPosition(FLIPPER_CEILING);
+                if (nextLocation==Location.LEFT) {
+                    left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                }
+                if (nextLocation==Location.RIGHT) {
+                    right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                }
                 break;
             default:
-                flipper = middle_flipper;
         }
-        flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
-        teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
-        flipper.setPosition(FLIPPER_CEILING);
     }
 
     public boolean elevatorToGroundV2() {
@@ -248,6 +273,23 @@ public class Intake {
         }
     }
 
+    public void elevatorToGroundV2NoWait () {
+        if (elevatorMoving.get()) {
+            teamUtil.log("WARNING: elevatorToGroundV2NoWait called while moving--Ignored");
+            return;
+        }
+        elevatorMoving.set(true);
+        failedOut.set(false);
+        teamUtil.log("Launching Thread to elevatorToGroundV2NoWait.");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                elevatorToGroundV2();
+            }
+        });
+        thread.start();
+    }
+
     public boolean getReadyToIntake() {
         teamUtil.log("getReadyToIntake");
 
@@ -290,7 +332,7 @@ public class Intake {
         thread.start();
     }
 
-    public boolean elevatorToFlippersV2(){
+    public boolean elevatorToFlippersV2(boolean waitForGround){
         teamUtil.log("elevatorToFlippersV2NoWait");
 
         failedOut.set(false);
@@ -347,9 +389,15 @@ public class Intake {
         middle_flipper.setPosition(FLIPPER_TRANSFER);
         teamUtil.pause(ELEVATOR_PAUSE_2);
 
-        boolean success =  elevatorToGroundV2();
-        teamUtil.log("elevatorToFlippersV2 Finished");
-        return success;
+        if (waitForGround) {
+            boolean success =  elevatorToGroundV2();
+            teamUtil.log("elevatorToFlippersV2 Finished");
+            return success;
+        } else {
+            elevatorToGroundV2NoWait();
+            teamUtil.log("elevatorToFlippersV2 Finished with elevator returning to ground");
+            return true;
+        }
     }
 
     public void elevatorToFlippersV2NoWait(){
@@ -363,7 +411,7 @@ public class Intake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                elevatorToFlippersV2();
+                elevatorToFlippersV2(true);
             }
         });
         thread.start();

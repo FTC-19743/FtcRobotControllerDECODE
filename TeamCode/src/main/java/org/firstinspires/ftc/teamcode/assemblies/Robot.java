@@ -23,6 +23,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Config
 public class Robot {
@@ -94,7 +95,6 @@ public class Robot {
     }
     //
     public void detectPattern () {
-        // TODO: Get april tag detections and decide what we are looking at. Set Blinkin accordingly
         int detectionNum;
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         if(currentDetections.isEmpty()){
@@ -146,58 +146,6 @@ public class Robot {
 
     }
 
-    public void testDetectPattern (AprilTagProcessor processor) {
-        // TODO: Get april tag detections and decide what we are looking at. Set Blinkin accordingly
-        int detectionNum;
-        List<AprilTagDetection> currentDetections = processor.getDetections();
-        if(currentDetections.isEmpty()){
-            blinkin.setSignal(Blinkin.Signals.GOLD);
-            telemetry.addLine("Not Detecting Anything");
-        } else{
-            if(teamUtil.alliance == teamUtil.Alliance.BLUE){
-                int lowestYIndex=0;
-                double lowestY = 0;
-                for(int element = 0; element < currentDetections.size(); element++){
-                    if(currentDetections.get(element).center.y>lowestY){
-                        lowestYIndex = element;
-                        lowestY=currentDetections.get(element).center.y;
-                    }
-                }
-                if(details){
-                    teamUtil.log("Lowest Y" + lowestY);
-                }
-
-                detectionNum=currentDetections.get(lowestYIndex).id;
-            }
-            else{
-                int highestYIndex=0;
-                double highestY = 10000;
-                for(int element = 0; element < currentDetections.size(); element++){
-                    if(currentDetections.get(element).center.y<highestY){
-                        highestYIndex = element;
-                        highestY=currentDetections.get(element).center.y;
-                    }
-                }
-                if(details){
-                    teamUtil.log("Highest Y" + highestY);
-                }
-                detectionNum=currentDetections.get(highestYIndex).id;
-            }
-
-            if(detectionNum==23){
-                teamUtil.pattern = PPG;
-                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.PPG_BLUE : Blinkin.Signals.PPG_RED);
-            }else if(detectionNum==22){
-                teamUtil.pattern = PGP;
-                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.PGP_BLUE : Blinkin.Signals.PGP_RED);
-            }else{
-                teamUtil.pattern = GPP;
-                blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.GPP_BLUE : Blinkin.Signals.GPP_RED);
-            }
-            telemetry.addLine("Detection ID: " + detectionNum);
-        }
-
-    }
     public void outputTelemetry() {
         //drive.driveMotorTelemetry();
     }
@@ -434,7 +382,17 @@ public class Robot {
         if(ballCount == 1){
             intake.intakeStart();
         }
+    }
 
+    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
+        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shootArtifactColor(color);
+            }
+        });
+        thread.start();
     }
 
     public  Intake.Location[][][][][] loadMap;
@@ -480,132 +438,100 @@ public class Robot {
         // We could add a NONE value to the Location enum and set all these to NONE to make this a bit cleaner
 
     }
-    static {
-    }
+
     public Intake.Location nextLoad(int num) {
         return loadMap[teamUtil.pattern.ordinal()][intake.leftLoad.ordinal()][intake.middleLoad.ordinal()][intake.rightLoad.ordinal()][num];
     }
-    
-    public void autoShootArtifacts(teamUtil.Pattern loadPattern){
-        if(teamUtil.pattern == PPG){
-            if(loadPattern == teamUtil.Pattern.PPG){
-                shootArtifactLocation(Intake.Location.LEFT);
-                shootArtifactLocation(Intake.Location.CENTER);
-                shootArtifactLocation(Intake.Location.RIGHT); // green is right and last
-            }else if(loadPattern == teamUtil.Pattern.PGP){
-                shootArtifactLocation(Intake.Location.LEFT);
-                shootArtifactLocation(Intake.Location.RIGHT);
-                shootArtifactLocation(Intake.Location.CENTER); // green is center and last
-            }else{//gpp
-                shootArtifactLocation(Intake.Location.RIGHT);
-                shootArtifactLocation(Intake.Location.CENTER);
-                shootArtifactLocation(Intake.Location.LEFT); // green is left and last
-            }
-        }else if(teamUtil.pattern == PGP){
-            if(loadPattern == teamUtil.Pattern.PPG){
-                shootArtifactLocation(Intake.Location.LEFT);
-                shootArtifactLocation(Intake.Location.RIGHT); // green is right and center
-                shootArtifactLocation(Intake.Location.CENTER);
-            }else if(loadPattern == teamUtil.Pattern.PGP){
-                shootArtifactLocation(Intake.Location.LEFT);
-                shootArtifactLocation(Intake.Location.CENTER); // green is center and center
-                shootArtifactLocation(Intake.Location.RIGHT);
-            }else{//gpp
-                shootArtifactLocation(Intake.Location.RIGHT);
-                shootArtifactLocation(Intake.Location.LEFT); // green is left and center
-                shootArtifactLocation(Intake.Location.CENTER);
-            }
-        }else{ // GPP
-            if(loadPattern == teamUtil.Pattern.PPG){
-                shootArtifactLocation(Intake.Location.RIGHT); // green is right and first
-                shootArtifactLocation(Intake.Location.LEFT);
-                shootArtifactLocation(Intake.Location.CENTER);
-            }else if(loadPattern == teamUtil.Pattern.PGP){
-                shootArtifactLocation(Intake.Location.CENTER); // green is center and first
-                shootArtifactLocation(Intake.Location.LEFT);
-                shootArtifactLocation(Intake.Location.RIGHT);
-            }else{//gpp
-                shootArtifactLocation(Intake.Location.LEFT); // green is left and first
-                shootArtifactLocation(Intake.Location.RIGHT);
-                shootArtifactLocation(Intake.Location.CENTER);
-            }
-        }
-    }
 
-    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
-        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                shootArtifactColor(color);
-            }
-        });
-        thread.start();
-    }
-
-    // TODO: Maybe we can make this faster by knowing the full sequence and moving 2nd and 3rd shots into position earlier?
-    // TODO: (especially while driving into shooting position)
-    public boolean shootPatternAuto(teamUtil.Pattern loadPattern) {
-        teamUtil.log("shootPatternAuto");
-        drive.loop();
-        shooter.adjustShooterV2(drive.robotGoalDistance());
-        drive.spinToHeadingV2(drive.robotGoalHeading(), 3000); // Will not change distance to target
-        drive.stopMotors();
-
-        // Wait for Flywheels to be ready
-        long now = System.currentTimeMillis();
-        long timeOutTime = System.currentTimeMillis() + 3000; // max time to wait for flywheels
-        while (!shooterFlyWheelsReady() && teamUtil.keepGoing(timeOutTime)) {
-            teamUtil.pause(100); // TODO: shorten pause
-        }
-        teamUtil.log("Waited " + (System.currentTimeMillis()-now) + "millisecs for flywheels");
-        /*
-        if (teamUtil.loadPattern==PPG || teamUtil.loadPattern==PGP) {
-            shootArtifactColor(Intake.ARTIFACT.PURPLE);
-            teamUtil.log("Shot purple");
+    public boolean patternShotAvailable (int num) {
+        if (num <1 || num > 3) return false;
+        Intake.Location location = nextLoad(num);
+        if ((location== Intake.Location.LEFT && intake.leftLoad == Intake.ARTIFACT.NONE) ||
+                (location== Intake.Location.CENTER && intake.middleLoad == Intake.ARTIFACT.NONE) ||
+                (location== Intake.Location.RIGHT && intake.rightLoad == Intake.ARTIFACT.NONE)) { // nothing loaded in the next flipper to unload
+            return false;
         } else {
-            shootArtifactColor(Intake.ARTIFACT.GREEN);
-            teamUtil.log("Shot green");
+            return true;
         }
-        if (teamUtil.loadPattern==PPG || teamUtil.loadPattern==GPP) {
-            shootArtifactColor(Intake.ARTIFACT.PURPLE);
-            teamUtil.log("Shot purple");
-        } else {
-            shootArtifactColor(Intake.ARTIFACT.GREEN);
-            teamUtil.log("Shot green");
-        }
-        if (teamUtil.loadPattern==PGP || teamUtil.loadPattern==GPP) {
-            shootArtifactColor(Intake.ARTIFACT.PURPLE);
-            teamUtil.log("Shot purple");
-        } else {
-            shootArtifactColor(Intake.ARTIFACT.GREEN);
-            teamUtil.log("Shot green");
-        }
-        teamUtil.log("shootPatternAuto Finished");
-        */
-        autoShootArtifacts(loadPattern);
-        return true;
-
     }
 
     // Loads the next Artifact into the shooter in a separate thread
     public boolean loadPatternShotNoWait(int num) {
-        Intake.Location location = nextLoad(num);
-        if ((location== Intake.Location.LEFT && intake.leftLoad == Intake.ARTIFACT.NONE) ||
-            (location== Intake.Location.CENTER && intake.middleLoad == Intake.ARTIFACT.NONE) ||
-            (location== Intake.Location.RIGHT && intake.rightLoad == Intake.ARTIFACT.NONE)) { // nothing loaded in the next flipper to unload
-                teamUtil.log ("Empty Flipper, not unloading");
-                return false;
+        if (!patternShotAvailable(num)) {
+            teamUtil.log ("Empty Flipper, not unloading");
+            return false;
         }
         teamUtil.log("Launching Thread to loadPatternShotNoWait");
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                intake.unloadServo(location);
+                int nextShot = num+1;
+                while (!patternShotAvailable(nextShot) && nextShot < 4) {
+                    nextShot++;
+                }
+                if (nextShot > 3) { // No next shot to pin
+                    intake.unloadServo(nextLoad(num), Intake.Location.NONE);
+                } else { // load the next shot and pin the next one if possible
+                    intake.unloadServo(nextLoad(num), nextLoad(nextShot));
+                }
             }
         });
         thread.start();
         return true;
+    }
+
+    // Attempts to run elevator to flippers and then load the first pattern shot
+    // If balls are missing, will move to the next. Its possible that nothing will be loaded if nothing was in the intake
+    public AtomicBoolean transferring = new AtomicBoolean(false);
+    public void autoTransferAndLoad (long pause, long timeOut) {
+        transferring.set(true);
+        teamUtil.log("autoTransferAndLoad with pause:  " + pause);
+        long timeOutTime = System.currentTimeMillis() + timeOut;
+        teamUtil.pause(pause);
+        if (intake.elevatorToFlippersV2(false)) {
+            // TODO: This might be a good place to detect what is loaded
+
+            int shot = 1; // load first shot that is available
+            int nextShot;
+            while (!patternShotAvailable(shot) && shot < 4) {
+                shot++;
+            }
+            nextShot = shot+1;
+            while (!patternShotAvailable(nextShot) && nextShot < 4) {
+                nextShot++;
+            }
+            if (shot>3) { // nothing to transfer
+                teamUtil.log("autoTransferAndLoad: Nothing to load");
+                transferring.set(false);
+            } else { // We can at least load one into the shooter
+                if (nextShot > 3) { // No next shot to pin
+                    intake.unloadServo(nextLoad(shot), Intake.Location.NONE);
+                } else { // load the next shot and pin the next one if possible
+                    intake.unloadServo(nextLoad(shot), nextLoad(nextShot));
+                }
+            }
+        } else { // intake failed in some way
+            // TODO: Maybe pause then try again for some amount of time?
+            teamUtil.log("ElevatorToFlippersV2 failed. Giving up on Transfer.");
+        }
+        transferring.set(false);
+        teamUtil.log("autoTransferAndLoad Finished");
+    }
+
+    public void autoTransferAndLoadNoWait (long pause, long timeOut) {
+        if (transferring.get()) {
+            teamUtil.log("WARNING: Attempt to autoTransferAndLoadNoWait while transferring. Ignored.");
+            return;
+        }
+        transferring.set(true);
+        teamUtil.log("Launching Thread to autoTransferAndLoadNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                autoTransferAndLoad(pause, timeOut);
+            }
+        });
+        thread.start();
     }
 
     public void logShot(double flyWheelVelocity) {
@@ -648,10 +574,10 @@ public class Robot {
         return true;
     }
 
-    public static long AUTO_PATTERN_SHOT_LOAD_LIMIT = 1750; // Skip shot if it takes longer than this to load it into shooter
+    public static long AUTO_PATTERN_SHOT_LOAD_LIMIT = 1500; // Skip shot if it takes longer than this to load it into shooter
     // Move while shooting adjusting robot heading and shooter as needed
-    // TODO: Empty shooter at end if somehow it is still loaded
-    public boolean driveWhileShooting(boolean useArms, double driveHeading, double velocity, long timeOut) {
+    // TODO: Shooter should have something loaded before this starts. Bail out if not true?
+    public boolean driveWhileShootingPattern(boolean useArms, double driveHeading, double velocity, long timeOut) {
         teamUtil.log("driveWhileShooting driveH: " + driveHeading + " Vel: " + velocity);
         long timeOutTime = System.currentTimeMillis() + timeOut;
         long nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT;
@@ -665,7 +591,9 @@ public class Robot {
             double shotHeading = drive.robotGoalHeading();
             drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
             if (useArms) {
-                if (shootIfCan()) { // TODO: What if the flipper in the middle hasn't let go of the ball yet? Might be able to solve this by backing up unload position on middle flipper only
+                // TODO: Should we make sure a minimum amount of time has passed since last shot to make sure they hit ramp in the correct order?
+                if (shootIfCan()) {
+                    velocity = 0; // stop driving once we have a good shot (but keep rotating!)
                     nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++;
                     if (numShots < 3) {
@@ -690,6 +618,12 @@ public class Robot {
                             teamUtil.log ("Nothing to load--Skipping Shot " + numShots);
                         }
                     }
+                }
+                // Empty out shooter in case something got left behind. Not worried about aiming at this point.
+                while (shooter.isLoaded() && !shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
+                    teamUtil.log("driveWhileShootingPattern --------------- Leftovers in shooter! Emptying");
+                    shooter.pushOneNoWait();
+                    logShot(shooter.leftFlywheel.getVelocity());
                 }
             } else if (System.currentTimeMillis() > shot3Time) {
                     break;
@@ -738,13 +672,6 @@ public class Robot {
 
 
 
-
-
-    public boolean seeLine(){
-        return  (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() > LIFT_AUTO_ALIGN_BLUE_THRESHOLD) ||
-                (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() > LIFT_AUTO_ALIGN_RED_THRESHOLD);
-    }
-
     public static double B00_MAX_SPEED = 2200;
     public static double B00_CORNER_VELOCITY = 1800;
     public static double B00_SHOOT_VELOCITY = 100;
@@ -781,6 +708,9 @@ public class Robot {
     public static double B07_RAMP_FY = B06_PICKUP1_Y;
     public static double B07_RAMP_FH = 270;
     public static long B07_RAMP_TIMEOUT = 1000;
+    public static long B07_PICKUP2_INTAKE_PAUSE = 500;
+    public static long B07_PICKUP3_INTAKE_PAUSE = 0;
+    public static long B07_PICKUP4_INTAKE_PAUSE = 0;
 
     public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
     public static double B07_SETUP2_DH = 105;
@@ -793,6 +723,9 @@ public class Robot {
     public static double B08_SHOOT2_H = 45;
     public static double B08_SHOOT2_DH = 315;
     public static double B08_SHOOT2_END_VEL = 400;
+
+    public static long B08_PICKUP3_PAUSE = 150;
+    public static long B08_PICKUP4_PAUSE = 200;
 
     public static double B08_SHOOT3_Y = B08_SHOOT2_Y;
     public static double B08_SHOOT3_DRIFT = 100;
@@ -826,7 +759,7 @@ public class Robot {
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
-            shooter.setShootSpeed(B05_SHOT1_VEL);
+            shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots
             Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
             loadPatternShotNoWait(1); // get the first ARTIFACT in the shooter
         }
@@ -837,7 +770,7 @@ public class Robot {
         // Drive fast to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
         // Shoot preloads
-        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,3500)) return;
+        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,5000)) return;
 
 
         /////////////////////////////Intake 2nd group and shoot
@@ -852,30 +785,29 @@ public class Robot {
             teamUtil.log("==================== Empty Ramp ");
             // Pickup 2nd set of artifacts, slowing at end
             if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
+            // Manually set what is loaded in intake in case detector fails
+            if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+                intake.setLoadedArtifacts(teamUtil.Pattern.GPP);
+            }else{
+                intake.setLoadedArtifacts(teamUtil.Pattern.PPG);
+            }
+            if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, 3000);
             // push the gate allowing for timeout
             drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, 0, null, 0, B07_RAMP_TIMEOUT);
             drive.stopMotors();
-            intake.elevatorToFlippersV2NoWait();
-            if (useArms) { intake.intakeStop(); }
-            teamUtil.pause(emptyRampPause);
+           teamUtil.pause(emptyRampPause);
             // get clear of 3rd group before rotating
             if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_RAMP_FY, B07_RAMP_X + B07_RAMP_X_DRIFT, B07_RAMP_FH, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
         } else {
             // pickup 2nd set of artifacts
             if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
-            intake.elevatorToFlippersV2NoWait(); // TODO: Do we need to give the intake a bit more time before activating elevator?
+            if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, 3000);
         }
-        // Manually set what is loaded in intake
-        if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
-            intake.setLoadedArtifacts(teamUtil.Pattern.GPP);
-        }else{
-            intake.setLoadedArtifacts(teamUtil.Pattern.PPG);
-        }
+        // TODO: Adjust flywheel speed for 2nd 3 shots
         // Drive back to shooting zone
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         // shoot second set of balls
-        loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
-        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,3500)) return;
+        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT2_H) : 360-B08_SHOOT2_H,B00_SHOOT_VELOCITY,5000)) return;
 
         /////////////////////////////Intake 3rd group and shoot
         // Setup to pickup group 3
@@ -886,35 +818,44 @@ public class Robot {
         // Pickup group 3
         if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
-        intake.elevatorToFlippersV2NoWait(); // TODO: Do we need to give the intake a bit more time before activating elevator?
-        // Manually set what is loaded in intake
+        // Manually set what is loaded in intake in case detector fails
         intake.setLoadedArtifacts(teamUtil.Pattern.PGP);
+        drive.stopMotors(); // kill some forward momentum
+        teamUtil.pause(B08_PICKUP3_PAUSE);
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, 3000);
+        // TODO: Adjust flywheel speed for 3rd group
+
         // Drive back to shooting zone
-        loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
         // shoot 3rd set of balls
-        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,3500)) return;
+        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,5000)) return;
 
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
         if (useArms) { intake.intakeIn(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
-        intake.elevatorToFlippersV2NoWait();
-        // Manually set what is loaded in intake
+        // Manually set what is loaded in intake in case detector fails
         if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
             intake.setLoadedArtifacts(teamUtil.Pattern.PPG);
         }else{
             intake.setLoadedArtifacts(teamUtil.Pattern.GPP);
         }
+        drive.stopMotors(); // kill some forward momentum
+        teamUtil.pause(B08_PICKUP4_PAUSE);
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, 3000);
+        // TODO: Adjust flywheel speed for 4th group
         // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         // shoot 4th set of balls
-        loadPatternShotNoWait(1); // TODO: Ideally this would be done before we get here
-        if (!driveWhileShooting(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,3500)) return;
+        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,5000)) return;
 
         /////////////////////////////Park
         teamUtil.log("==================== Park ================");
+        intake.intakeStop();
+        intake.stopDetector();
+        shooter.stopShooter();
+
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
@@ -922,7 +863,6 @@ public class Robot {
 
         /////////////////////////////Wrap up
         drive.stopMotors();
-        intake.stopDetector();
         intake.intakeStop();
         shooter.stopShooter();
     }
@@ -932,6 +872,96 @@ public class Robot {
     /// // OLD CODE
     ///
     /*
+
+        public void autoShootArtifacts(teamUtil.Pattern loadPattern){
+        if(teamUtil.pattern == PPG){
+            if(loadPattern == teamUtil.Pattern.PPG){
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.CENTER);
+                shootArtifactLocation(Intake.Location.RIGHT); // green is right and last
+            }else if(loadPattern == teamUtil.Pattern.PGP){
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER); // green is center and last
+            }else{//gpp
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER);
+                shootArtifactLocation(Intake.Location.LEFT); // green is left and last
+            }
+        }else if(teamUtil.pattern == PGP){
+            if(loadPattern == teamUtil.Pattern.PPG){
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.RIGHT); // green is right and center
+                shootArtifactLocation(Intake.Location.CENTER);
+            }else if(loadPattern == teamUtil.Pattern.PGP){
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.CENTER); // green is center and center
+                shootArtifactLocation(Intake.Location.RIGHT);
+            }else{//gpp
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.LEFT); // green is left and center
+                shootArtifactLocation(Intake.Location.CENTER);
+            }
+        }else{ // GPP
+            if(loadPattern == teamUtil.Pattern.PPG){
+                shootArtifactLocation(Intake.Location.RIGHT); // green is right and first
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.CENTER);
+            }else if(loadPattern == teamUtil.Pattern.PGP){
+                shootArtifactLocation(Intake.Location.CENTER); // green is center and first
+                shootArtifactLocation(Intake.Location.LEFT);
+                shootArtifactLocation(Intake.Location.RIGHT);
+            }else{//gpp
+                shootArtifactLocation(Intake.Location.LEFT); // green is left and first
+                shootArtifactLocation(Intake.Location.RIGHT);
+                shootArtifactLocation(Intake.Location.CENTER);
+            }
+        }
+    }
+
+
+    public boolean shootPatternAuto(teamUtil.Pattern loadPattern) {
+        teamUtil.log("shootPatternAuto");
+        drive.loop();
+        shooter.adjustShooterV2(drive.robotGoalDistance());
+        drive.spinToHeadingV2(drive.robotGoalHeading(), 3000); // Will not change distance to target
+        drive.stopMotors();
+
+        // Wait for Flywheels to be ready
+        long now = System.currentTimeMillis();
+        long timeOutTime = System.currentTimeMillis() + 3000; // max time to wait for flywheels
+        while (!shooterFlyWheelsReady() && teamUtil.keepGoing(timeOutTime)) {
+            teamUtil.pause(100);
+        }
+        teamUtil.log("Waited " + (System.currentTimeMillis()-now) + "millisecs for flywheels");
+
+
+        if (teamUtil.loadPattern==PPG || teamUtil.loadPattern==PGP) {
+            shootArtifactColor(Intake.ARTIFACT.PURPLE);
+            teamUtil.log("Shot purple");
+        } else {
+            shootArtifactColor(Intake.ARTIFACT.GREEN);
+            teamUtil.log("Shot green");
+        }
+        if (teamUtil.loadPattern==PPG || teamUtil.loadPattern==GPP) {
+            shootArtifactColor(Intake.ARTIFACT.PURPLE);
+            teamUtil.log("Shot purple");
+        } else {
+            shootArtifactColor(Intake.ARTIFACT.GREEN);
+            teamUtil.log("Shot green");
+        }
+        if (teamUtil.loadPattern==PGP || teamUtil.loadPattern==GPP) {
+            shootArtifactColor(Intake.ARTIFACT.PURPLE);
+            teamUtil.log("Shot purple");
+        } else {
+            shootArtifactColor(Intake.ARTIFACT.GREEN);
+            teamUtil.log("Shot green");
+        }
+        teamUtil.log("shootPatternAuto Finished");
+
+        autoShootArtifacts(loadPattern);
+        return true;
+    }
     public static double A00_MAX_SPEED_NEAR_GOAL = 1500;
     public static double A00_SHOOT_END_VELOCITY = 300;
     public static double A01_SHOOT_END_VELOCITY = 1000;
@@ -1124,6 +1154,10 @@ public class Robot {
     public static int LIFT_AUTO_ALIGN_BLUE_THRESHOLD = 2500;
     public static int LIFT_AUTO_ALIGN_RED_THRESHOLD = 2500;
 
+    public boolean seeLine(){
+        return  (teamUtil.alliance== teamUtil.Alliance.BLUE && footColorSensor.blue() > LIFT_AUTO_ALIGN_BLUE_THRESHOLD) ||
+                (teamUtil.alliance== teamUtil.Alliance.RED && footColorSensor.red() > LIFT_AUTO_ALIGN_RED_THRESHOLD);
+    }
 
     // Back up until robot sees a line then stop
     public boolean alignForLift() {
