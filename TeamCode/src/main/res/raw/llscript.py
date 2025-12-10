@@ -1,0 +1,224 @@
+import cv2
+import numpy as np
+from collections import deque
+import statistics
+
+# --- Global Variables for State Maintenance ---
+HISTORY_LENGTH = 10
+history = deque([(0, 0, 0)] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
+
+# Mode Constants (as before)
+MODE_INTAKE = 1  # OpMode sends 1 for INTAKE mode
+MODE_LOADED = 2  # OpMode sends 2 for LOADED mode
+
+NONE = 0
+GREEN = 1
+PURPLE = 2
+
+# --- FTC DECODE ARTIFACT HSV Ranges ---
+# These are typical ranges for these colors under good lighting. You may need to fine-tune these.
+
+# Green ARTIFACT (typically a distinct, high-saturation green)
+# Hue: around 50-70. Saturation/Value: High
+LOWER_GREEN = np.array([40, 100, 100])
+UPPER_GREEN = np.array([80, 255, 255])
+
+# Purple ARTIFACT (requires wrapping the hue for some shades, but let's stick to a single main band)
+# Hue: around 125-165. Saturation/Value: High
+LOWER_PURPLE = np.array([120, 50, 50])
+UPPER_PURPLE = np.array([160, 255, 255])
+
+# ---  BLUR FACTOR ---
+# Must be a positive, odd integer (e.g., 3, 5, 7, 9).
+# Larger number = more blur. Start with 5 and tune as needed.
+BLUR_KERNEL_SIZE_INTAKE = 51
+BLUR_KERNEL_SIZE_LOADED = 51
+
+# Minimum Bounding Box Area (Adjust based on your target size/distance)
+MIN_AREA_CONSTRAINT_INTAKE = 200.0
+MIN_AREA_CONSTRAINT_LOADED = 200.0
+
+DOUBLE_BALL_MAX = 0
+DOUBLE_BALL_MAX_INTAKE = 1000
+DOUBLE_BALL_MAX_LOADED = 4000
+SINGLE_BALL_MAX = 0
+SINGLE_BALL_MAX_INTAKE = 1000
+SINGLE_BALL_MAX_LOADED = 2000
+LEFT_DOUBLE_THRESHOLD = 320
+LEFT_THRESHOLD = 0
+LEFT_THRESHOLD_INTAKE = 200
+LEFT_THRESHOLD_LOADED = 275
+RIGHT_THRESHOLD = 0
+RIGHT_THRESHOLD_INTAKE = 420
+RIGHT_THRESHOLD_LOADED = 550
+
+CROP_BOTTOM_PIXELS = 200
+
+def process_green_boxes(boxes):
+    """
+    Iterates through the list of green bounding boxes and calculates properties
+    like area and center (cx, cy).
+
+    Returns: A list of dictionaries containing the calculated properties.
+    """
+    bounding_box_data = []
+
+def detect(boxes, color):
+    for x, y, w, h, area, cx, cy in boxes:
+        if (area > DOUBLE_BALL_MAX):
+            left_result = color
+            middle_result = color
+            right_result = color
+        elif (area > SINGLE_BALL_MAX):
+            if (cx < LEFT_DOUBLE_THRESHOLD):
+                left_result = color
+                middle_result = color
+            else:
+                middle_result = color
+                right_result = color
+        elif (cx< LEFT_THRESHOLD):
+            left_result = color
+        elif (cx > RIGHT_THRESHOLD):
+            right_result = color
+        else:
+            middle_result = color
+    print(f"DOUBLE_BALL_MAX {DOUBLE_BALL_MAX} | SINGLE_BALL_MAX {SINGLE_BALL_MAX}, LEFT_THRESHOLD {LEFT_THRESHOLD}, RIGHT_THRESHOLD{RIGHT_THRESHOLD}")
+    print(f"Box: Area {area} | X,Y: {cx}, {cy}")
+
+
+def runPipeline(image, llrobot):
+    global history
+
+    # Initialize outputs
+    largestContour = np.array([[]])
+    llpython = [0.0] * 8
+
+    # 1. Receive Input Mode from OpMode (llrobot[0])
+    current_mode = llrobot[0]
+
+# Black out the bottom region on the original image
+    height, width = image.shape[:2] # Get image height and width
+    crop_height_start = height - CROP_BOTTOM_PIXELS
+
+    # Set the bottom region to black (0) on the original BGR image
+    image[crop_height_start:height, 0:width] = 0
+
+    if current_mode == MODE_INTAKE:
+        kernel = (BLUR_KERNEL_SIZE_INTAKE, BLUR_KERNEL_SIZE_INTAKE)
+        MIN_AREA_CONSTRAINT = MIN_AREA_CONSTRAINT_INTAKE
+        DOUBLE_BALL_MAX = DOUBLE_BALL_MAX_INTAKE
+        SINGLE_BALL_MAX = SINGLE_BALL_MAX_INTAKE
+        LEFT_THRESHOLD = LEFT_THRESHOLD_INTAKE
+        RIGHT_THRESHOLD = RIGHT_THRESHOLD_INTAKE
+    else:
+        kernel = (BLUR_KERNEL_SIZE_LOADED, BLUR_KERNEL_SIZE_LOADED)
+        MIN_AREA_CONSTRAINT = MIN_AREA_CONSTRAINT_LOADED
+        DOUBLE_BALL_MAX = DOUBLE_BALL_MAX_LOADED
+        SINGLE_BALL_MAX = SINGLE_BALL_MAX_LOADED
+        LEFT_THRESHOLD = LEFT_THRESHOLD_LOADED
+        RIGHT_THRESHOLD = RIGHT_THRESHOLD_LOADED
+
+    # Apply Gaussian Blur to the HSV image
+    # This reduces noise and helps smooth the edges of the blobs.
+    img_blurred = cv2.GaussianBlur(image, kernel, 0)
+
+    # Convert to HSV color space once
+    img_hsv = cv2.cvtColor(img_blurred, cv2.COLOR_BGR2HSV)
+
+
+
+    # --- 2. Identify and Separate Blobs ---
+
+    # Create masks using the blurred image
+    mask_green = cv2.inRange(img_hsv, LOWER_GREEN, UPPER_GREEN)
+    mask_purple = cv2.inRange(img_hsv, LOWER_PURPLE, UPPER_PURPLE)
+
+    # Dictionaries to hold the bounding boxes: {'color': [(x, y, w, h), ...]}
+    green_boxes = []
+    purple_boxes = []
+
+    # Process Green Blobs
+    contours_g, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in contours_g:
+        area = cv2.contourArea(c)
+        if area >= MIN_AREA_CONSTRAINT:
+            x, y, w, h = cv2.boundingRect(c)
+            area = w*h
+            cx = x + (w // 2)
+            cy = y + (h // 2)
+            green_boxes.append((x, y, w, h, area, cx, cy))
+            cv2.rectangle(img_blurred, (x, y), (x + w, y + h), (0, 255, 0), 2) # Green box on image
+
+    # Process Purple Blobs
+    contours_p, _ = cv2.findContours(mask_purple, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for c in contours_p:
+        area = cv2.contourArea(c)
+        if area >= MIN_AREA_CONSTRAINT:
+            x, y, w, h = cv2.boundingRect(c)
+            area = w*h
+            cx = x + (w // 2)
+            cy = y + (h // 2)
+            purple_boxes.append((x, y, w, h, area, cx, cy))
+            cv2.rectangle(img_blurred, (x, y), (x + w, y + h), (255, 0, 255), 2) # Purple box on image
+
+    # Update the Limelight's largest contour for standard tx/ty/ta outputs
+    all_contours = contours_g + contours_p
+    if all_contours:
+        largestContour = max(all_contours, key=cv2.contourArea)
+
+    # --- 3. Process the Bounding Box Lists (Your Custom Game Logic) ---
+
+    # NOTE: You will replace this placeholder logic with your actual game logic.
+    # The logic must use 'green_boxes' and 'purple_boxes' and output three integers.
+
+    # Placeholder Logic: Example using the number of blobs found
+
+    num_green = len(green_boxes)
+    num_purple = len(purple_boxes)
+    # Print the counts and the current mode for debugging
+    #print(f"Mode: {current_mode} | Green Detections: {num_green} | Purple Detections: {num_purple}")
+
+    left_result = NONE
+    middle_result = NONE
+    right_result = NONE
+    # Run through detections
+    detect (green_boxes, GREEN)
+    detect (purple_boxes, PURPLE)
+
+    # --- 4. Maintain Stats (History Update) ---
+    history.append((left_result, middle_result, right_result))
+
+    # --- 5. Return Most Common Value (Temporal Smoothing) ---
+
+    left_values = [res[0] for res in history]
+    middle_values = [res[1] for res in history]
+    right_values = [res[2] for res in history]
+
+    # Calculate the most common (mode) for each list
+    try:
+        most_common_left = statistics.mode(left_values)
+        most_common_middle = statistics.mode(middle_values)
+        most_common_right = statistics.mode(right_values)
+    except statistics.StatisticsError:
+        # Fallback to the latest value if all are unique
+        most_common_left = left_values[-1]
+        most_common_middle = middle_values[-1]
+        most_common_right = right_values[-1]
+
+    print(f"Mode: {current_mode} | Left: {most_common_left} | Middle : {most_common_middle} | Right: {most_common_right}")
+
+    # Populate the llpython array with the smoothed results and status
+    # llpython[0]: Flag (1.0 if targets found, 0.0 otherwise)
+    llpython[0] = 1.0 if (green_boxes or purple_boxes) else 0.0
+
+    # llpython[1], [2], [3]: Smoothed (most common) results
+    llpython[1] = float(most_common_left)
+    llpython[2] = float(most_common_middle)
+    llpython[3] = float(most_common_right)
+
+    # Optional: Return raw count data for debugging
+    llpython[4] = float(num_green)
+    llpython[5] = float(num_purple)
+
+    # Return the required tuple
+    return largestContour, img_blurred, llpython
