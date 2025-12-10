@@ -397,7 +397,7 @@ public class Robot {
 
     public  Intake.Location[][][][][] loadMap;
     public void setupLoadMap() {
-        loadMap = new Intake.Location[3][3][3][3][4];
+        loadMap = new Intake.Location[3][3][3][3][4]; // pattern, left loaded, center loaded, right loaded, shot num
         loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][1] = Intake.Location.CENTER;
         loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][2] = Intake.Location.LEFT;
         loadMap[PPG.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.PURPLE.ordinal()][Intake.ARTIFACT.GREEN.ordinal()][3] = Intake.Location.RIGHT;
@@ -582,12 +582,29 @@ public class Robot {
         if(Math.sqrt(Math.pow(drive.oQlocalizer.velX_mmS, 2) + Math.pow(drive.oQlocalizer.velY_mmS, 2)) > SHOOT_VELOCITY_THRESHOLD){
             return false;
         }
+        // Don't attempt to shoot if we are currently shooting
+        if (shooter.pusher.moving.get()) return false;
 
-        if(shootIfCan()){
-            //flipNextNoWait();
-            return true;
+        // Don't attempt to shoot if our heading is not accurate enough
+        if(!shooterHeadingReady()) return false;
+
+        // Don't attempt to shoot if there is no ball in the shooter
+        if(!shooter.isLoaded()){
+            return false;
         }
-        return false;
+
+        double goalDistance = drive.robotGoalDistance();
+        double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
+
+        // Don't attempt to shoot if flywheel speed is not in acceptable range
+        if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
+        // Launch it
+        shooter.pushOneNoWait();
+        if(details) {
+            logShot(flyWheelVelocity);
+        }
+        intake.flipNextNoWait();
+        return true;
     }
 
     public static long AUTO_PATTERN_SHOT_LOAD_LIMIT = 1500; // Skip shot if it takes longer than this to load it into shooter
