@@ -48,7 +48,7 @@ public class Intake {
 
     public enum Location{LEFT, CENTER, RIGHT, NONE}; // correspond to the flippers (reversed if facing the robot)
     public enum ARTIFACT {NONE, GREEN, PURPLE};
-    public ARTIFACT leftLoad,rightLoad,middleLoad, leftIntake, middleIntake, rightIntake;
+    public static ARTIFACT leftLoad = ARTIFACT.NONE,rightLoad = ARTIFACT.NONE,middleLoad = ARTIFACT.NONE, leftIntake = ARTIFACT.NONE, middleIntake = ARTIFACT.NONE, rightIntake = ARTIFACT.NONE;
     public int intakeNum = 0;
 
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
@@ -78,6 +78,7 @@ public class Intake {
     static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
     static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
     public static long FLIPPER_UNLOAD_PAUSE = 400;
+    public static Location pinned;
 
 
 
@@ -189,38 +190,99 @@ public class Intake {
             case LEFT:
                 if (servoPositionIs(left_flipper,FLIPPER_TRANSFER)) {
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    leftLoad = ARTIFACT.NONE;
                     teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                    pinned = Location.NONE;
                 }
                 left_flipper.setPosition(FLIPPER_CEILING);
                 if (nextLocation==Location.RIGHT) {
                     right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    pinned = nextLocation;
                 }
                 break;
             case RIGHT:
                 if (servoPositionIs(right_flipper,FLIPPER_TRANSFER)) {
                     right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    rightLoad = ARTIFACT.NONE;
                     teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                    pinned = Location.NONE;
                 }
                 right_flipper.setPosition(FLIPPER_CEILING);
                 if (nextLocation==Location.LEFT) {
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    pinned = nextLocation;
                 }
                 break;
             case CENTER:
                 if (servoPositionIs(middle_flipper,FLIPPER_TRANSFER)) {
                     middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+                    middleLoad = ARTIFACT.NONE;
                     teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                    pinned = Location.NONE;
                 }
                 middle_flipper.setPosition(FLIPPER_CEILING);
                 if (nextLocation==Location.LEFT) {
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    pinned = nextLocation;
                 }
                 if (nextLocation==Location.RIGHT) {
                     right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    pinned = nextLocation;
                 }
                 break;
             default:
         }
+
+    }
+
+    public void flipNext(){
+        if(middleLoad != ARTIFACT.NONE){
+            middleLoad = ARTIFACT.NONE;
+            middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+            if(leftLoad != ARTIFACT.NONE){
+                left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+            }
+            if(rightLoad != ARTIFACT.NONE) {
+                right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+            }
+            teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+            middle_flipper.setPosition(FLIPPER_CEILING);
+        }else{
+            if (servoPositionIs(left_flipper,EDGE_FLIPPER_SHOOTER_TRANSFER)) {
+                left_flipper.setPosition(FLIPPER_CEILING);
+                leftLoad = ARTIFACT.NONE;
+            }else if(servoPositionIs(right_flipper,EDGE_FLIPPER_SHOOTER_TRANSFER)){
+                right_flipper.setPosition(FLIPPER_CEILING);
+                rightLoad = ARTIFACT.NONE;
+            }else{
+                if(leftLoad != ARTIFACT.NONE){
+                    left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    leftLoad = ARTIFACT.NONE;
+                    if (rightLoad != ARTIFACT.NONE) {
+                        right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    }
+                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                    left_flipper.setPosition(FLIPPER_CEILING);
+                }else if(rightLoad != ARTIFACT.NONE) {
+                    right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    rightLoad = ARTIFACT.NONE;
+                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                    right_flipper.setPosition(FLIPPER_CEILING);
+                }
+
+            }
+        }
+    }
+
+    public void flipNextNoWait() {
+        teamUtil.log("Launching Thread to flipNext.");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                flipNext();
+            }
+        });
+        thread.start();
     }
 
     public boolean elevatorToGroundV2() {
@@ -327,6 +389,38 @@ public class Intake {
             @Override
             public void run() {
                 getReadyToIntake();
+            }
+        });
+        thread.start();
+    }
+
+
+
+    public void elevatorToShooterFast(){
+        if(leftIntake == ARTIFACT.NONE && middleIntake == ARTIFACT.NONE && rightIntake == ARTIFACT.NONE){
+            teamUtil.log("elevatorToShooterFast called without loaded artifacts");
+//            return;
+        }
+        if(elevatorToFlippersV2(false)){
+
+            flipNext();
+        }
+
+        teamUtil.log("elevatorToShooterFast finished");
+    }
+
+    public void elevatorToShooterFastNoWait(){
+        if (elevatorMoving.get()) {
+            teamUtil.log("WARNING: elevatorToShooterNoWait called while moving--Ignored");
+            return;
+        }
+        elevatorMoving.set(true);
+        failedOut.set(false);
+        teamUtil.log("Launching Thread to elevatorToShooterNoWait.");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                elevatorToShooterFast();
             }
         });
         thread.start();

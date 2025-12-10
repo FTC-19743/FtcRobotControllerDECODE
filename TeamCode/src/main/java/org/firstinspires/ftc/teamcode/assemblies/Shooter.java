@@ -116,7 +116,7 @@ public class Shooter {
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
         pusher.setPower(0);
-        pusher.calibrate();
+        pusher.calibrate(500);
         pushOne();
     }
     public void outputTelemetry(){
@@ -220,6 +220,15 @@ public class Shooter {
         setShootSpeed(velocityNeeded);
         aim(pitchNeeded);
         if(details)teamUtil.log("adjustShooterV2 Finished");
+    }
+
+    public void adjustShooterV3(double distance){
+        if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
+
+        VELOCITY_COMMANDED = calculateMidSpeed(distance);
+        setShootSpeed(VELOCITY_COMMANDED);
+        aim(calculatePitch(distance, leftFlywheel.getVelocity()));
+        if(details)teamUtil.log("adjustShooterV3 Finished");
     }
 
     public static double minSpeedA = 0.0000490408;

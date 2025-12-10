@@ -168,15 +168,15 @@ public class Teleop extends LinearOpMode {
                     robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
                 }
                 if(shootingMode){
-                    robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
+                    robot.shooter.adjustShooterV3(robot.drive.robotGoalDistance());
                 }
                 if(gamepad2.yWasReleased()){
                     robot.shooter.pushOneNoWait();
                 }
                 if(gamepad2.aWasReleased()){
-                    robot.shooter.pusher.calibrateNoWait();
+                    robot.shooter.pusher.calibrateNoWait(500);
                     robot.shooter.pushOneNoWait();
-                }if(gamepad2.right_trigger > .6f){
+                }if(gamepad2.right_trigger > .6f && shootingMode){
                     robot.shootIfCanTeleop(); // blinkin based on the result?
                 }
 
@@ -230,7 +230,7 @@ public class Teleop extends LinearOpMode {
                 }
 
                 if(gamepad2.leftBumperWasReleased()){
-                    robot.intake.elevatorToFlippersV2NoWait();
+                    robot.intake.elevatorToShooterFastNoWait();
                 }
 
                 robot.outputTelemetry();
