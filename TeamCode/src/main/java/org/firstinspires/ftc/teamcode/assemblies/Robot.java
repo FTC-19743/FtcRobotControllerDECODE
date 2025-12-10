@@ -574,6 +574,22 @@ public class Robot {
         return true;
     }
 
+    public static short SHOOT_VELOCITY_THRESHOLD = 1000; // mm/s
+
+    public boolean shootIfCanTeleop(){
+
+        // Don't shoot if the robot is moving too fast
+        if(Math.sqrt(Math.pow(drive.oQlocalizer.velX_mmS, 2) + Math.pow(drive.oQlocalizer.velY_mmS, 2)) > SHOOT_VELOCITY_THRESHOLD){
+            return false;
+        }
+
+        if(shootIfCan()){
+            //flipNextNoWait();
+            return true;
+        }
+        return false;
+    }
+
     public static long AUTO_PATTERN_SHOT_LOAD_LIMIT = 1500; // Skip shot if it takes longer than this to load it into shooter
     // Move while shooting adjusting robot heading and shooter as needed
     // TODO: Shooter should have something loaded before this starts. Bail out if not true?

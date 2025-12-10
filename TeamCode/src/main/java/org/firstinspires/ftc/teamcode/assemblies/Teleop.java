@@ -176,8 +176,9 @@ public class Teleop extends LinearOpMode {
                 if(gamepad2.aWasReleased()){
                     robot.shooter.pusher.calibrateNoWait();
                     robot.shooter.pushOneNoWait();
+                }if(gamepad2.right_trigger > .6f){
+                    robot.shootIfCanTeleop(); // blinkin based on the result?
                 }
-
 
                 ///////////// ENDGAME //////////////////////////////
                 if(gamepad1.touchpadWasPressed()) {
