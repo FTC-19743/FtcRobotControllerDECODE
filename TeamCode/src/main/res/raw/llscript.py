@@ -4,7 +4,7 @@ from collections import deque
 import statistics
 
 # --- Global Variables for State Maintenance ---
-HISTORY_LENGTH = 10
+HISTORY_LENGTH = 3
 history = deque([(0, 0, 0)] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
 
 # Mode Constants (as before)
@@ -15,61 +15,71 @@ NONE = 0
 GREEN = 1
 PURPLE = 2
 
+left_result = NONE
+middle_result = NONE
+right_result = NONE
+
 # --- FTC DECODE ARTIFACT HSV Ranges ---
 # These are typical ranges for these colors under good lighting. You may need to fine-tune these.
 
+# LL Settings
+# 640x480
+# Exposure 2000
+# Sensor Gain 10
+# Red/Blue Balance 1300/1975  Defaults are 1200/1975
 # Green ARTIFACT (typically a distinct, high-saturation green)
 # Hue: around 50-70. Saturation/Value: High
-LOWER_GREEN = np.array([40, 100, 100])
-UPPER_GREEN = np.array([80, 255, 255])
+LOWER_GREEN = np.array([40, 100, 70])
+UPPER_GREEN = np.array([100, 255, 255]) #was 80 before led strip
 
 # Purple ARTIFACT (requires wrapping the hue for some shades, but let's stick to a single main band)
 # Hue: around 125-165. Saturation/Value: High
 LOWER_PURPLE = np.array([120, 50, 50])
-UPPER_PURPLE = np.array([160, 255, 255])
+UPPER_PURPLE = np.array([135, 255, 255])
 
 # ---  BLUR FACTOR ---
 # Must be a positive, odd integer (e.g., 3, 5, 7, 9).
 # Larger number = more blur. Start with 5 and tune as needed.
-BLUR_KERNEL_SIZE_INTAKE = 51
-BLUR_KERNEL_SIZE_LOADED = 51
+BLUR_KERNEL_SIZE_INTAKE = 11
+BLUR_KERNEL_SIZE_LOADED = 21
+
+# --- Clean up tape edges and other noise
+# --- MORPHOLOGICAL KERNEL ---
+MORPH_KERNEL_INTAKE = np.ones((5, 5), np.uint8)
+MORPH_KERNEL_LOADED = np.ones((15, 15), np.uint8)
 
 # Minimum Bounding Box Area (Adjust based on your target size/distance)
-MIN_AREA_CONSTRAINT_INTAKE = 200.0
+MIN_AREA_CONSTRAINT_INTAKE = 5000.0
 MIN_AREA_CONSTRAINT_LOADED = 200.0
 
 DOUBLE_BALL_MAX = 0
-DOUBLE_BALL_MAX_INTAKE = 1000
-DOUBLE_BALL_MAX_LOADED = 4000
+DOUBLE_BALL_MAX_INTAKE = 410
+DOUBLE_BALL_MAX_LOADED = 600
 SINGLE_BALL_MAX = 0
-SINGLE_BALL_MAX_INTAKE = 1000
-SINGLE_BALL_MAX_LOADED = 2000
+SINGLE_BALL_MAX_INTAKE = 210
+SINGLE_BALL_MAX_LOADED = 500
 LEFT_DOUBLE_THRESHOLD = 320
 LEFT_THRESHOLD = 0
 LEFT_THRESHOLD_INTAKE = 200
 LEFT_THRESHOLD_LOADED = 275
 RIGHT_THRESHOLD = 0
-RIGHT_THRESHOLD_INTAKE = 420
+RIGHT_THRESHOLD_INTAKE = 400
 RIGHT_THRESHOLD_LOADED = 550
 
-CROP_BOTTOM_PIXELS = 200
+CROP_BOTTOM_PIXELS = 240
+CROP_TOP_PIXELS = 100
+CROP_RIGHT_PIXELS = 50
 
-def process_green_boxes(boxes):
-    """
-    Iterates through the list of green bounding boxes and calculates properties
-    like area and center (cx, cy).
-
-    Returns: A list of dictionaries containing the calculated properties.
-    """
-    bounding_box_data = []
 
 def detect(boxes, color):
+    global left_result, middle_result, right_result
+
     for x, y, w, h, area, cx, cy in boxes:
-        if (area > DOUBLE_BALL_MAX):
+        if (w > DOUBLE_BALL_MAX):
             left_result = color
             middle_result = color
             right_result = color
-        elif (area > SINGLE_BALL_MAX):
+        elif (w > SINGLE_BALL_MAX):
             if (cx < LEFT_DOUBLE_THRESHOLD):
                 left_result = color
                 middle_result = color
@@ -82,12 +92,15 @@ def detect(boxes, color):
             right_result = color
         else:
             middle_result = color
-    print(f"DOUBLE_BALL_MAX {DOUBLE_BALL_MAX} | SINGLE_BALL_MAX {SINGLE_BALL_MAX}, LEFT_THRESHOLD {LEFT_THRESHOLD}, RIGHT_THRESHOLD{RIGHT_THRESHOLD}")
-    print(f"Box: Area {area} | X,Y: {cx}, {cy}")
+        #print(f"Box: Area {area} | w: {w} | X,Y: {cx}, {cy}")
+        # print(f"MIN_AREA_CONSTRAINT {MIN_AREA_CONSTRAINT} | DOUBLE_BALL_MAX {DOUBLE_BALL_MAX} | SINGLE_BALL_MAX {SINGLE_BALL_MAX}")
+    #print(f" Left: {left_result} | Middle : {middle_result} | Right: {right_result}")
 
 
 def runPipeline(image, llrobot):
     global history
+    global DOUBLE_BALL_MAX, SINGLE_BALL_MAX, LEFT_THRESHOLD, RIGHT_THRESHOLD, MIN_AREA_CONSTRAINT
+    global left_result, middle_result, right_result
 
     # Initialize outputs
     largestContour = np.array([[]])
@@ -95,12 +108,14 @@ def runPipeline(image, llrobot):
 
     # 1. Receive Input Mode from OpMode (llrobot[0])
     current_mode = llrobot[0]
+    current_mode = MODE_LOADED
 
 # Black out the bottom region on the original image
     height, width = image.shape[:2] # Get image height and width
     crop_height_start = height - CROP_BOTTOM_PIXELS
+    crop_width_start = width - CROP_RIGHT_PIXELS
 
-    # Set the bottom region to black (0) on the original BGR image
+    # Crop rear wall
     image[crop_height_start:height, 0:width] = 0
 
     if current_mode == MODE_INTAKE:
@@ -110,6 +125,9 @@ def runPipeline(image, llrobot):
         SINGLE_BALL_MAX = SINGLE_BALL_MAX_INTAKE
         LEFT_THRESHOLD = LEFT_THRESHOLD_INTAKE
         RIGHT_THRESHOLD = RIGHT_THRESHOLD_INTAKE
+        image[0:CROP_TOP_PIXELS, 0:width] = 0 # crop top
+        image[CROP_TOP_PIXELS:crop_height_start, crop_width_start:width] = 0 # crop far right
+
     else:
         kernel = (BLUR_KERNEL_SIZE_LOADED, BLUR_KERNEL_SIZE_LOADED)
         MIN_AREA_CONSTRAINT = MIN_AREA_CONSTRAINT_LOADED
@@ -132,6 +150,11 @@ def runPipeline(image, llrobot):
     # Create masks using the blurred image
     mask_green = cv2.inRange(img_hsv, LOWER_GREEN, UPPER_GREEN)
     mask_purple = cv2.inRange(img_hsv, LOWER_PURPLE, UPPER_PURPLE)
+
+    if current_mode == MODE_INTAKE:
+        mask_purple = cv2.erode(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
+    else:
+        mask_purple = cv2.erode(mask_purple, MORPH_KERNEL_LOADED, iterations=1)
 
     # Dictionaries to hold the bounding boxes: {'color': [(x, y, w, h), ...]}
     green_boxes = []
@@ -221,4 +244,5 @@ def runPipeline(image, llrobot):
     llpython[5] = float(num_purple)
 
     # Return the required tuple
+    #return largestContour, mask_purple, llpython
     return largestContour, img_blurred, llpython
