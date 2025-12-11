@@ -73,7 +73,7 @@ public class Intake {
     static public double INTAKE_OUT_POWER = -0.7;
 
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
-    static public float FLIPPER_CEILING = 0.8f;
+    static public float FLIPPER_CEILING = 0.86f;
     static public float FLIPPER_TRANSFER = 0.7f;
     static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
     static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
