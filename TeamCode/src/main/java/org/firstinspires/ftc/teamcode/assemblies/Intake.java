@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import static androidx.core.math.MathUtils.clamp;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -31,6 +32,10 @@ public class Intake {
 
     public DcMotorEx elevator;
     public DcMotorEx intake;
+
+    private Servo rgbLeft;
+    private Servo rgbMiddle;
+    private Servo rgbRight;
 
     private ColorSensor leftTopColorSensor;
     private ColorSensor middleTopColorSensor;
@@ -98,6 +103,10 @@ public class Intake {
         right_flipper = hardwareMap.get(Servo.class,"rightflipper");
         middle_flipper = hardwareMap.get(Servo.class,"middleflipper");
 
+        rgbLeft = hardwareMap.get(Servo.class,"rgbleft");
+        rgbMiddle = hardwareMap.get(Servo.class,"rgbmiddle");
+        rgbRight = hardwareMap.get(Servo.class,"rgbright");
+
         leftTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperleftcolorsensor");
         middleTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "uppermiddlecolorsensor");
         rightTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperrightcolorsensor");
@@ -157,7 +166,8 @@ public class Intake {
     }
     public void intakeStart(){
         intakeIn();
-        startDetector(false);
+        //startDetector(false);
+        setDetectorModeIntake();
         left_flipper.setPosition(FLIPPER_CEILING);
         right_flipper.setPosition(FLIPPER_CEILING);
         middle_flipper.setPosition(FLIPPER_CEILING);
@@ -235,7 +245,7 @@ public class Intake {
 
     }
 
-    public void flipNext(){
+    public void flipNextFast(){
         if(middleLoad != ARTIFACT.NONE){
             middleLoad = ARTIFACT.NONE;
             middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
@@ -274,12 +284,12 @@ public class Intake {
         }
     }
 
-    public void flipNextNoWait() {
-        teamUtil.log("Launching Thread to flipNext.");
+    public void flipNextFastNoWait() {
+        teamUtil.log("Launching Thread to flipNextFast.");
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                flipNext();
+                flipNextFast();
             }
         });
         thread.start();
@@ -367,8 +377,9 @@ public class Intake {
             left_flipper.setPosition(FLIPPER_CEILING);
             right_flipper.setPosition(FLIPPER_CEILING);
             middle_flipper.setPosition(FLIPPER_CEILING);
-
             intakeIn();
+            setDetectorModeIntake();
+
             teamUtil.log("getReadyToIntake Finished");
             return true;
         } else {
@@ -399,13 +410,15 @@ public class Intake {
     public void elevatorToShooterFast(){
         if(leftIntake == ARTIFACT.NONE && middleIntake == ARTIFACT.NONE && rightIntake == ARTIFACT.NONE){
             teamUtil.log("elevatorToShooterFast called without loaded artifacts");
-//            return;
+            return;
         }
         if(elevatorToFlippersV2(false)){
-
-            flipNext();
+            if (!detectLoadedArtifactsV2()) {
+                teamUtil.log("ERROR: elevatorToShooterFast found artifacts in Intake but nothing at the top of transfer");
+            } else {
+                flipNextFast();
+            }
         }
-
         teamUtil.log("elevatorToShooterFast finished");
     }
 
@@ -481,6 +494,7 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
+        setDetectorModeLoaded(); // Tell Limelight to shift to loaded mode
         teamUtil.pause(ELEVATOR_PAUSE_2);
 
         if (waitForGround) {
@@ -643,6 +657,7 @@ public class Intake {
         stopDetector.set(false);
     }
 
+
     public void startDetector (boolean colors) {
         if (detecting.get()) {
             teamUtil.log ("WARNING----------startDetector called while already detecting. Ignored");
@@ -669,6 +684,113 @@ public class Intake {
             teamUtil.log("Stopping Detector Thread");
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
         }
+    }
+
+    /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Limelight based detector code
+    public enum DETECTION_MODE {NONE, INTAKE, LOADED};
+    public DETECTION_MODE detectorMode = DETECTION_MODE.NONE;
+
+    // Tell the limelight where to look for ARTIFACTS
+    public boolean setDetectorModeIntake() {
+        //double[] inputs = {(float)DETECTION_MODE.INTAKE.ordinal(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        double[] inputs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        if (teamUtil.robot.limelight.updatePythonInputs(inputs)) {
+            detectorMode = DETECTION_MODE.INTAKE;
+            teamUtil.log("setDetectorModeIntake Successful");
+            return true;
+        };
+        teamUtil.log("setDetectorModeIntake FAILED");
+        return false;
+    }
+    public boolean setDetectorModeLoaded() {
+        //double[] inputs = {(float)DETECTION_MODE.LOADED.ordinal(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        double[] inputs = {2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        if (teamUtil.robot.limelight.updatePythonInputs(inputs)) {
+            detectorMode = DETECTION_MODE.LOADED;
+            teamUtil.log("setDetectorModeLoaded Successful");
+            return true;
+        };
+        teamUtil.log("setDetectorModeLoaded FAILED");
+        return false;
+    }
+
+    public static float rgbGREEN = 0.5f;
+    public static float rgbPURPLE = 0.7f;
+    public static float rbgOFF = 0f;
+
+    public void setSignal (Servo rgb, ARTIFACT artifact) {
+        switch (artifact) {
+            case GREEN: rgb.setPosition(rgbGREEN); break;
+            case PURPLE: rgb.setPosition(rgbPURPLE); break;
+            default: rgb.setPosition(rbgOFF); break;
+        }
+    }
+    public void setSignals (ARTIFACT left, ARTIFACT middle, ARTIFACT right) {
+        setSignal(rgbLeft, left);
+        setSignal(rgbMiddle, middle);
+        setSignal(rgbRight, right);
+    }
+    // Signal to drivers current status
+    public void signalArtifacts () {
+        if (detectorMode == DETECTION_MODE.INTAKE) {
+            setSignals(leftIntake, middleIntake, rightIntake);
+        } else if (detectorMode == DETECTION_MODE.LOADED) {
+            setSignals(leftLoad, middleLoad, rightLoad);
+        } else {
+            setSignals(ARTIFACT.NONE, ARTIFACT.NONE, ARTIFACT.NONE);
+        }
+    }
+
+    private double[]  getDetectorOutput() {
+        LLResult result = teamUtil.robot.limelight.getLatestResult();
+        //teamUtil.log("result: " + result);
+
+        if (result == null /*|| !result.isValid() */) { // Valid test returns false on data returned from SnapScript, so don't use it
+            teamUtil.log("ERROR: Failed to get latest results from Limelight");
+            return null;
+        }
+        double[] llOutput = result.getPythonOutput();
+        if (llOutput == null || llOutput.length < 5) {
+            teamUtil.log("ERROR: Bad data back from SnapScript on Limelight");
+            return null;
+        }
+        int mode = (int) Math.round( llOutput[0]);
+        if (mode != detectorMode.ordinal()) {
+            teamUtil.log("ERROR: Limelight reports mode: "+mode+ " But we are in "+detectorMode+" whose ordinal value is " + detectorMode.ordinal());
+            return null;
+        }
+        return llOutput;
+    }
+    private ARTIFACT getArtifactColor(double code) {
+        int codeInt = (int) Math.round(code);
+        if (codeInt == 1) return ARTIFACT.GREEN;
+        else if (codeInt == 2) return ARTIFACT.PURPLE;
+        else return ARTIFACT.NONE;
+    }
+    public boolean detectIntakeArtifactsV2() {
+        double[] llOutput = getDetectorOutput();
+        if (llOutput == null){
+            return false;
+        }
+        //teamUtil.log("Detect Intake worked...Codes: " + llOutput[2] +", "+ llOutput[3]+", "+ llOutput[4]);
+        leftIntake = getArtifactColor(llOutput[2]);
+        middleIntake = getArtifactColor(llOutput[3]);
+        rightIntake = getArtifactColor(llOutput[4]);
+        //signalArtifacts();
+        return true;
+    }
+    public boolean detectLoadedArtifactsV2() {
+        double[] llOutput = getDetectorOutput();
+        if (llOutput == null){
+            return false;
+        }
+        //teamUtil.log("Detect Loaded worked...Codes: " + llOutput[2] +", "+ llOutput[3]+", "+ llOutput[4]);
+        leftLoad = getArtifactColor(llOutput[2]);
+        middleLoad = getArtifactColor(llOutput[3]);
+        rightLoad = getArtifactColor(llOutput[4]);
+        //signalArtifacts();
+        return true;
     }
 
 }

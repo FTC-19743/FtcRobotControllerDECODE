@@ -67,7 +67,8 @@ public class Robot {
 
         if (useLimeLight) {
             limelight = hardwareMap.get(Limelight3A.class, "limelight");
-            limelight.pipelineSwitch(0);
+            limelight.pipelineSwitch(9); // our ARTIFACT detector pipeline
+            limelight.setPollRateHz(60);
             limelight.start();
         }
     }
@@ -603,7 +604,7 @@ public class Robot {
         if(details) {
             logShot(flyWheelVelocity);
         }
-        intake.flipNextNoWait();
+        intake.flipNextFastNoWait();
         return true;
     }
 
@@ -813,7 +814,7 @@ public class Robot {
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 2
-        if (useArms) { intake.intakeIn(); }
+        if (useArms) { intake.intakeIn(); } // TODO: Call IntakeStart here to ensure flippers in correct location and detector in correct mode?
         if (emptyRamp) {
             teamUtil.log("==================== Empty Ramp ");
             // Pickup 2nd set of artifacts, slowing at end

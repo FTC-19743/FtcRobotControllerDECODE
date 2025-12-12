@@ -39,6 +39,10 @@
             <goBILDA5202SeriesMotor name="intake" port="3" />
 
             <Servo name = "aimer" port = "0" />
+            <Servo name = "rgbleft" port = "1" />
+            <Servo name = "rgbmiddle" port = "2" />
+            <Servo name = "rgbright" port = "3" />
+
             <Servo name = "middleflipper" port = "4" />
             <Servo name = "leftflipper" port = "5" />
 

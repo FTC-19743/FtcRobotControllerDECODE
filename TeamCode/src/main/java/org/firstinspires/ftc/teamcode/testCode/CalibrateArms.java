@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -42,6 +43,7 @@ public class CalibrateArms extends LinearOpMode {
     
     public enum Ops {
         Test_Intake,
+        Test_DetectorV2,
         Test_Intake_Detector,
         Test_Elevator,
         Test_Shooter,
@@ -61,7 +63,7 @@ public class CalibrateArms extends LinearOpMode {
         teamUtil.init(this);
         
         robot = new Robot();
-        robot.initialize(false);
+        robot.initialize(true);
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
@@ -89,7 +91,7 @@ public class CalibrateArms extends LinearOpMode {
         }
 
         while (opModeIsActive()) {
-           
+            telemetry.addLine("MODE : " + AA_Operation);
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + "PATTERN: " + teamUtil.pattern);
 
             if (gamepad1.left_stick_button) {
@@ -98,6 +100,7 @@ public class CalibrateArms extends LinearOpMode {
             switch (AA_Operation) {
                 case Test_Intake : testIntake();break;
                 case Test_Intake_Detector: testIntakeDetector();break;
+                case Test_DetectorV2 : testDetectorV2(); break;
                 case Test_Elevator: testElevator();break;
                 case Test_Shooter : testShooter();break;
                 case Test_CV: testCV();break;
@@ -205,6 +208,69 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.stopDetector();
         }
     }
+
+    public void testDetectorV2() {
+        //telemetry.addLine("LL Status: " + robot.limelight.getStatus());
+        telemetry.addLine("DetectorMode: " + robot.intake.detectorMode);
+        if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
+            robot.intake.detectIntakeArtifactsV2();
+        } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
+            robot.intake.detectLoadedArtifactsV2();
+        }
+        telemetry.addLine("Loaded: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R:" + robot.intake.rightLoad);
+        telemetry.addLine("Intake: Num: " + robot.intake.intakeNum + " L: " + robot.intake.leftIntake + " M: " + robot.intake.middleIntake + " R: " + robot.intake.rightIntake);
+        robot.intake.signalArtifacts();
+
+        if (gamepad1.dpadUpWasReleased()) {
+            robot.intake.setDetectorModeLoaded();
+        }
+        if (gamepad1.dpadDownWasReleased()) {
+            robot.intake.setDetectorModeIntake();
+        }
+        if (gamepad1.bWasReleased()) {
+            robot.intake.calibrateElevators();
+        }
+        if (gamepad1.yWasReleased()) {
+            robot.intake.elevatorToFlippersV2(false);
+            teamUtil.log("Detectors at Top: L: " + robot.intake.leftLoad + " M: " + robot.intake.rightLoad + " R: " + robot.intake.middleLoad);
+        }
+        if (gamepad1.aWasReleased()) {
+            robot.intake.elevatorToGroundV2();
+        }
+        if (gamepad1.rightBumperWasReleased()) {
+            robot.intake.intakeStop();
+        }
+        if (gamepad1.leftBumperWasReleased()) {
+            robot.intake.getReadyToIntake();
+        }
+        if (gamepad1.xWasReleased()) {
+            teamUtil.log(teamUtil.robot.limelight.getStatus().toString());
+            teamUtil.log("Time since last update: " + robot.limelight.getTimeSinceLastUpdate());
+            double inputs[] = {1,2,2,2,2,2,2,2};
+            teamUtil.robot.limelight.updatePythonInputs(inputs); // This should put it into intake mode
+            teamUtil.pause(500);
+            LLResult result = teamUtil.robot.limelight.getLatestResult();
+            teamUtil.log("result: " + result);
+            if (result != null) {
+                teamUtil.log("Valid: " + result.isValid());
+                double[] llOutput = result.getPythonOutput();
+
+                if (llOutput != null) {
+                    /*
+                    double output0 = llOutput[0];
+                    double output1 = llOutput[1];
+                    double output2 = llOutput[2];
+                    double output3 = llOutput[3];
+                    teamUtil.log("llOutput: " + llOutput.length + " Values: " + output0 + ", "+ output1 + ", "+ output2 + ", "+ output3);
+                    */
+                    teamUtil.log("Mode: " + llOutput[0] + " Detections: "+ llOutput[1] + " L: "+ llOutput[2] + " M: "+ llOutput[3] + " R: "+ llOutput[4]);
+                }
+            }
+        }
+
+
+    }
+
 
     public void testElevator() {
         if (gamepad1.dpadUpWasReleased()) {
