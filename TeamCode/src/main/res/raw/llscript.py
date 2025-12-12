@@ -104,13 +104,11 @@ def runPipeline(image, llrobot):
 
     # Initialize outputs
     largestContour = np.array([[]])
-    llpython = [0.0] * 8
 
     # 1. Receive Input Mode from OpMode (llrobot[0])
-    current_mode = llrobot[0]
-    current_mode = MODE_LOADED
+    current_mode = int(round(llrobot[0]))
 
-# Black out the bottom region on the original image
+    # Black out the bottom region on the original image
     height, width = image.shape[:2] # Get image height and width
     crop_height_start = height - CROP_BOTTOM_PIXELS
     crop_width_start = width - CROP_RIGHT_PIXELS
@@ -231,17 +229,22 @@ def runPipeline(image, llrobot):
     print(f"Mode: {current_mode} | Left: {most_common_left} | Middle : {most_common_middle} | Right: {most_common_right}")
 
     # Populate the llpython array with the smoothed results and status
-    # llpython[0]: Flag (1.0 if targets found, 0.0 otherwise)
-    llpython[0] = 1.0 if (green_boxes or purple_boxes) else 0.0
+    llpython = [0.0] * 8
 
-    # llpython[1], [2], [3]: Smoothed (most common) results
-    llpython[1] = float(most_common_left)
-    llpython[2] = float(most_common_middle)
-    llpython[3] = float(most_common_right)
+    # llpython[0]: What mode did we use for detection
+    llpython[0] = float(current_mode)
+
+    # llpython[1]: Flag (1.0 if targets found, 0.0 otherwise)
+    llpython[1] = float(1.0) if (green_boxes or purple_boxes) else float(0.0)
+
+    # llpython[2], [3], [4]: Smoothed (most common) results
+    llpython[2] = float(most_common_left)
+    llpython[3] = float(most_common_middle)
+    llpython[4] = float(most_common_right)
 
     # Optional: Return raw count data for debugging
-    llpython[4] = float(num_green)
-    llpython[5] = float(num_purple)
+    llpython[5] = float(num_green)
+    llpython[6] = float(num_purple)
 
     # Return the required tuple
     #return largestContour, mask_purple, llpython
