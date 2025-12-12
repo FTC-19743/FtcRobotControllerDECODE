@@ -4,7 +4,7 @@ from collections import deque
 import statistics
 
 # --- Global Variables for State Maintenance ---
-HISTORY_LENGTH = 3
+HISTORY_LENGTH = 5
 history = deque([(0, 0, 0)] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
 
 # Mode Constants (as before)
@@ -106,7 +106,8 @@ def runPipeline(image, llrobot):
     largestContour = np.array([[]])
 
     # 1. Receive Input Mode from OpMode (llrobot[0])
-    current_mode = int(round(llrobot[0]))
+    #current_mode = int(round(llrobot[0]))
+    current_mode = MODE_INTAKE # hardcode to intake only for now
 
     # Black out the bottom region on the original image
     height, width = image.shape[:2] # Get image height and width
