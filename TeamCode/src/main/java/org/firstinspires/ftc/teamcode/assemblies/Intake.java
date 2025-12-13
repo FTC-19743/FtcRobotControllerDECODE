@@ -51,7 +51,7 @@ public class Intake {
     public AtomicBoolean detecting = new AtomicBoolean(false);
     public AtomicBoolean stopDetector = new AtomicBoolean(false);
 
-    public enum Location{LEFT, CENTER, RIGHT, NONE}; // correspond to the flippers (reversed if facing the robot)
+    public enum Location{NONE, LEFT, CENTER, RIGHT}; // correspond to the flippers (reversed if facing the robot)
     public enum ARTIFACT {NONE, GREEN, PURPLE};
     public static ARTIFACT leftLoad = ARTIFACT.NONE,rightLoad = ARTIFACT.NONE,middleLoad = ARTIFACT.NONE, leftIntake = ARTIFACT.NONE, middleIntake = ARTIFACT.NONE, rightIntake = ARTIFACT.NONE;
     public int intakeNum = 0;
@@ -167,7 +167,7 @@ public class Intake {
     public void intakeStart(){
         intakeIn();
         //startDetector(false);
-        setDetectorModeIntake();
+        startIntakeDetector();
         left_flipper.setPosition(FLIPPER_CEILING);
         right_flipper.setPosition(FLIPPER_CEILING);
         middle_flipper.setPosition(FLIPPER_CEILING);
@@ -378,7 +378,7 @@ public class Intake {
             right_flipper.setPosition(FLIPPER_CEILING);
             middle_flipper.setPosition(FLIPPER_CEILING);
             intakeIn();
-            setDetectorModeIntake();
+            startIntakeDetector();
 
             teamUtil.log("getReadyToIntake Finished");
             return true;
@@ -452,6 +452,12 @@ public class Intake {
 
         // TODO: Consider turning the intake wheel off at this point, it might make it slightly more difficult for the elevator to go up but avoid pulling in extra balls
 
+        // "transfer" the sensor readings to the loaded level
+        leftLoad = leftIntake;
+        middleLoad = middleIntake;
+        rightLoad = rightIntake;
+
+
         // Move flippers out of the way
         left_flipper.setPosition(FLIPPER_PRE_TRANSFER);
         right_flipper.setPosition(FLIPPER_PRE_TRANSFER);
@@ -475,14 +481,17 @@ public class Intake {
         if (elevator.getCurrentPosition() < ELEVATOR_UP_ENCODER) {
             // We ran into an issue so fail out
             teamUtil.log("elevatorToFlippersV2 Failed Out due to time out or stall");
+            leftLoad = ARTIFACT.NONE;
+            middleLoad = ARTIFACT.NONE;
+            rightLoad = ARTIFACT.NONE;
 
             elevator.setPower(0);
-            stopDetector();
+            stopIntakeDetector();
             elevatorMoving.set(false);
             failedOut.set(true);
             return false;
         }
-        stopDetector();
+        stopIntakeDetector();
 
         // Hold at unload position
         elevator.setTargetPosition(ELEVATOR_UNLOAD_ENCODER);
@@ -494,7 +503,7 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
-        setDetectorModeLoaded(); // Tell Limelight to shift to loaded mode
+        //setDetectorModeLoaded(); // Tell Limelight to shift to loaded mode  NOT USING THIS CURRENTLY
         teamUtil.pause(ELEVATOR_PAUSE_2);
 
         if (waitForGround) {
@@ -503,7 +512,7 @@ public class Intake {
             return success;
         } else {
             elevatorToGroundV2NoWait();
-            teamUtil.log("elevatorToFlippersV2 Finished with elevator returning to ground");
+            teamUtil.log("elevatorToFlippersV2 Finished while elevator returning to ground");
             return true;
         }
     }
@@ -603,6 +612,11 @@ public class Intake {
         middleLoad = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
         rightLoad = (pattern == teamUtil.Pattern.PGP || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
     }
+    public void setIntakeArtifacts(teamUtil.Pattern pattern) {
+        leftIntake = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.PGP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
+        middleIntake = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
+        rightIntake = (pattern == teamUtil.Pattern.PGP || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
+    }
 
     public void detectLoadedArtifacts() {
         leftLoad = detectLoadedArtifact(leftTopColorSensor);
@@ -692,8 +706,12 @@ public class Intake {
     public DETECTION_MODE detectorMode = DETECTION_MODE.NONE;
 
     // Tell the limelight where to look for ARTIFACTS
-    public boolean setDetectorModeIntake() {
+    public boolean startIntakeDetector() {
         //double[] inputs = {(float)DETECTION_MODE.INTAKE.ordinal(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE);
+        detectorMode = DETECTION_MODE.INTAKE;
+        return true;
+        /*
         double[] inputs = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         if (teamUtil.robot.limelight.updatePythonInputs(inputs)) {
             detectorMode = DETECTION_MODE.INTAKE;
@@ -702,7 +720,14 @@ public class Intake {
         };
         teamUtil.log("setDetectorModeIntake FAILED");
         return false;
+        */
     }
+
+    public void stopIntakeDetector() {
+        detectorMode = DETECTION_MODE.NONE;
+        teamUtil.robot.stopLimeLight();
+    }
+
     public boolean setDetectorModeLoaded() {
         //double[] inputs = {(float)DETECTION_MODE.LOADED.ordinal(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         double[] inputs = {2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -735,10 +760,11 @@ public class Intake {
     public void signalArtifacts () {
         if (detectorMode == DETECTION_MODE.INTAKE) {
             setSignals(leftIntake, middleIntake, rightIntake);
-        } else if (detectorMode == DETECTION_MODE.LOADED) {
+        } else if (detectorMode == DETECTION_MODE.LOADED)  {
             setSignals(leftLoad, middleLoad, rightLoad);
         } else {
-            setSignals(ARTIFACT.NONE, ARTIFACT.NONE, ARTIFACT.NONE);
+            setSignals(leftLoad, middleLoad, rightLoad); // Default to loaded status, which is currently only set by elevatorToFlippersV2()
+            //setSignals(ARTIFACT.NONE, ARTIFACT.NONE, ARTIFACT.NONE);
         }
     }
 

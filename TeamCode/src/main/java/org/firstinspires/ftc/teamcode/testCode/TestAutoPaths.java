@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
+import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.assemblies.Shooter;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -42,7 +43,7 @@ public class TestAutoPaths extends LinearOpMode{
         teamUtil.init(this);
 
         robot = new Robot();
-        robot.initialize(false);
+        robot.initialize(true);
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         robot.drive.setHeading(0);
@@ -98,6 +99,7 @@ public class TestAutoPaths extends LinearOpMode{
             }
             if(gamepad1.yWasReleased()){
                 robot.intake.flippersToTransfer();
+                robot.intake.calibrateElevators();
             }
 
             // Drawing stuff on the field
@@ -108,6 +110,18 @@ public class TestAutoPaths extends LinearOpMode{
             telemetry.update();
         }
 
+    }
+
+    public String colorLetter(Intake.ARTIFACT color) {
+        if (color == Intake.ARTIFACT.PURPLE) return "P";
+        else if (color == Intake.ARTIFACT.GREEN) return "G";
+        else return "N";
+    }
+    public String locationLetter(Intake.Location location) {
+        if (location == Intake.Location.LEFT) return "L";
+        else if (location ==  Intake.Location.CENTER) return "M";
+        else if (location ==  Intake.Location.RIGHT) return "R";
+        else return "N";
     }
 
     public void testGoalSide() {
@@ -124,6 +138,25 @@ public class TestAutoPaths extends LinearOpMode{
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
+        }
+        if (gamepad1.xWasReleased()) {
+            // test shot order logic
+            for (teamUtil.Pattern currentPattern : teamUtil.Pattern.values()) {
+                teamUtil.pattern = currentPattern;
+                for (Intake.ARTIFACT left : Intake.ARTIFACT.values()) {
+                    Intake.leftLoad = left;
+                    for (Intake.ARTIFACT middle : Intake.ARTIFACT.values()) {
+                        Intake.middleLoad = middle;
+                        for (Intake.ARTIFACT right : Intake.ARTIFACT.values()) {
+                            Intake.rightLoad = right;
+                            robot.determineShotOrderAutoPattern();
+                            teamUtil.log("Pattern: " + teamUtil.pattern +
+                                    " Loaded: " + colorLetter(Intake.leftLoad) + colorLetter(Intake.middleLoad) + colorLetter(Intake.rightLoad) +
+                                    " Order: " + locationLetter(robot.shotOrder[1]) + locationLetter(robot.shotOrder[2]) + locationLetter(robot.shotOrder[3]));
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -55,7 +55,7 @@ public class Teleop extends LinearOpMode {
 
 
         robot = new Robot();
-        robot.initialize(false);
+        robot.initialize(true);
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         if(teamUtil.justRanAuto){
@@ -159,7 +159,7 @@ public class Teleop extends LinearOpMode {
                 ////////////// SHOOTER ///////////////////////////
 
                 if(gamepad2.rightBumperWasReleased()){
-                    robot.shootAllArtifactsNoWait();
+                    //robot.shootAllArtifactsNoWait(); // replaced by shootIfCanTeleop
                 }
                 if(gamepad2.bWasReleased()){
                     robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
@@ -247,6 +247,7 @@ public class Teleop extends LinearOpMode {
             }
 
         teamUtil.log("shutting down");
+        robot.stopLimeLight();
 
         teamUtil.cacheHeading = robot.drive.getHeadingODO();
         teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;

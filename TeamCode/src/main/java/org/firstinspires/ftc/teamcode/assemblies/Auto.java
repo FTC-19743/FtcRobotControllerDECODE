@@ -21,8 +21,8 @@ public class Auto extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
         teamUtil.init(this);
         robot = new Robot();
-        robot.initialize(false);
-        //robot.initCV(enableLiveView);// TODO: false for competition
+        robot.initialize(false); // TODO: Are we going to use Intake detection in Auto?
+        //robot.initCV(enableLiveView);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
         robot.calibrate();
@@ -119,6 +119,7 @@ public class Auto extends LinearOpMode {
             long elapsedTime = endTime - startTime;
             teamUtil.log("Elapsed Auto Time Without Wait At End: " + elapsedTime);
             robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            robot.stopLimeLight();
             //while (opModeIsActive()) { }// don't kill opMode until the last possible moment to allow other threads to finish
             teamUtil.pause(500);
             robot.drive.loop();

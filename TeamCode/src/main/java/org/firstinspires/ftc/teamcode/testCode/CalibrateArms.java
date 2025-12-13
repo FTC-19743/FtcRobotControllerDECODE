@@ -7,6 +7,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -126,7 +127,7 @@ public class CalibrateArms extends LinearOpMode {
 
 
         }
-
+        robot.stopLimeLight();
     }
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
@@ -210,6 +211,7 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public void testDetectorV2() {
+
         //telemetry.addLine("LL Status: " + robot.limelight.getStatus());
         telemetry.addLine("DetectorMode: " + robot.intake.detectorMode);
         if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
@@ -219,13 +221,23 @@ public class CalibrateArms extends LinearOpMode {
         }
         telemetry.addLine("Loaded: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R:" + robot.intake.rightLoad);
         telemetry.addLine("Intake: Num: " + robot.intake.intakeNum + " L: " + robot.intake.leftIntake + " M: " + robot.intake.middleIntake + " R: " + robot.intake.rightIntake);
+        LLStatus llstatus = robot.limelight.getStatus();
+        if (llstatus == null) {
+            telemetry.addLine("LimeLight: NO Status");
+        } else {
+            telemetry.addLine(String.format("LimeLight Pipeline: %d FPS: %.1f Temp: %.1f PipeImgCount: %d",llstatus.getPipelineIndex(),llstatus.getFps(),llstatus.getTemp(), llstatus.getPipeImgCount()));
+        }
+
         robot.intake.signalArtifacts();
 
         if (gamepad1.dpadUpWasReleased()) {
-            robot.intake.setDetectorModeLoaded();
+            robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // This test first, then fix modes and integrate into Intake
         }
         if (gamepad1.dpadDownWasReleased()) {
-            robot.intake.setDetectorModeIntake();
+            robot.stopLimeLight();
+        }
+        if (gamepad1.dpadLeftWasReleased()) {
+            robot.startLimeLightPipeline(Robot.PIPELINE_VIEW);
         }
         if (gamepad1.bWasReleased()) {
             robot.intake.calibrateElevators();
@@ -378,10 +390,10 @@ public class CalibrateArms extends LinearOpMode {
             teamUtil.log("shootIfCan returned "+result);
         }
         if(gamepad1.yWasPressed()){
-            robot.shootAllArtifacts();
+            //robot.shootAllArtifacts();
         }
         if(gamepad1.bWasPressed()){ // Time pusher
-            robot.shootAllArtifacts();
+            //robot.shootAllArtifacts();
             long startTime = System.currentTimeMillis();
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
             double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
