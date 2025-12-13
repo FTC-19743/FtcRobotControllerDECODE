@@ -38,6 +38,8 @@ public class AxonPusher {
     public static float POWER_ADJUSTMENT = -.01f;
     public static float RTP_MAX_VELOCITY = .5f;
     public boolean CALIBRATED = false;
+    public static long OQ_READ_TIMEOUT = 30;
+
 
     public AxonPusher() {
         teamUtil.log("Constructing Pusher");
@@ -51,7 +53,7 @@ public class AxonPusher {
         teamUtil.robot.oq.setSingleEncoderDirection(ODO_PUSHER,  OctoQuadFWv3.EncoderDirection.FORWARD);
     }
 
-    public void calibrateNoWait(long timeout) {
+    public void calibrateNoWait() {
         if (moving.get()) { // Pusher is already running in another thread
             teamUtil.log("WARNING: Attempt to AxonPusher.calibrate while Pusher is moving--ignored");
             return;
@@ -60,44 +62,40 @@ public class AxonPusher {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    calibrate(timeout);
+                    calibrate();
                 }
             });
             thread.start();
         }
     }
-
-    public void calibrate(long timeout) {
+    public void calibrate() {
         timedOut.set(false);
         CALIBRATED = false;
         teamUtil.log("Calibrating Pusher");
         double currentPot = servoPot.getVoltage();
         int currentEncoder = getPositionEncoder();
-        long timeoutTime = timeout+System.currentTimeMillis();
-        while(currentEncoder == -1 && teamUtil.keepGoing(timeoutTime)){
-            teamUtil.pause(50); // wait for good crc
-            getPositionEncoder();
-        }
-        if(currentEncoder == -1){
-            timedOut.set(true);
-            moving.set(false);
-            teamUtil.log("calibrate timed out with a bad crc");
-            return;
-        }
         ENCODER_LOAD_POSITION_1 = (int) (-(AXON_LOAD_2-currentPot)/AXON_POT_FULL_REVOLUTION * REV_ENCODER_TICS_PER_REVOLUTION + currentEncoder);
         ENCODER_LOAD_POSITION_2 = ENCODER_LOAD_POSITION_1 + REV_ENCODER_TICS_PER_REVOLUTION/2;
         teamUtil.log("Pusher encoder load 1: "+ENCODER_LOAD_POSITION_1+" Pusher encoder load 2: "+ENCODER_LOAD_POSITION_2);
         CALIBRATED = true;
     }
 
+
+    int lastValidEncoder;
     public int getPositionEncoder() {
         OctoQuadFWv3.EncoderDataBlock encoders;
         encoders = teamUtil.robot.oq.readAllEncoderData();
+        long timeoutTime = System.currentTimeMillis() + OQ_READ_TIMEOUT;
+        while(!encoders.crcOk && teamUtil.keepGoing(timeoutTime)){
+            encoders = teamUtil.robot.oq.readAllEncoderData();
+            teamUtil.log("ERROR ------------- Pusher OQ returned bad CRC");
+        }
         if(encoders.crcOk) {
+            lastValidEncoder = encoders.positions[ODO_PUSHER];
             return encoders.positions[ODO_PUSHER];
         }
-        teamUtil.log("OQ returned a bad crc");
-        return -1; // bad crc
+        teamUtil.log("ERROR ------------- Timed out waiting for good CRC from Pusher OQ");
+        return lastValidEncoder;
     }
 
     public double getPot(){
@@ -113,19 +111,7 @@ public class AxonPusher {
         teamUtil.log("Pusher runToTargetEncoder: " + (int)target + " at power: "+ velocity);
         long timeoutTime = System.currentTimeMillis()+timeOut;
 
-        double ticsFromTarget = getPositionEncoder();
-        while(ticsFromTarget == -1 && teamUtil.keepGoing(timeoutTime)){
-            teamUtil.pause(50); // wait for good crc
-            ticsFromTarget = getPositionEncoder();
-        }
-        if(ticsFromTarget == -1){
-            timedOut.set(true); // timed out with bad crc
-            moving.set(false);
-            teamUtil.log("runToTargetEncoder timed out with a bad crc");
-            return;
-        }
-        ticsFromTarget -= target; // position - target
-        ticsFromTarget *= -1; // target - position
+        double ticsFromTarget = target - getPositionEncoder(); // position - target
         setPower(velocity); // start moving
         while (teamUtil.keepGoing(timeoutTime) &&  ticsFromTarget > RUN_TO_ENCODER_DRIFT) {// while we haven't yet reached the target
             if (details)
@@ -188,16 +174,6 @@ public class AxonPusher {
 //            runToEncoderPosition(nextEncoderTarget(getPositionEncoder())-PUSH_FAST_THRESHOLD, PUSH_SLOW_VELOCITY, timeout); // slow velocity to make the ball not hit the roof
             int encoderPosition = getPositionEncoder();
             long timeoutTime = timeout + System.currentTimeMillis();
-            while(encoderPosition == -1 && teamUtil.keepGoing(timeoutTime)){
-                teamUtil.pause(50);
-                encoderPosition = getPositionEncoder(); // wait for good crc
-            }
-            if(encoderPosition == -1){
-                teamUtil.log("pushN timed out with a bad crc");
-                timedOut.set(true);
-                moving.set(false);
-                return;
-            }
             runToEncoderPosition(nextEncoderTarget(getPositionEncoder()), velocity, timeout);// consider making velocity proportional to distance
             if(timedOut.get()){
                 teamUtil.log("PushN timed out");
