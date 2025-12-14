@@ -56,6 +56,7 @@ public class Teleop extends LinearOpMode {
 
         robot = new Robot();
         robot.initialize(true);
+        robot.shooter.flywheelNormal();
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         if(teamUtil.justRanAuto){
@@ -68,6 +69,7 @@ public class Teleop extends LinearOpMode {
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
         boolean endgameMode = false;
+        boolean limelightOverride = false;
 
 
         telemetry.addLine("Ready to start");
@@ -110,11 +112,9 @@ public class Teleop extends LinearOpMode {
 
                 if(gamepad1.yWasReleased()){
                     if(shootingMode){
-                        robot.intake.startDetector(false);
                         shootingMode = false;
                         robot.shooter.setShootSpeed(robot.shooter.IDLE_FLYWHEEL_VELOCITY);
                     }else{
-                        robot.intake.stopDetector();
                         shootingMode = true;
                     }
                 }
@@ -162,19 +162,19 @@ public class Teleop extends LinearOpMode {
                     //robot.shootAllArtifactsNoWait(); // replaced by shootIfCanTeleop
                 }
                 if(gamepad2.bWasReleased()){
-                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
+                    robot.shootArtifactLocation(Intake.Location.RIGHT);
                 }
                 if(gamepad2.xWasReleased()){
-                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
+                    robot.shootArtifactLocation(Intake.Location.LEFT);
                 }
                 if(shootingMode){
                     robot.shooter.adjustShooterV3(robot.drive.robotGoalDistance());
                 }
                 if(gamepad2.yWasReleased()){
-                    robot.shooter.pushOneNoWait();
+                    robot.shootArtifactLocation(Intake.Location.CENTER);
                 }
                 if(gamepad2.aWasReleased()){
-                    robot.shooter.pusher.calibrateNoWait(500);
+                    robot.shooter.pusher.calibrateNoWait( );
                     robot.shooter.pushOneNoWait();
                 }if(gamepad2.right_trigger > .6f && shootingMode){
                     robot.shootIfCanTeleop(); // blinkin based on the result?
@@ -224,16 +224,34 @@ public class Teleop extends LinearOpMode {
                 if(gamepad2.left_trigger > .8){
                     robot.intake.flippersToTransfer();
                     robot.intake.intakeOut();
-                    if(robot.intake.detecting.get()) {
-                        robot.intake.stopDetector();
-                    }
+                    robot.intake.stopLimelight();
+                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: work with patterns
                 }
 
                 if(gamepad2.leftBumperWasReleased()){
-                    robot.intake.elevatorToShooterFastNoWait();
+                    if(robot.intake.servoPositionIs(robot.intake.left_flipper, Intake.FLIPPER_TRANSFER)){
+                        robot.intake.flipNextFastNoWait();
+                    }else{
+                        if(limelightOverride){
+                            robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
+                        }
+                        robot.intake.elevatorToShooterFastNoWait();
+                    }
                 }
+                if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE && !limelightOverride) {
+                    robot.intake.detectIntakeArtifactsV2();
+                }
+                robot.intake.signalArtifacts();
 
                 robot.outputTelemetry();
+
+                if(gamepad2.optionsWasReleased()){
+                    if(!limelightOverride) {
+                        limelightOverride = true;
+                    }else{
+                        limelightOverride = false;
+                    }
+                }
 
 
                 //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());

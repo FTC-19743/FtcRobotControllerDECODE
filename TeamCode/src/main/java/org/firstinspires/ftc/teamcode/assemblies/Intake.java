@@ -4,7 +4,6 @@ import static androidx.core.math.MathUtils.clamp;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -55,6 +54,7 @@ public class Intake {
     public enum ARTIFACT {NONE, GREEN, PURPLE};
     public static ARTIFACT leftLoad = ARTIFACT.NONE,rightLoad = ARTIFACT.NONE,middleLoad = ARTIFACT.NONE, leftIntake = ARTIFACT.NONE, middleIntake = ARTIFACT.NONE, rightIntake = ARTIFACT.NONE;
     public int intakeNum = 0;
+
 
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
     static public int ELEVATOR_GROUND = 5;
@@ -107,13 +107,13 @@ public class Intake {
         rgbMiddle = hardwareMap.get(Servo.class,"rgbmiddle");
         rgbRight = hardwareMap.get(Servo.class,"rgbright");
 
-        leftTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperleftcolorsensor");
-        middleTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "uppermiddlecolorsensor");
-        rightTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperrightcolorsensor");
-
-        leftLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowerleftcolorsensor");
-        middleLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowermiddlecolorsensor");
-        rightLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowerrightcolorsensor");
+//        leftTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperleftcolorsensor");
+//        middleTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "uppermiddlecolorsensor");
+//        rightTopColorSensor = hardwareMap.get(RevColorSensorV3.class, "upperrightcolorsensor");
+//
+//        leftLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowerleftcolorsensor");
+//        middleLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowermiddlecolorsensor");
+//        rightLowerColorSensor = hardwareMap.get(ColorSensor.class, "lowerrightcolorsensor");
 
         teamUtil.log("Intake Initialized");
     }
@@ -153,10 +153,10 @@ public class Intake {
     }
     public void intakeTelemetry() {
         telemetry.addLine("Intake elevator Position: " + elevator.getCurrentPosition());
-        telemetry.addData("UpperSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftTopColorSensor), formatSensor(middleTopColorSensor), formatSensor(rightTopColorSensor));
-        telemetry.addData("LowerSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftLowerColorSensor), formatSensor(middleLowerColorSensor), formatSensor(rightLowerColorSensor));
-        detectLoadedArtifacts();
-        checkIntakeArtifacts();
+        //telemetry.addData("UpperSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftTopColorSensor), formatSensor(middleTopColorSensor), formatSensor(rightTopColorSensor));
+        //telemetry.addData("LowerSensors(A/R/G/B): ", "L%s M%s R%s",formatSensor(leftLowerColorSensor), formatSensor(middleLowerColorSensor), formatSensor(rightLowerColorSensor));
+        //detectLoadedArtifacts();
+        //checkIntakeArtifacts();
         telemetry.addLine("Loaded: L:" + leftLoad.toString() + "  M:" + middleLoad.toString() + "  R:" + rightLoad.toString());
         telemetry.addLine("Intake: Num:" + intakeNum + " L:" + leftIntake.toString() + "  M:" + middleIntake.toString() + "  R:" + rightIntake.toString());
     }
@@ -167,7 +167,7 @@ public class Intake {
     public void intakeStart(){
         intakeIn();
         //startDetector(false);
-        startIntakeDetector();
+        startLimelight();
         left_flipper.setPosition(FLIPPER_CEILING);
         right_flipper.setPosition(FLIPPER_CEILING);
         middle_flipper.setPosition(FLIPPER_CEILING);
@@ -378,7 +378,7 @@ public class Intake {
             right_flipper.setPosition(FLIPPER_CEILING);
             middle_flipper.setPosition(FLIPPER_CEILING);
             intakeIn();
-            startIntakeDetector();
+            startLimelight();
 
             teamUtil.log("getReadyToIntake Finished");
             return true;
@@ -410,6 +410,8 @@ public class Intake {
     public void elevatorToShooterFast(){
         if(leftIntake == ARTIFACT.NONE && middleIntake == ARTIFACT.NONE && rightIntake == ARTIFACT.NONE){
             teamUtil.log("elevatorToShooterFast called without loaded artifacts");
+            elevatorMoving.set(false);
+            failedOut.set(true);
             return;
         }
         if(elevatorToFlippersV2(false)){
@@ -420,6 +422,7 @@ public class Intake {
             }
         }
         teamUtil.log("elevatorToShooterFast finished");
+        elevatorMoving.set(false);
     }
 
     public void elevatorToShooterFastNoWait(){
@@ -453,9 +456,7 @@ public class Intake {
         // TODO: Consider turning the intake wheel off at this point, it might make it slightly more difficult for the elevator to go up but avoid pulling in extra balls
 
         // "transfer" the sensor readings to the loaded level
-        leftLoad = leftIntake;
-        middleLoad = middleIntake;
-        rightLoad = rightIntake;
+        setLoadedArtifacts(leftIntake, middleIntake, rightIntake);
 
 
         // Move flippers out of the way
@@ -481,17 +482,15 @@ public class Intake {
         if (elevator.getCurrentPosition() < ELEVATOR_UP_ENCODER) {
             // We ran into an issue so fail out
             teamUtil.log("elevatorToFlippersV2 Failed Out due to time out or stall");
-            leftLoad = ARTIFACT.NONE;
-            middleLoad = ARTIFACT.NONE;
-            rightLoad = ARTIFACT.NONE;
+            setLoadedArtifacts(ARTIFACT.NONE, ARTIFACT.NONE, ARTIFACT.NONE);
 
             elevator.setPower(0);
-            stopIntakeDetector();
+            stopLimelight();
             elevatorMoving.set(false);
             failedOut.set(true);
             return false;
         }
-        stopIntakeDetector();
+        stopLimelight();
 
         // Hold at unload position
         elevator.setTargetPosition(ELEVATOR_UNLOAD_ENCODER);
@@ -555,17 +554,17 @@ public class Intake {
     public static double GREEN_THRESHOLD = 1.25;
     public static int LEFT_ALPHA_THRESHOLD = 52;
 
+    /*
     public ARTIFACT detectLoadedArtifact(ColorSensor sensor) {
         if(sensor.alpha() < UPPER_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
         if(sensor == leftTopColorSensor && sensor.alpha() < LEFT_ALPHA_THRESHOLD){return ARTIFACT.NONE;}
         if((float) sensor.green()/ (float) sensor.alpha() > GREEN_THRESHOLD){return ARTIFACT.GREEN;}
         return ARTIFACT.PURPLE;
-    }
+    }*/
 
     public static int LOWER_ALPHA_THRESHOLD = 75;
 
     public int loadedBallNum(){
-        detectLoadedArtifacts();
         int loadedBalls = 0;
         if(leftLoad != ARTIFACT.NONE){
             loadedBalls++;
@@ -579,20 +578,7 @@ public class Intake {
         return loadedBalls;
     }
 
-    public int intakeBallNum(){
-        checkIntakeArtifacts();
-        int intakeBalls = 0;
-        if(leftIntake != ARTIFACT.NONE){
-            intakeBalls++;
-        }
-        if(middleIntake != ARTIFACT.NONE){
-            intakeBalls++;
-        }
-        if(rightIntake != ARTIFACT.NONE){
-            intakeBalls++;
-        }
-        return intakeBalls;
-    }
+
 
     public ARTIFACT checkIntakeArtifact(ColorSensor sensor) {
         /*
@@ -612,12 +598,20 @@ public class Intake {
         middleLoad = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
         rightLoad = (pattern == teamUtil.Pattern.PGP || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
     }
+
+    public void setLoadedArtifacts(ARTIFACT left, ARTIFACT middle, ARTIFACT right) {
+        leftLoad = left;
+        middleLoad = middle;
+        rightLoad = right;
+    }
+
     public void setIntakeArtifacts(teamUtil.Pattern pattern) {
         leftIntake = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.PGP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
         middleIntake = (pattern == teamUtil.Pattern.PPG || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
         rightIntake = (pattern == teamUtil.Pattern.PGP || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
     }
 
+    /*
     public void detectLoadedArtifacts() {
         leftLoad = detectLoadedArtifact(leftTopColorSensor);
         middleLoad = detectLoadedArtifact(middleTopColorSensor);
@@ -629,7 +623,7 @@ public class Intake {
         middleIntake = checkIntakeArtifact(middleLowerColorSensor);
         rightIntake = checkIntakeArtifact(rightLowerColorSensor);
         intakeNum = (leftIntake == ARTIFACT.NONE ? 0 : 1) + (middleIntake == ARTIFACT.NONE ? 0 : 1) + (rightIntake == ARTIFACT.NONE ? 0 : 1);
-    }
+    }*/
 
     public void setBlinkinArtifact(ARTIFACT artifact){
         switch (artifact) {
@@ -644,7 +638,7 @@ public class Intake {
     public static int CYCLE_TIME = 500;
     public void detectIntakeArtifacts(boolean colors) {
         while (!stopDetector.get()) {
-            checkIntakeArtifacts();
+            //checkIntakeArtifacts();
             if (colors) {
                 setBlinkinArtifact(leftIntake);
                 teamUtil.pause(FLASH_TIME);
@@ -706,7 +700,7 @@ public class Intake {
     public DETECTION_MODE detectorMode = DETECTION_MODE.NONE;
 
     // Tell the limelight where to look for ARTIFACTS
-    public boolean startIntakeDetector() {
+    public boolean startLimelight() {
         //double[] inputs = {(float)DETECTION_MODE.INTAKE.ordinal(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE);
         detectorMode = DETECTION_MODE.INTAKE;
@@ -723,7 +717,7 @@ public class Intake {
         */
     }
 
-    public void stopIntakeDetector() {
+    public void stopLimelight() {
         detectorMode = DETECTION_MODE.NONE;
         teamUtil.robot.stopLimeLight();
     }

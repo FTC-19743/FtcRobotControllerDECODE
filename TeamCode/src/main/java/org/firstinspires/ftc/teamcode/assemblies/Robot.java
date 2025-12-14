@@ -224,9 +224,21 @@ public class Robot {
         return Math.abs(shooter.rightFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD &&
                 Math.abs(shooter.leftFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD;
     }
+
+    public static double GoalSizeThreshold = 254; //10 inches in millimeters
+
     public boolean shooterHeadingReady() {
-        return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < BasicDrive.HEADING_CAN_SHOOT_THRESHOLD;
+        double distToCornerY = teamUtil.alliance == teamUtil.Alliance.BLUE ? Math.abs(BasicDrive.RED_ALLIANCE_WALL-drive.oQlocalizer.posY_mm):Math.abs(BasicDrive.BLUE_ALLIANCE_WALL-drive.oQlocalizer.posY_mm);
+        double distToCornerX = BasicDrive.SCORE_X - drive.oQlocalizer.posX_mm;
+        double headingCanShootThreshold = 90-Math.toDegrees(Math.atan((distToCornerX-GoalSizeThreshold)/distToCornerY))-Math.toDegrees(Math.atan((distToCornerY-GoalSizeThreshold)/distToCornerX));
+        //TODO: Take out details
+        if(details){
+            teamUtil.log("Heading can shoot threshold: " + headingCanShootThreshold + " Current Declination: " + Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) + " DistX : " + distToCornerX + " DistY: " + distToCornerY);
+        }
+        return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < (headingCanShootThreshold/2);
     }
+
+
     public boolean canShoot(){
         return shooterFlyWheelsReady() && shooterHeadingReady();
     }
@@ -239,49 +251,49 @@ public class Robot {
 
     public static long EDGE_PUSHER_PAUSE = 700;
 
-    public void shootArtifactColor(Intake.ARTIFACT color){
-        teamUtil.log("shootArtifactColor called");
-        intake.detectLoadedArtifacts();
-        int ballCount = intake.loadedBallNum();
-        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
-        if(color == Intake.ARTIFACT.NONE){
-            teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");
-            return;
-        }
-        if(ballCount == 0) {
-            teamUtil.log("shootArtifactColor called without any artifacts loaded");
-            return;
-        }
-        if(loadedArtifacts[0] != color && loadedArtifacts[1] != color && loadedArtifacts[2] != color){
-            teamUtil.log("shootArtifactColor called without a loaded artifact of the specified color");
-            return;
-        }
-        if(color == loadedArtifacts[1]){
-            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
-            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
-            shooter.pushOne();
-            teamUtil.log("shootArtifactColor: Moved middle flipper");
-        }else if(color == loadedArtifacts[0]){
-            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
-            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
-            teamUtil.pause(EDGE_PUSHER_PAUSE);
-            shooter.pushOne();
-            teamUtil.log("shootArtifactColor: Moved left flipper");
-        }else{
-            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
-            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
-            teamUtil.pause(EDGE_PUSHER_PAUSE);
-            shooter.pushOne();
-            teamUtil.log("shootArtifactColor: Moved right flipper");
-        }
-        if(ballCount == 1){
-            intake.intakeStart();
-        }
-
-    }
+//    public void shootArtifactColor(Intake.ARTIFACT color){
+//        teamUtil.log("shootArtifactColor called");
+//        intake.detectLoadedArtifacts();
+//        int ballCount = intake.loadedBallNum();
+//        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
+//        if(color == Intake.ARTIFACT.NONE){
+//            teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");
+//            return;
+//        }
+//        if(ballCount == 0) {
+//            teamUtil.log("shootArtifactColor called without any artifacts loaded");
+//            return;
+//        }
+//        if(loadedArtifacts[0] != color && loadedArtifacts[1] != color && loadedArtifacts[2] != color){
+//            teamUtil.log("shootArtifactColor called without a loaded artifact of the specified color");
+//            return;
+//        }
+//        if(color == loadedArtifacts[1]){
+//            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+//            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+//            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+//            shooter.pushOne();
+//            teamUtil.log("shootArtifactColor: Moved middle flipper");
+//        }else if(color == loadedArtifacts[0]){
+//            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+//            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+//            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+//            teamUtil.pause(EDGE_PUSHER_PAUSE);
+//            shooter.pushOne();
+//            teamUtil.log("shootArtifactColor: Moved left flipper");
+//        }else{
+//            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+//            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+//            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+//            teamUtil.pause(EDGE_PUSHER_PAUSE);
+//            shooter.pushOne();
+//            teamUtil.log("shootArtifactColor: Moved right flipper");
+//        }
+//        if(ballCount == 1){
+//            intake.intakeStart();
+//        }
+//
+//    }
 
     public void shootArtifactLocation(Intake.Location location){ //
         teamUtil.log("shootArtifactLocation called");
@@ -307,22 +319,22 @@ public class Robot {
             shooter.pushOne();
             teamUtil.log("shootArtifactLocation: Moved right flipper");
         }
-        int ballCount = intake.loadedBallNum();
-        if(ballCount == 1){
+        int ball_num = intake.loadedBallNum();
+        if(ball_num == 0){
             intake.intakeStart();
         }
     }
 
-    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
-        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                shootArtifactColor(color);
-            }
-        });
-        thread.start();
-    }
+//    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
+//        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
+//        Thread thread = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                shootArtifactColor(color);
+//            }
+//        });
+//        thread.start();
+//    }
 
     public int left = 1;
     public int middle = 2;
@@ -428,7 +440,7 @@ public class Robot {
     public void logShot(double flyWheelVelocity) {
         drive.loop();
         double goalDistance = drive.robotGoalDistance();
-        double midSpeed = shooter.calculateMidSpeed(goalDistance);
+        double midSpeed = shooter.getVelocityNeeded(goalDistance);
         teamUtil.log("----------------------------------- SHOT " );
         teamUtil.log("------------ Robot X: " + drive.oQlocalizer.posX_mm + " Y: " + drive.oQlocalizer.posY_mm + " Goal Distance: " + goalDistance);
         teamUtil.log("------------ Target Heading: " + drive.robotGoalHeading() + " Actual Heading: " + drive.getHeadingODO() + " Diff: " + Math.abs(drive.robotGoalHeading()-drive.getHeadingODO()));
@@ -491,9 +503,8 @@ public class Robot {
         if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
         // Launch it
         shooter.pushOneNoWait();
-        if(details) {
-            logShot(flyWheelVelocity);
-        }
+        logShot(flyWheelVelocity);
+        teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
         intake.flipNextFastNoWait();
         return true;
     }

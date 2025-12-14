@@ -107,7 +107,7 @@ public class BasicDrive{
     public static float SLOWSPEED = .1f;
     public static float STRAFESLOWSPEED = 0.25f;
     public static float MAXROTATIONFACTOR = 0.8f;
-    public static float ROTATION_ADJUST_HELD_HEADING = 0.025f;
+    public static float ROTATION_ADJUST_HELD_HEADING = 0.1f;
     public static float STATIONARY_ROTATION_ADJUST_HELD_HEADING = 0.005f;
     public static float SLOWSLOPE =0.22f;
     public static float SLOWSLOPESTRAFE =0.35f;
@@ -2444,6 +2444,7 @@ public class BasicDrive{
     // Implements a deadband where joystick position will be ignored (translation and rotation)
     // Uses a linear scale that starts at the edge of the dead band
     // Attempts to hold the last heading that was commanded via a turn
+    public static float MAX_SPEED_ROTATION_FACTOR = 1;
     public void driveJoyStickV3(float leftJoyStickX, float leftJoyStickY, float rightJoyStickX, boolean isFast, boolean isSlow, boolean autoRotate) {
 
         float SLOPE = 0.55f;
@@ -2544,7 +2545,7 @@ public class BasicDrive{
             }else{
                 rotationAdjustment = (float) getHeadingError(heldHeading) * -1f * ROTATION_ADJUST_HELD_HEADING; // auto rotate to held heading
 
-                rotationAdjustment = rotationAdjustment * Math.min(Math.max(Math.abs(leftX), Math.abs(leftY)), 0.7f);// make it proportional to speed
+                rotationAdjustment = rotationAdjustment * Math.min(Math.max(Math.abs(leftX), Math.abs(leftY)), MAX_SPEED_ROTATION_FACTOR);// make it proportional to speed
                 rotationAdjustment = MathUtils.clamp(rotationAdjustment, -MAXROTATIONFACTOR,MAXROTATIONFACTOR ); // clip rotation so it doesn't obliterate translation
 
             }

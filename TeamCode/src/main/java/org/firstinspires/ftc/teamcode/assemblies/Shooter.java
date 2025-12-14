@@ -30,20 +30,20 @@ public class Shooter {
     public static float PUSHER_VELOCITY = .5f;
 
     //Old flywheel values pidf
-    /*
+
     public static double shooterP = 50;
     public static double shooterI = 1;
     public static double shooterD = 0.8;
     public static double shooterF = 0;
 
-     */
+
 
     //THESE are the PIDF numbers to get the flywheels from 0 to 900 fast
 
-    public static double shooterP = 50;
-    public static double shooterI = 4.6;
-    public static double shooterD = 4;
-    public static double shooterF = 0;
+    public static double shooterStartP = 50;
+    public static double shooterStartI = 4.6;
+    public static double shooterStartD = 4;
+    public static double shooterStartF = 0;
 
 
 
@@ -97,14 +97,27 @@ public class Shooter {
         telemetry = teamUtil.theOpMode.telemetry;
         pusher = new AxonPusher();
     }
+    public void setFlywheelCoefficients(double P, double I, double D, double F){
+        leftFlywheel.setVelocityPIDFCoefficients(P, I, D, F);
+        rightFlywheel.setVelocityPIDFCoefficients(P, I, D, F);
+    }
+
+    public void flywheelStartup(){
+        setFlywheelCoefficients(shooterStartP, shooterStartI, shooterStartD, shooterStartF);
+        teamUtil.log("set shooter PIDF to startup to get to speed");
+    }
+
+    public void flywheelNormal(){
+        setFlywheelCoefficients(shooterP, shooterI, shooterD, shooterF);
+        teamUtil.log("set shooter PIDF to normal to maintain speed");
+    }
 
     public void initialize() {
         teamUtil.log("Initializing Shooter");
         leftFlywheel = hardwareMap.get(DcMotorEx.class,"leftflywheel");
         rightFlywheel = hardwareMap.get(DcMotorEx.class,"rightflywheel");
         leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftFlywheel.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
-        rightFlywheel.setVelocityPIDFCoefficients(shooterP, shooterI, shooterD, shooterF);
+        flywheelStartup();
         pusher.initialize();
         aimer = hardwareMap.get(Servo.class,"aimer");
         loadedSensor = hardwareMap.get(DigitalChannel.class, "loaded");
@@ -116,7 +129,7 @@ public class Shooter {
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
         pusher.setPower(0);
-        pusher.calibrate(500);
+        pusher.calibrate();
         pushOne();
     }
     public void outputTelemetry(){
@@ -202,30 +215,43 @@ public class Shooter {
     public static double A09_LONG_AIM_M = .000118464;
     public static double A09_LONG_AIM_B = .18204;
 
-    public void adjustShooterV2(double distance){
-        if(details)teamUtil.log("adjustShooterV2 to distance: " + distance);
+    public double getVelocityNeeded(double distance){
         double velocityNeeded;
-        double pitchNeeded;
         if (distance<MID_SHORT_DISTANCE_THRESHOLD){
             velocityNeeded =A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
-            pitchNeeded = A09_SHORT_AIM_M*distance + A09_SHORT_AIM_B;
         }else if (distance<MID_DISTANCE_THRESHOLD){
             velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
-            pitchNeeded = A09_LONG_AIM_M*distance + A09_LONG_AIM_B;
         }else{
             velocityNeeded = 0.297372*distance + 472.75242;
+        }
+        return velocityNeeded;
+    }
+
+    public double getAimNeeded(double distance) {
+        double pitchNeeded;
+        if (distance < MID_SHORT_DISTANCE_THRESHOLD) {
+            pitchNeeded = A09_SHORT_AIM_M * distance + A09_SHORT_AIM_B;
+        } else if (distance < MID_DISTANCE_THRESHOLD) {
+            pitchNeeded = A09_LONG_AIM_M * distance + A09_LONG_AIM_B;
+        } else {
             pitchNeeded = 0.44;
         }
-        VELOCITY_COMMANDED = velocityNeeded;
-        setShootSpeed(velocityNeeded);
-        aim(pitchNeeded);
+        return pitchNeeded;
+    }
+
+
+    public void adjustShooterV2(double distance){
+        if(details)teamUtil.log("adjustShooterV2 to distance: " + distance);
+        VELOCITY_COMMANDED = getVelocityNeeded(distance);
+        setShootSpeed(VELOCITY_COMMANDED);
+        aim(getAimNeeded(distance));
         if(details)teamUtil.log("adjustShooterV2 Finished");
     }
 
     public void adjustShooterV3(double distance){
         if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
 
-        VELOCITY_COMMANDED = calculateMidSpeed(distance);
+        VELOCITY_COMMANDED = getVelocityNeeded(distance);
         setShootSpeed(VELOCITY_COMMANDED);
         aim(calculatePitch(distance, leftFlywheel.getVelocity()));
         if(details)teamUtil.log("adjustShooterV3 Finished");
