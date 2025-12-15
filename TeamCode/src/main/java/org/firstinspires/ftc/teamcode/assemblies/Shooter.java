@@ -159,9 +159,11 @@ public class Shooter {
     public double currentAim () {
         return aimer.getPosition();
     }
+
     public void pushOne(){
         pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
     }
+
     public void pushOneNoWait(){
             if (pusher.moving.get()) { // Pusher is already running in another thread
                 teamUtil.log("WARNING: Attempt to AxonPusher.pushNNoWait while Pusher is moving--ignored");

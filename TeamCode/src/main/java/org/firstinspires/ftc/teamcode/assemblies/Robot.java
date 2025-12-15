@@ -81,15 +81,16 @@ public class Robot {
     public boolean limeLightActive() {
         return LIME_LIGHT_ACTIVE;
     }
-    public void startLimeLightPipeline(int pipeline) {
+    public boolean startLimeLightPipeline(int pipeline) {
         teamUtil.log("startLimeLightPipeline with pipeline: " + pipeline);
         if (limelight == null) {
             teamUtil.log("ERROR: Attempt to switch pipeline without initializing Limelight" + pipeline);
-            return;
+            return false;
         }
         boolean pipelineSwitch = limelight.pipelineSwitch(pipeline); // minimize CPU on the LL
         if(!pipelineSwitch){
             teamUtil.log("ERROR: Pipeline Switch Failed in StartLimeLightPipeline");
+            return false;
         }
 
         if (!LIME_LIGHT_ACTIVE) {
@@ -97,11 +98,12 @@ public class Robot {
             limelight.start();
         }
         LIME_LIGHT_ACTIVE = true;
+        return true;
     }
-    public void stopLimeLight() {
+    public boolean stopLimeLight() {
         if (limelight == null) {
             teamUtil.log("ERROR: Attempt to stop Limelight without initializing Limelight");
-            return;
+            return false;
         }
         if (!LIME_LIGHT_ACTIVE) {
             teamUtil.log("WARNING: stopLimeLight called while Limelight is already stopped");
@@ -109,9 +111,11 @@ public class Robot {
         boolean pipelineSwitch = limelight.pipelineSwitch(PIPELINE_IDLE); // minimize CPU on the LL
         if(!pipelineSwitch){
             teamUtil.log("ERROR: Pipeline Switch To IDLE Failed in StopLimeLight");
+            return false;
         }
         limelight.stop();
         LIME_LIGHT_ACTIVE = false;
+        return true;
     }
 
     public void initCV (boolean liveStream) {
@@ -301,37 +305,6 @@ public class Robot {
 //        }
 //
 //    }
-
-    public void shootArtifactLocation(Intake.Location location){ //
-        teamUtil.log("shootArtifactLocation called");
-        // consider adding checks?
-        if(location == Intake.Location.CENTER){
-            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
-            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING_MIDDLE);
-            shooter.pushOne();
-            teamUtil.log("shootArtifactLocation: Moved middle flipper");
-        }else if(location == Intake.Location.LEFT){
-            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
-            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
-            teamUtil.pause(EDGE_PUSHER_PAUSE);
-            shooter.pushOne();
-            teamUtil.log("shootArtifactLocation: Moved left flipper");
-        }else{ // right
-            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
-            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
-            teamUtil.pause(EDGE_PUSHER_PAUSE);
-            shooter.pushOne();
-            teamUtil.log("shootArtifactLocation: Moved right flipper");
-        }
-        int ball_num = intake.loadedBallNum();
-        if(ball_num == 0){
-            intake.intakeStart();
-        }
-    }
-
 //    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
 //        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
 //        Thread thread = new Thread(new Runnable() {
@@ -342,6 +315,55 @@ public class Robot {
 //        });
 //        thread.start();
 //    }
+
+    public void shootArtifactLocation(Intake.Location location){ //
+        teamUtil.log("shootArtifactLocation: " + location);
+        // consider adding checks?
+        if(location == Intake.Location.CENTER){
+            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING_MIDDLE);
+            intake.middleLoad = Intake.ARTIFACT.NONE;
+            intake.signalArtifacts();
+            shooter.pushOne();
+            teamUtil.log("shootArtifactLocation: Moved middle flipper");
+        }else if(location == Intake.Location.LEFT){
+            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+            intake.leftLoad = Intake.ARTIFACT.NONE;
+            intake.signalArtifacts();
+            teamUtil.pause(EDGE_PUSHER_PAUSE);
+            shooter.pushOne();
+            teamUtil.log("shootArtifactLocation: Moved left flipper");
+        }else{ // right
+            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+            intake.rightLoad = Intake.ARTIFACT.NONE;
+            intake.signalArtifacts();
+            teamUtil.pause(EDGE_PUSHER_PAUSE);
+            shooter.pushOne();
+            teamUtil.log("shootArtifactLocation: Moved right flipper");
+        }
+        int ball_num = intake.numBallsInFlippers();
+        if(ball_num == 0){
+            intake.intakeStart();
+        }
+    }
+
+    public void shootArtifactLocationNoWait(Intake.Location location){ //
+        teamUtil.log("Launching Thread to shootArtifactLocationNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shootArtifactLocation(location);
+            }
+        });
+        thread.start();
+    }
+
+
 
     public int left = 1;
     public int middle = 2;
@@ -399,7 +421,7 @@ public class Robot {
                 while (nextShot < 4 && shotOrder[nextShot] == Intake.Location.NONE ) {
                     nextShot++;
                 }
-                intake.unloadServo(shotOrder[shot], nextShot < 4 ? shotOrder[nextShot] : Intake.Location.NONE);
+                intake.unloadFlipper(shotOrder[shot], nextShot < 4 ? shotOrder[nextShot] : Intake.Location.NONE);
             }
         });
         thread.start();
@@ -417,7 +439,7 @@ public class Robot {
         if (intake.elevatorToFlippersV2(false)) {
             determineShotOrderAutoPattern(); // sets global shotOrder
             teamUtil.log("Shot Order: " + shotOrder[1] + "/"+ shotOrder[2] + "/"+ shotOrder[3]);
-            intake.unloadServo(shotOrder[1], shotOrder[2]); // preload next if possible
+            intake.unloadFlipper(shotOrder[1], shotOrder[2]); // preload next if possible
         } else { // intake failed in some way
             // TODO: Maybe pause then try again for some amount of time?
             teamUtil.log("ElevatorToFlippersV2 failed. Giving up on Transfer.");
@@ -425,8 +447,6 @@ public class Robot {
         transferring.set(false);
         teamUtil.log("autoTransferAndLoadV2 Finished");
     }
-
-
 
     public void autoTransferAndLoadNoWait (long pause, long timeOut) {
         if (transferring.get()) {
@@ -513,7 +533,7 @@ public class Robot {
         logShot(flyWheelVelocity);
         teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
         //0 balls in the flippers
-        if(intake.loadedBallNum()==0){
+        if(intake.numBallsInFlippers()==0){
             intake.intakeStart();
         }
         intake.flipNextFastNoWait();
@@ -709,6 +729,14 @@ public class Robot {
             determineShotOrderAutoPattern(); // sets up the data for loadPattern
             loadPatternShotNoWait(1); // get the first ARTIFACT in the shooter
         }
+        if (useIntakeDetector) {
+            if (intake.startIntakeDetector()) {
+                teamUtil.log("Started Intake Detector");
+            } else {
+                useIntakeDetector = false;
+                teamUtil.log("FALED to Start Intake Detector, using hardcoded mode instead");
+            }
+        }
 
 
         /////////////////////////////Shoot Preloads (Group 1)
@@ -814,7 +842,7 @@ public class Robot {
         /////////////////////////////Park
         teamUtil.log("==================== Park ================");
         intake.intakeStop();
-        intake.stopDetector();
+        intake.stopIntakeDetector();
         shooter.stopShooter();
 
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;

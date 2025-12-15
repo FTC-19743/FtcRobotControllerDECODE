@@ -197,16 +197,16 @@ public class CalibrateArms extends LinearOpMode {
     public void testIntakeDetector() {
         robot.intake.intakeTelemetry();
         if(gamepad1.dpadUpWasReleased()){
-            robot.intake.startDetector(DETECTOR_COLORS);
+            //robot.intake.startDetector(DETECTOR_COLORS);
         }
         if(gamepad1.dpadLeftWasReleased()){
             DETECTOR_COLORS = !DETECTOR_COLORS;
-            robot.intake.stopDetector();
+            //robot.intake.stopDetector();
             teamUtil.pause(100);
-            robot.intake.startDetector(DETECTOR_COLORS);
+            //robot.intake.startDetector(DETECTOR_COLORS);
         }
         if(gamepad1.dpadDownWasReleased()){
-            robot.intake.stopDetector();
+            //robot.intake.stopDetector();
         }
     }
 
@@ -217,7 +217,7 @@ public class CalibrateArms extends LinearOpMode {
         if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
             robot.intake.detectIntakeArtifactsV2();
         } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
-            robot.intake.detectLoadedArtifactsV2();
+            //robot.intake.detectLoadedArtifactsV2();
         }
         telemetry.addLine("Loaded: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R:" + robot.intake.rightLoad);
         telemetry.addLine("Intake: Num: " + robot.intake.intakeNum + " L: " + robot.intake.leftIntake + " M: " + robot.intake.middleIntake + " R: " + robot.intake.rightIntake);
@@ -339,7 +339,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.intakeStop();
         }
         if(gamepad1.triangleWasReleased()){
-            robot.intake.intakeIn();
+            robot.intake.intakeStart();
         }
         if(gamepad1.squareWasReleased()){
             robot.intake.intakeOut();

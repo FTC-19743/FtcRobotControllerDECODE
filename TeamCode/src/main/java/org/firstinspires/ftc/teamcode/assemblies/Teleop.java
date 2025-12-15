@@ -159,25 +159,27 @@ public class Teleop extends LinearOpMode {
 
                 ////////////// SHOOTER ///////////////////////////
 
+                if(shootingMode){
+                    robot.shooter.adjustShooterV3(robot.drive.robotGoalDistance());
+                }
+
                 if(gamepad2.rightBumperWasReleased()){
                     //robot.shootAllArtifactsNoWait(); // replaced by shootIfCanTeleop
                 }
                 if(gamepad2.bWasReleased()){
-                    robot.shootArtifactLocation(Intake.Location.RIGHT);
+                    robot.shootArtifactLocationNoWait(Intake.Location.RIGHT);
                 }
                 if(gamepad2.xWasReleased()){
-                    robot.shootArtifactLocation(Intake.Location.LEFT);
-                }
-                if(shootingMode){
-                    robot.shooter.adjustShooterV3(robot.drive.robotGoalDistance());
+                    robot.shootArtifactLocationNoWait(Intake.Location.LEFT);
                 }
                 if(gamepad2.yWasReleased()){
-                    robot.shootArtifactLocation(Intake.Location.CENTER);
+                    robot.shootArtifactLocationNoWait(Intake.Location.CENTER);
                 }
                 if(gamepad2.aWasReleased()){
                     robot.shooter.pusher.calibrateNoWait( );
                     robot.shooter.pushOneNoWait();
-                }if(gamepad2.right_trigger > .6f && shootingMode){
+                }
+                if(gamepad2.right_trigger > .6f && shootingMode){
                     robot.shootIfCanTeleop(); // blinkin based on the result?
                 }
 
@@ -222,11 +224,11 @@ public class Teleop extends LinearOpMode {
                 }if(gamepad2.dpadRightWasPressed()){
                     robot.intake.intakeStart();
                 }
-                if(gamepad2.left_trigger > .8){
+                if(gamepad2.left_trigger > .8){ // Set up for a manual (Human Player) load
                     robot.intake.flippersToTransfer();
                     robot.intake.intakeOut();
-                    robot.intake.stopLimelight();
-                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: work with patterns
+                    robot.intake.stopIntakeDetector();
+                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: Update once we have a detector that works at the top
                 }
 
                 if(gamepad2.leftBumperWasReleased()){
