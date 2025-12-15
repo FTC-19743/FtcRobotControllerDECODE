@@ -449,6 +449,20 @@ public class BasicDrive{
         return getGoalHeading(oQlocalizer.posX_mm, oQlocalizer.posY_mm );
     }
 
+    public static int HELD_HEADING_FUTURE_MILLIS = 500;
+    public double robotGoalHeadingPredictive(){
+        int currentXPos = oQlocalizer.posX_mm;
+        int currentYPos = oQlocalizer.posY_mm;
+
+        int currentXVel = oQlocalizer.velX_mmS;
+        int currentYVel = oQlocalizer.velY_mmS;
+
+        int futureX = currentXPos + HELD_HEADING_FUTURE_MILLIS/1000*currentXVel;
+        int futureY = currentYPos + HELD_HEADING_FUTURE_MILLIS/1000*currentYVel;
+        return getGoalHeading(futureX, futureY);
+
+    }
+
 
     /************************************************************************************************************/
     //   Holonomic Motor Operations

@@ -15,6 +15,8 @@ public class Auto extends LinearOpMode {
 
     Robot robot;
     boolean shootingMode = false;
+    boolean useIntakeDetector = false;
+
 
     public void runOpMode() {
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -57,8 +59,23 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
+            teamUtil.telemetry.addLine("Press Bumpers To use Intake Detector");
+            if (gamepad1.rightBumperWasReleased() || gamepad1.leftBumperWasReleased()) {
+                useIntakeDetector = !useIntakeDetector;
+            }
+            teamUtil.telemetry.update();
+        }
+        if (isStopRequested()) return;
+
+
         teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
         teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+        teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
         teamUtil.telemetry.addLine("----------------------------------");
         teamUtil.telemetry.addLine("Press A to Localize and start CV");
         teamUtil.telemetry.update();
@@ -71,6 +88,7 @@ public class Auto extends LinearOpMode {
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
@@ -83,6 +101,7 @@ public class Auto extends LinearOpMode {
         while (!isStarted()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Green goes on the power switch side");
             robot.drive.localizerTelemetry();
             robot.detectPattern();
@@ -109,7 +128,7 @@ public class Auto extends LinearOpMode {
             //teamUtil.pause(delay);
 
             if (teamUtil.SIDE == teamUtil.Side.GOAL) {
-                robot.goalSideV2(true);
+                robot.goalSideV2(true, useIntakeDetector);
             } else {
                 robot.humanSide(true);
             }

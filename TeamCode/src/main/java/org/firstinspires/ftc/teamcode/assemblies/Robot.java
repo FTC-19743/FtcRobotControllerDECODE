@@ -87,7 +87,11 @@ public class Robot {
             teamUtil.log("ERROR: Attempt to switch pipeline without initializing Limelight" + pipeline);
             return;
         }
-        limelight.pipelineSwitch(pipeline); // minimize CPU on the LL
+        boolean pipelineSwitch = limelight.pipelineSwitch(pipeline); // minimize CPU on the LL
+        if(!pipelineSwitch){
+            teamUtil.log("ERROR: Pipeline Switch Failed in StartLimeLightPipeline");
+        }
+
         if (!LIME_LIGHT_ACTIVE) {
             limelight.setPollRateHz(PIPELINE_INTAKE_POLLRATE);
             limelight.start();
@@ -102,7 +106,10 @@ public class Robot {
         if (!LIME_LIGHT_ACTIVE) {
             teamUtil.log("WARNING: stopLimeLight called while Limelight is already stopped");
         }
-        limelight.pipelineSwitch(PIPELINE_IDLE); // minimize CPU on the LL
+        boolean pipelineSwitch = limelight.pipelineSwitch(PIPELINE_IDLE); // minimize CPU on the LL
+        if(!pipelineSwitch){
+            teamUtil.log("ERROR: Pipeline Switch To IDLE Failed in StopLimeLight");
+        }
         limelight.stop();
         LIME_LIGHT_ACTIVE = false;
     }
@@ -301,7 +308,7 @@ public class Robot {
         if(location == Intake.Location.CENTER){
             intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
-            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING_MIDDLE);
             shooter.pushOne();
             teamUtil.log("shootArtifactLocation: Moved middle flipper");
         }else if(location == Intake.Location.LEFT){
@@ -505,6 +512,10 @@ public class Robot {
         shooter.pushOneNoWait();
         logShot(flyWheelVelocity);
         teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
+        //0 balls in the flippers
+        if(intake.loadedBallNum()==0){
+            intake.intakeStart();
+        }
         intake.flipNextFastNoWait();
         return true;
     }
@@ -683,7 +694,7 @@ public class Robot {
     public static boolean emptyRamp = true;
     public static int emptyRampPause = 2000;
 
-    public void goalSideV2(boolean useArms) {
+    public void goalSideV2(boolean useArms, boolean useIntakeDetector) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
         double savedDeclination;
@@ -715,18 +726,23 @@ public class Robot {
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 2
-        if (useArms) { intake.intakeIn(); } // TODO: Call IntakeStart here to ensure flippers in correct location and detector in correct mode?
+        if (useArms) { intake.intakeStart(); }
         if (emptyRamp) {
             teamUtil.log("==================== Empty Ramp ");
             // Pickup 2nd set of artifacts, slowing at end
             if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
-            // Manually set what is loaded in intake in case detector fails
-            if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
-                intake.setIntakeArtifacts(teamUtil.Pattern.GPP);
-            }else{
-                intake.setIntakeArtifacts(teamUtil.Pattern.PPG);
+            if (useIntakeDetector) {
+                intake.detectIntakeArtifactsV2();
+                intake.signalArtifacts();
+            } else {
+                // Manually set what is loaded in intake in case detector fails
+                if (teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+                    intake.setIntakeArtifacts(teamUtil.Pattern.GPP);
+                } else {
+                    intake.setIntakeArtifacts(teamUtil.Pattern.PPG);
+                }
             }
-            if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, 3000);
+            if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, 3000); // TODO: Need to test for failure here and do something smart to avoid massive penalities
             // push the gate allowing for timeout
             drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, 0, null, 0, B07_RAMP_TIMEOUT);
             drive.stopMotors();
@@ -751,13 +767,18 @@ public class Robot {
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 3
-        if (useArms) { intake.intakeIn(); }
+        if (useArms) { intake.intakeStart(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
         // Manually set what is loaded in intake in case detector fails
-        intake.setIntakeArtifacts(teamUtil.Pattern.PGP);
+        if (useIntakeDetector) {
+            intake.detectIntakeArtifactsV2();
+            intake.signalArtifacts();
+        } else {
+            intake.setIntakeArtifacts(teamUtil.Pattern.PGP);
+        }
         drive.stopMotors(); // kill some forward momentum
         teamUtil.pause(B08_PICKUP3_PAUSE);
-        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, 3000);
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, 3000); // TODO: Need to test for failure here and do something smart to avoid massive penalities
         // TODO: Adjust flywheel speed for 3rd group
 
         // Drive back to shooting zone
@@ -768,17 +789,22 @@ public class Robot {
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
-        if (useArms) { intake.intakeIn(); }
+        if (useArms) { intake.intakeStart(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
         // Manually set what is loaded in intake in case detector fails
-        if(teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
-            intake.setIntakeArtifacts(teamUtil.Pattern.PPG);
-        }else{
-            intake.setIntakeArtifacts(teamUtil.Pattern.GPP);
+        if (useIntakeDetector) {
+            intake.detectIntakeArtifactsV2();
+            intake.signalArtifacts();
+        } else {
+            if (teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+                intake.setIntakeArtifacts(teamUtil.Pattern.PPG);
+            } else {
+                intake.setIntakeArtifacts(teamUtil.Pattern.GPP);
+            }
         }
         drive.stopMotors(); // kill some forward momentum
         teamUtil.pause(B08_PICKUP4_PAUSE);
-        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, 3000);
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, 3000); // TODO: Need to test for failure here and do something smart to avoid massive penalities
         // TODO: Adjust flywheel speed for 4th group
         // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;

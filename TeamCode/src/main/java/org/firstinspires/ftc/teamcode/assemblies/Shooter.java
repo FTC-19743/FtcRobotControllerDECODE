@@ -227,6 +227,7 @@ public class Shooter {
         return velocityNeeded;
     }
 
+    /*
     public double getAimNeeded(double distance) {
         double pitchNeeded;
         if (distance < MID_SHORT_DISTANCE_THRESHOLD) {
@@ -239,7 +240,9 @@ public class Shooter {
         return pitchNeeded;
     }
 
+     */
 
+/*
     public void adjustShooterV2(double distance){
         if(details)teamUtil.log("adjustShooterV2 to distance: " + distance);
         VELOCITY_COMMANDED = getVelocityNeeded(distance);
@@ -247,6 +250,8 @@ public class Shooter {
         aim(getAimNeeded(distance));
         if(details)teamUtil.log("adjustShooterV2 Finished");
     }
+
+ */
 
     public void adjustShooterV3(double distance){
         if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
@@ -281,9 +286,14 @@ public class Shooter {
     public static double pitchD = -8.07697e-8;
     public static double pitchE = -3.01755e-7;
     public static double pitchF = 2.67729e-7;
+    public static double longPitch = .44;
 
     public double calculatePitch(double distance, double velocity) {
-        return pitchA - pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
+        if(distance<MID_DISTANCE_THRESHOLD){
+            return pitchA - pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
+        }else{
+            return longPitch;
+        }
     }
 
     public void changeAim(double distance, double velocity){ // account for robot velocity?

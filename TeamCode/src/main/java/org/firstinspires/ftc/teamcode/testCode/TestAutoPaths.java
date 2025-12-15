@@ -23,6 +23,7 @@ public class TestAutoPaths extends LinearOpMode{
     Robot robot;
 
     static public boolean USE_ARMS = false;
+    static public boolean USE_INTAKE_DETECTOR = false;
     public long elapsedTime = 0;
 
     public enum Ops {
@@ -127,14 +128,14 @@ public class TestAutoPaths extends LinearOpMode{
     public void testGoalSide() {
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
-            robot.goalSideV2(USE_ARMS);
+            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
         if(gamepad1.dpadDownWasReleased()){
             long startTime = System.currentTimeMillis();
-            robot.goalSideV2(USE_ARMS);
+            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);

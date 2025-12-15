@@ -113,6 +113,7 @@ public class Teleop extends LinearOpMode {
                 if(gamepad1.yWasReleased()){
                     if(shootingMode){
                         shootingMode = false;
+                        robot.blinkin.setSignal(Blinkin.Signals.OFF);
                         robot.shooter.setShootSpeed(robot.shooter.IDLE_FLYWHEEL_VELOCITY);
                     }else{
                         shootingMode = true;
@@ -241,6 +242,11 @@ public class Teleop extends LinearOpMode {
                 if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE && !limelightOverride) {
                     robot.intake.detectIntakeArtifactsV2();
                 }
+
+                if(gamepad2.backWasPressed()){
+                    robot.intake.elevatorToFlippersV2NoWait();
+                }
+
                 robot.intake.signalArtifacts();
 
                 robot.outputTelemetry();

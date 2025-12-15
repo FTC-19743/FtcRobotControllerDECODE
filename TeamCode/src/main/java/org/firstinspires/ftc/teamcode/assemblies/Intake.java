@@ -79,6 +79,7 @@ public class Intake {
 
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
     static public float FLIPPER_CEILING = 0.86f;
+    static public float FLIPPER_CEILING_MIDDLE = 0.82f;
     static public float FLIPPER_TRANSFER = 0.7f;
     static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
     static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
@@ -168,11 +169,16 @@ public class Intake {
         intakeIn();
         //startDetector(false);
         startLimelight();
-        left_flipper.setPosition(FLIPPER_CEILING);
-        right_flipper.setPosition(FLIPPER_CEILING);
-        middle_flipper.setPosition(FLIPPER_CEILING);
+        flippersToCeiling();
 
     }
+
+    public void flippersToCeiling(){
+        left_flipper.setPosition(FLIPPER_CEILING);
+        right_flipper.setPosition(FLIPPER_CEILING);
+        middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE);
+    }
+
     public void intakeOut(){
         intake.setPower(INTAKE_OUT_POWER);
     }
@@ -230,7 +236,7 @@ public class Intake {
                     teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
                     pinned = Location.NONE;
                 }
-                middle_flipper.setPosition(FLIPPER_CEILING);
+                middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE);
                 if (nextLocation==Location.LEFT) {
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
                     pinned = nextLocation;
@@ -256,7 +262,7 @@ public class Intake {
                 right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
             }
             teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
-            middle_flipper.setPosition(FLIPPER_CEILING);
+            middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE);
         }else{
             if (servoPositionIs(left_flipper,EDGE_FLIPPER_SHOOTER_TRANSFER)) {
                 left_flipper.setPosition(FLIPPER_CEILING);
@@ -374,16 +380,15 @@ public class Intake {
         // Move elevator to ground
         if( elevatorToGroundV2()) {
             // Move flippers into blocking position
-            left_flipper.setPosition(FLIPPER_CEILING);
-            right_flipper.setPosition(FLIPPER_CEILING);
-            middle_flipper.setPosition(FLIPPER_CEILING);
+            flippersToCeiling();
+
             intakeIn();
             startLimelight();
 
             teamUtil.log("getReadyToIntake Finished");
             return true;
         } else {
-            teamUtil.log("getReadyToIntake Finished");
+            teamUtil.log("getReadyToIntake Finished But Elevator to Ground V2 Failed");
             return false;
         }
     }
@@ -415,11 +420,7 @@ public class Intake {
             return;
         }
         if(elevatorToFlippersV2(false)){
-            if (!detectLoadedArtifactsV2()) {
-                teamUtil.log("ERROR: elevatorToShooterFast found artifacts in Intake but nothing at the top of transfer");
-            } else {
-                flipNextFast();
-            }
+            flipNextFast();
         }
         teamUtil.log("elevatorToShooterFast finished");
         elevatorMoving.set(false);
