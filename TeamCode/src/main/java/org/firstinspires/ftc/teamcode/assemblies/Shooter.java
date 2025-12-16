@@ -161,7 +161,7 @@ public class Shooter {
     }
 
     public void pushOne(){
-        pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+        pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 2500);
     }
 
     public void pushOneNoWait(){

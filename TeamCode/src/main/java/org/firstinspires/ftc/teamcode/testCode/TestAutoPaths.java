@@ -67,6 +67,7 @@ public class TestAutoPaths extends LinearOpMode{
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + " PATTERN: " + teamUtil.pattern);
             telemetry.addLine("Testing: " + AA_Operation);
             telemetry.addLine("Use Arms: "+ USE_ARMS);
+            telemetry.addLine("Use Detector: "+ USE_INTAKE_DETECTOR);
             telemetry.addLine("Last Op: "+ elapsedTime);
             robot.drive.loop();
             robot.drive.driveMotorTelemetry();

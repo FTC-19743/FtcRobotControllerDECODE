@@ -163,6 +163,7 @@ public class Intake {
     }
 
     public void intakeStart(){
+        teamUtil.log("intakeStart");
         intakeIn();
         startIntakeDetector();
         flippersToCeiling();
@@ -606,11 +607,15 @@ public class Intake {
     public enum DETECTION_MODE {NONE, INTAKE, LOADED};
     public DETECTION_MODE detectorMode = DETECTION_MODE.NONE;
     public static boolean DETECTOR_FAILSAFE = false;
-    public static boolean KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = false;
+    public static boolean KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = true;
 
     // Tell the limelight where to look for ARTIFACTS
     public boolean startIntakeDetector() {
-        teamUtil.log("startIntakeDetector: Result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
+        if (teamUtil.robot.limeLightActive()) {
+            teamUtil.log("WARNING: startIntakeDetector called while limelight active.  Ignored.");
+        } else {
+            teamUtil.log("startIntakeDetector: Result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
+        }
         detectorMode = DETECTION_MODE.INTAKE;
         return true;
     }
@@ -625,6 +630,17 @@ public class Intake {
         }
     }
 
+    public static long LL_RESET_PAUSE = 10;
+    public boolean resetIntakeDetector() {
+        teamUtil.log("resetIntakeDetector");
+        boolean stored = KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;
+        KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = false; // force stop of limelight
+        stopIntakeDetector();
+        teamUtil.pause(LL_RESET_PAUSE);
+        startIntakeDetector();
+        KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = stored; // restore previous value
+        return true;
+    }
     private double[]  getDetectorOutput() {
         LLResult result = teamUtil.robot.limelight.getLatestResult();
         //teamUtil.log("result: " + result);

@@ -76,6 +76,9 @@ public class Teleop extends LinearOpMode {
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
 
+        if (Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) { // If we are going to keep this running the whole time
+            robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // start it right away
+        }
 
         while (!opModeIsActive()) {
         /*   
@@ -93,8 +96,9 @@ public class Teleop extends LinearOpMode {
         }
         
 
-            //TODO: FIX ALL STATE MANAGEMENT
-            waitForStart();
+        waitForStart();
+
+
 
 
             while (opModeIsActive()) {
@@ -227,7 +231,7 @@ public class Teleop extends LinearOpMode {
                 if(gamepad2.left_trigger > .8){ // Set up for a manual (Human Player) load
                     robot.intake.flippersToTransfer();
                     robot.intake.intakeOut();
-                    robot.intake.stopIntakeDetector();
+                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) robot.intake.stopIntakeDetector();
                     robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: Update once we have a detector that works at the top
                 }
 
@@ -268,7 +272,7 @@ public class Teleop extends LinearOpMode {
                 //telemetry.addLine("Hang Manual: " + hangManualControl);
                 telemetry.addLine((endgameMode ? "ENDGAME ":"")+"ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
                 telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "Red" : "Blue"));
-
+                //telemetry.addLine("Detector Mode: " + robot.intake.detectorMode + " Left: " + Intake.leftIntake);
                 telemetry.update();
             }
 

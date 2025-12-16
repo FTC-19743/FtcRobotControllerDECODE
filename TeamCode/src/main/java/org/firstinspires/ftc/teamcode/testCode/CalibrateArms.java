@@ -91,6 +91,8 @@ public class CalibrateArms extends LinearOpMode {
             return;
         }
 
+        robot.intake.startIntakeDetector();
+
         while (opModeIsActive()) {
             telemetry.addLine("MODE : " + AA_Operation);
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + "PATTERN: " + teamUtil.pattern);
@@ -210,15 +212,20 @@ public class CalibrateArms extends LinearOpMode {
         }
     }
 
+    public static long LLRESET_PAUSE = 100;
+
     public void testDetectorV2() {
 
         //telemetry.addLine("LL Status: " + robot.limelight.getStatus());
-        telemetry.addLine("DetectorMode: " + robot.intake.detectorMode);
+        telemetry.addLine("DetectorMode: " + robot.intake.detectorMode + " Keep On: " + Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING);
+
         if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
             robot.intake.detectIntakeArtifactsV2();
         } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
             //robot.intake.detectLoadedArtifactsV2();
         }
+        robot.intake.signalArtifacts();
+
         telemetry.addLine("Loaded: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R:" + robot.intake.rightLoad);
         telemetry.addLine("Intake: Num: " + robot.intake.intakeNum + " L: " + robot.intake.leftIntake + " M: " + robot.intake.middleIntake + " R: " + robot.intake.rightIntake);
         LLStatus llstatus = robot.limelight.getStatus();
@@ -228,13 +235,23 @@ public class CalibrateArms extends LinearOpMode {
             telemetry.addLine(String.format("LimeLight Pipeline: %d FPS: %.1f Temp: %.1f PipeImgCount: %d",llstatus.getPipelineIndex(),llstatus.getFps(),llstatus.getTemp(), llstatus.getPipeImgCount()));
         }
 
-        robot.intake.signalArtifacts();
 
-        if (gamepad1.dpadUpWasReleased()) {
-            robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // This test first, then fix modes and integrate into Intake
+        if (gamepad1.dpadUpWasReleased()) { // fix it
+            robot.intake.resetIntakeDetector();
+            //robot.intake.stopIntakeDetector();
+            //teamUtil.pause(LLRESET_PAUSE);
+            //robot.intake.startIntakeDetector();
+
+            //robot.intake.startIntakeDetector();
+            //robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // This test first, then fix modes and integrate into Intake
         }
-        if (gamepad1.dpadDownWasReleased()) {
-            robot.stopLimeLight();
+
+        if (gamepad1.dpadLeftWasReleased()) { // toggle always on mode
+            Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = ! Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;
+        }
+        if (gamepad1.dpadRightWasReleased()) { // break it
+            robot.intake.stopIntakeDetector();
+            robot.intake.startIntakeDetector();
         }
         if (gamepad1.dpadLeftWasReleased()) {
             robot.startLimeLightPipeline(Robot.PIPELINE_VIEW);
