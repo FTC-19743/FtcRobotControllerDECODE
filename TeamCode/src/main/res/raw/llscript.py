@@ -34,7 +34,7 @@ UPPER_GREEN = np.array([100, 255, 255]) #was 80 before led strip
 
 # Purple ARTIFACT (requires wrapping the hue for some shades, but let's stick to a single main band)
 # Hue: around 125-165. Saturation/Value: High
-LOWER_PURPLE = np.array([120, 50, 50])
+LOWER_PURPLE = np.array([118, 50, 50])
 UPPER_PURPLE = np.array([135, 255, 255])
 
 # ---  BLUR FACTOR ---
@@ -146,14 +146,16 @@ def runPipeline(image, llrobot):
 
     # --- 2. Identify and Separate Blobs ---
 
-    # Create masks using the blurred image
+    # Create masks using the blurred HSV image
     mask_green = cv2.inRange(img_hsv, LOWER_GREEN, UPPER_GREEN)
     mask_purple = cv2.inRange(img_hsv, LOWER_PURPLE, UPPER_PURPLE)
 
     if current_mode == MODE_INTAKE:
         mask_purple = cv2.erode(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
+        mask_purple = cv2.dilate(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
     else:
         mask_purple = cv2.erode(mask_purple, MORPH_KERNEL_LOADED, iterations=1)
+        mask_purple = cv2.dilate(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
 
     # Dictionaries to hold the bounding boxes: {'color': [(x, y, w, h), ...]}
     green_boxes = []
@@ -185,7 +187,7 @@ def runPipeline(image, llrobot):
 
     # Update the Limelight's largest contour for standard tx/ty/ta outputs
     all_contours = contours_g + contours_p
-    if all_contours:
+    if all_contours: # check that all_contours isn't empty
         largestContour = max(all_contours, key=cv2.contourArea)
 
     # --- 3. Process the Bounding Box Lists (Your Custom Game Logic) ---
