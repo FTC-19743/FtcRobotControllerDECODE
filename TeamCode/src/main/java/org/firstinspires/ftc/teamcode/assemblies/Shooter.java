@@ -283,7 +283,7 @@ public class Shooter {
     }
 
     public static double pitchA = 0.012;
-    public static double pitchB = 0.0000044767;
+    public static double pitchB = -0.0000044767;
     public static double pitchC = 0.000457262;
     public static double pitchD = -8.07697e-8;
     public static double pitchE = -3.01755e-7;
@@ -292,7 +292,7 @@ public class Shooter {
 
     public double calculatePitch(double distance, double velocity) {
         if(distance<MID_DISTANCE_THRESHOLD){
-            return pitchA - pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
+            return pitchA + pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
         }else{
             return longPitch;
         }
@@ -304,11 +304,18 @@ public class Shooter {
     }
 
     public boolean flywheelSpeedOK(double distance, double velocity){
-        double minV = calculateMinSpeed(distance);
-        double maxV = calculateMaxSpeed(distance);
-        if (velocity > maxV || velocity < minV) { // not within thresholds
-            return false;
+        if(distance<MID_DISTANCE_THRESHOLD) {
+            double minV = calculateMinSpeed(distance);
+            double maxV = calculateMaxSpeed(distance);
+            if (velocity > maxV || velocity < minV) { // not within thresholds
+                return false;
+            }
+            return true;
+        }else{
+            if(Math.abs(velocity-getVelocityNeeded(distance))>VELOCITY_COMMANDED_THRESHOLD){
+                return false;
+            }
+            return true;
         }
-        return true;
     }
 }
