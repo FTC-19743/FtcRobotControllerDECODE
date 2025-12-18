@@ -236,7 +236,11 @@ public class CalibrateDrive extends LinearOpMode {
     }
 
     public void testNewMethods() {
-
+        if (gamepad1.dpadDownWasReleased()) {
+            drive.stallY(testPower, 270, 0, testVelocity, SECONDS);
+        } else  if (gamepad1.dpadUpWasReleased()) {
+            drive.stallY(testPower, 90, 0, testVelocity, SECONDS);
+        }
     }
 
     public void testMoveToHoldingLine() {
