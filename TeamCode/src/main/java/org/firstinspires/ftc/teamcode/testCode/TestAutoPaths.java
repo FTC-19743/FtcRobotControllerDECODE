@@ -36,6 +36,9 @@ public class TestAutoPaths extends LinearOpMode{
     public static Ops AA_Operation = Ops.Goal_Side;
     public static boolean useCV = false;
     public static long gateLeaveTime = 0;
+    public static int GRAB_VEL = 600;
+    public static int GRAB_X = -600;
+    public static int GRAB_TIME = 3000;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -139,8 +142,34 @@ public class TestAutoPaths extends LinearOpMode{
             long startTime = System.currentTimeMillis();
             robot.getMoreBalls();
             elapsedTime = System.currentTimeMillis()-startTime;
+            robot.drive.driveMotorsHeadingsFR(0,0,1000);
+            teamUtil.pause(500);
+            robot.drive.stopMotors();
+            robot.intake.intakeStop();
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
+        if (gamepad1.dpadRightWasReleased()) {
+            robot.intake.resetIntakeDetector();
+        }
+
+        if (gamepad1.dpadLeftWasReleased()){
+            Intake.INTAKE_IN_POWER = .9;
+            robot.intake.intakeNum=0;
+            if (robot.limeLightActive()) {
+                robot.intake.resetIntakeDetector();
+                teamUtil.pause(100);
+            }
+            robot.intake.startIntakeDetector();
+            robot.intake.getReadyToIntake();
+            teamUtil.pause(1000);
+            long startTime = System.currentTimeMillis();
+            robot.grab3(GRAB_VEL, GRAB_X, GRAB_TIME);
+            elapsedTime = System.currentTimeMillis()-startTime;
+            teamUtil.log("---------- Elapsed Time: " + elapsedTime);
+            teamUtil.pause(250);
+            robot.intake.intakeStop();
+        }
+
         if (gamepad1.xWasReleased()) {
             // test shot order logic
             for (teamUtil.Pattern currentPattern : teamUtil.Pattern.values()) {

@@ -959,19 +959,68 @@ public class Robot {
     public static double C01_FAST_APPROACH_DRIVE_HEADING = 145;
     public static double C01_FAST_APPROACH_ROBOT_HEADING = 180 + C01_FAST_APPROACH_DRIVE_HEADING;
     public static double C01_FAST_APPROACH_END_VELOCITY = B00_CORNER_VELOCITY;
-    public static double C02_BALL_APPROACH_Y_OFFSET = 50;
+    public static double C02_BALL_APPROACH_WALL_TARGET = 1650;
     public static double C02_BALL_APPROACH_X = -500;
     public static double C02_BALL_APPROACH_DRIVE_HEADING = 90;
     public static double C02_BALL_APPROACH_ROBOT_HEADING = 0;
-    public static double C02_BALL_APPROACH_VELOCITY = 600;
-    public static long C02_BALL_APPROACH_TIMEOUT = 1500;
+    public static double C02_BALL_APPROACH_VELOCITY = 800;
+    public static long C02_BALL_APPROACH_TIMEOUT = 1000;
+    public static float C02_BALL_APPROACH_POWER = .25f;
+    public static double C02_BALL_APPROACH_STALL_VEL = 50;
+
+    public static int C02_GRAB_VEL = 600;
+    public static int C02_GRAB_X_LIMIT = -1430;
+    public static double C02_GRAB_Y_WALL_OFFSET = 25;
+    public static double C02_GRAB_INTAKE_POWER = .9;
+    public static long C02_GRAB_TIME = 2000;
 
 
     public boolean getMoreBalls(){
+        // get Intake Ready
+        double stored = Intake.INTAKE_IN_POWER;
+        Intake.INTAKE_IN_POWER = C02_GRAB_INTAKE_POWER; // adjust intake speed for this operation
+        intake.getReadyToIntakeNoWait();
+
+        // Drive towards wall fast
         if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, C01_FAST_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 1500)) return false;
-        if (!drive.mirroredMoveToYHoldingLine(C02_BALL_APPROACH_VELOCITY, drive.oQlocalizer.posY_mm-C02_BALL_APPROACH_Y_OFFSET,C02_BALL_APPROACH_X,C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_VELOCITY, null, 0, C02_BALL_APPROACH_TIMEOUT)) return false;
-        if (!drive.mirroredMoveToXHoldingLine(600, -800,drive.oQlocalizer.posY_mm-10,180, 0, 0, null, 0, 1500)) return false;
+        //if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 2000)) return false;
+
+        // spin to final heading and snug up against wall (intended to time out)
+        drive.mirroredStallY(C02_BALL_APPROACH_POWER, C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_STALL_VEL, C02_BALL_APPROACH_TIMEOUT);
+        //drive.mirroredMoveToYHoldingLine(C02_BALL_APPROACH_VELOCITY, C02_BALL_APPROACH_WALL_TARGET,C02_BALL_APPROACH_X,C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_VELOCITY, null, 0, C02_BALL_APPROACH_TIMEOUT);
+
+        // move off the wall just a bit to make intake work better
+        if (!drive.mirroredMoveToYHoldingLine(C02_GRAB_VEL, Math.abs(drive.oQlocalizer.posY_mm)-C02_GRAB_Y_WALL_OFFSET,drive.oQlocalizer.posX_mm,C02_BALL_APPROACH_DRIVE_HEADING+180, C02_BALL_APPROACH_ROBOT_HEADING, C02_GRAB_VEL, null, 0, 1500)) return false;
+
+        // pick up the balls
+        if (!grab3(C02_GRAB_VEL, C02_GRAB_X_LIMIT, C02_GRAB_TIME)) return false;
         drive.stopMotors();
+        Intake.INTAKE_IN_POWER = stored; // restore intake speed default
+        return true;
+    }
+
+    // rolls straight at 180 trying to pickup 3 balls
+    // returns when it has 3, runs out of time, or when it reaches a certain x threshold
+    // assumes intake is on and intake detector is running
+    public boolean grab3(int velocity, int xThreshold, long timeOut) {
+        teamUtil.log("grab3");
+        long timeOutTime = System.currentTimeMillis()+timeOut;
+        while (teamUtil.keepGoing(timeOutTime) && intake.intakeNum<3 && drive.oQlocalizer.posX_mm > xThreshold) {
+            drive.loop();
+            intake.detectIntakeArtifactsV2();
+            intake.signalArtifacts();
+            drive.driveMotorsHeadingsFR(180, 0, velocity);
+        }
+        drive.stopMotors();
+        if (System.currentTimeMillis() >= timeOutTime) {
+            teamUtil.log("grab3 TIMED OUT.");
+            intake.intakeStop();
+            return false;
+        }
+        if (drive.oQlocalizer.posX_mm <= xThreshold) {
+            teamUtil.log("grab3 Reached X Threshold.");
+        }
+        teamUtil.log("grab3 Finished with " + intake.intakeNum + " artifacts.");
         return true;
     }
 
