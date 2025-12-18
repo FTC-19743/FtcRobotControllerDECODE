@@ -681,6 +681,7 @@ public class Intake {
         leftIntake = getArtifactColor(llOutput[2]);
         middleIntake = getArtifactColor(llOutput[3]);
         rightIntake = getArtifactColor(llOutput[4]);
+        intakeNum = (leftIntake == ARTIFACT.NONE ? 0 : 1) + (middleIntake == ARTIFACT.NONE ? 0 : 1) + (rightIntake == ARTIFACT.NONE ? 0 : 1);
         return true;
     }
 
