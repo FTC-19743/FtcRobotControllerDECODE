@@ -983,10 +983,10 @@ public class Robot {
 
         // Drive towards wall fast
         if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, C01_FAST_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 1500)) return false;
-        //if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 2000)) return false;
 
-        // spin to final heading and snug up against wall (intended to time out)
+        // spin to final heading and snug up against wall using stall detection. shouldn't time out but OK if it does
         drive.mirroredStallY(C02_BALL_APPROACH_POWER, C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_STALL_VEL, C02_BALL_APPROACH_TIMEOUT);
+        // spin to final heading and snug up against wall (intended to time out) (before stall detection)
         //drive.mirroredMoveToYHoldingLine(C02_BALL_APPROACH_VELOCITY, C02_BALL_APPROACH_WALL_TARGET,C02_BALL_APPROACH_X,C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_VELOCITY, null, 0, C02_BALL_APPROACH_TIMEOUT);
 
         // move off the wall just a bit to make intake work better
