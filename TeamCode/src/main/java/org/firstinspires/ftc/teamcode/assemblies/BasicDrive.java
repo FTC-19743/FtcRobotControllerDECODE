@@ -1761,7 +1761,7 @@ public class BasicDrive{
         }
 
         if(System.currentTimeMillis()>timeoutTime){
-            teamUtil.log("TIMEOUT Triggered");
+            teamUtil.log("moveToXHoldingLine TIMEOUT Triggered.  Current xPos:" + oQlocalizer.posX_mm + " Current yPos: "+ oQlocalizer.posY_mm);
             stopMotors();
             return false;
         }
@@ -1807,7 +1807,7 @@ public class BasicDrive{
         }
 
         if(System.currentTimeMillis()>timeoutTime){
-            teamUtil.log("TIMEOUT Triggered");
+            teamUtil.log("moveToYHoldingLine TIMEOUT Triggered. Current yPos:" + oQlocalizer.posY_mm + " Current xPos: "+ oQlocalizer.posX_mm);
             stopMotors();
             return false;
         }
@@ -1832,7 +1832,34 @@ public class BasicDrive{
     }
 
 
-    public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
+    public boolean stallY(float power, double driveHeading, double robotHeading, double minVel, long timeOut){
+        teamUtil.log("stallY");
+        long timeOutTime = System.currentTimeMillis() + timeOut;
+        loop();
+        while (Math.abs(oQlocalizer.velY_mmS) > minVel && teamUtil.keepGoing(timeOutTime)) {
+            driveMotorsHeadingsFRPower(driveHeading, robotHeading, power);
+            loop();
+            if (details) {
+                teamUtil.log("StallY: YVel: " + oQlocalizer.velY_mmS );
+            }
+        }
+        if (System.currentTimeMillis() > timeOutTime) {
+            teamUtil.log("stallY TIMED OUT. Ypos: " + oQlocalizer.posY_mm);
+            return false;
+        } else {
+            teamUtil.log("StallY Finished.  Ypos: " + oQlocalizer.posY_mm + "Yvel: " + oQlocalizer.velY_mmS );
+            return true;
+        }
+    }
+
+    public boolean mirroredStallY(float power, double driveHeading, double robotHeading, double minVel, long timeOut) {
+        if (teamUtil.alliance==RED) {
+            return stallY(power, 360-driveHeading,360-robotHeading, minVel, timeOut);
+        } else {
+            return stallY(power, driveHeading,robotHeading, minVel, timeOut);
+        }
+    }
+        public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
         //TODO THIS CODE SHALL NOT BE USED UNTIL THE ANGLE PROBLEM IS FIXED
