@@ -35,6 +35,7 @@ public class TestAutoPaths extends LinearOpMode{
     static public int RESET_H = 0;
     public static Ops AA_Operation = Ops.Goal_Side;
     public static boolean useCV = false;
+    public static long gateLeaveTime = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -129,15 +130,14 @@ public class TestAutoPaths extends LinearOpMode{
     public void testGoalSide() {
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
-            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR);
+            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
-        if(gamepad1.dpadDownWasReleased()){
+        if (gamepad1.dpadDownWasPressed()){
             long startTime = System.currentTimeMillis();
-            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR);
-            robot.drive.stopMotors();
+            robot.getMoreBalls();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }

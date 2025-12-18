@@ -776,8 +776,9 @@ public class Robot {
 
     public static boolean emptyRamp = true;
     public static int emptyRampPause = 2000;
+    public static long gateElapsedTime = 0;
 
-    public void goalSideV2(boolean useArms, boolean useIntakeDetector) {
+    public void goalSideV2(boolean useArms, boolean useIntakeDetector, long gateLeaveTime) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
         double savedDeclination;
@@ -825,11 +826,11 @@ public class Robot {
         /////////////////////////////Intake 2nd group and shoot
         // Setup to pickup group 2
         teamUtil.log("==================== Group 2 ================");
+        if (useArms) { intake.getReadyToIntakeNoWait(); }
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 2
-        if (useArms) { intake.intakeStart(); }
         if (emptyRamp) {
             teamUtil.log("==================== Empty Ramp ");
             // Pickup 2nd set of artifacts, slowing at end
@@ -852,7 +853,9 @@ public class Robot {
             // push the gate allowing for timeout
             drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, 0, null, 0, B07_RAMP_TIMEOUT);
             drive.stopMotors();
-           teamUtil.pause(emptyRampPause);
+            teamUtil.pause(emptyRampPause);
+            long pause = gateLeaveTime - (System.currentTimeMillis() - startTime);
+            teamUtil.pause(pause);
             // get clear of 3rd group before rotating
             if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_RAMP_FY, B07_RAMP_X + B07_RAMP_X_DRIFT, B07_RAMP_FH, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
         } else {
@@ -876,11 +879,11 @@ public class Robot {
         Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
         // Setup to pickup group 3
         teamUtil.log("==================== Group 3 ================");
+        if (useArms) { intake.getReadyToIntakeNoWait(); }
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_SETUP2_Y,B07_SETUP2_X,B07_SETUP2_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 3
-        if (useArms) { intake.intakeStart(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
         // Manually set what is loaded in intake in case detector fails
         if (useIntakeDetector) {
@@ -908,7 +911,7 @@ public class Robot {
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
-        if (useArms) { intake.intakeStart(); }
+        if (useArms) { intake.getReadyToIntakeNoWait(); }
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
         // Manually set what is loaded in intake in case detector fails
         if (useIntakeDetector) {
@@ -948,6 +951,28 @@ public class Robot {
 
         /////////////////////////////Wrap up
         stopRobot();
+    }
+
+    public static double C01_FAST_APPROACH_X = -400;
+    public static double C01_FAST_APPROACH_Y = 1250;
+    public static double C01_FAST_APPROACH_VELOCITY = B00_MAX_SPEED;
+    public static double C01_FAST_APPROACH_DRIVE_HEADING = 145;
+    public static double C01_FAST_APPROACH_ROBOT_HEADING = 180 + C01_FAST_APPROACH_DRIVE_HEADING;
+    public static double C01_FAST_APPROACH_END_VELOCITY = B00_CORNER_VELOCITY;
+    public static double C02_BALL_APPROACH_Y_OFFSET = 50;
+    public static double C02_BALL_APPROACH_X = -500;
+    public static double C02_BALL_APPROACH_DRIVE_HEADING = 90;
+    public static double C02_BALL_APPROACH_ROBOT_HEADING = 0;
+    public static double C02_BALL_APPROACH_VELOCITY = 600;
+    public static long C02_BALL_APPROACH_TIMEOUT = 1500;
+
+
+    public boolean getMoreBalls(){
+        if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, C01_FAST_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 1500)) return false;
+        if (!drive.mirroredMoveToYHoldingLine(C02_BALL_APPROACH_VELOCITY, drive.oQlocalizer.posY_mm-C02_BALL_APPROACH_Y_OFFSET,C02_BALL_APPROACH_X,C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_VELOCITY, null, 0, C02_BALL_APPROACH_TIMEOUT)) return false;
+        if (!drive.mirroredMoveToXHoldingLine(600, -800,drive.oQlocalizer.posY_mm-10,180, 0, 0, null, 0, 1500)) return false;
+        drive.stopMotors();
+        return true;
     }
 
 

@@ -262,6 +262,7 @@ public class Teleop extends LinearOpMode {
                         limelightOverride = true;
                     }else{
                         limelightOverride = false;
+                        robot.intake.resetIntakeDetector();
                     }
                 }
 
