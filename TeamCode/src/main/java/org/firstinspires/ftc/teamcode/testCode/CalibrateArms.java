@@ -352,13 +352,13 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.left_flipper.setPosition(FLIPPER_TEST_VAL);
             robot.intake.right_flipper.setPosition(FLIPPER_TEST_VAL);
         }
-        if(gamepad1.circleWasReleased()){
+        if(gamepad1.bWasReleased()){
             robot.intake.intakeStop();
         }
-        if(gamepad1.triangleWasReleased()){
+        if(gamepad1.yWasReleased()){
             robot.intake.intakeStart();
         }
-        if(gamepad1.squareWasReleased()){
+        if(gamepad1.xWasReleased()){
             robot.intake.intakeOut();
         }
     }
