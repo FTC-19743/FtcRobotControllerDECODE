@@ -39,6 +39,7 @@ public class TestAutoPaths extends LinearOpMode{
     public static int GRAB_VEL = 600;
     public static int GRAB_X = -600;
     public static int GRAB_TIME = 3000;
+    public static boolean GET_MORE_BALLS = true;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -133,7 +134,7 @@ public class TestAutoPaths extends LinearOpMode{
     public void testGoalSide() {
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
-            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime);
+            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime, GET_MORE_BALLS);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
@@ -142,14 +143,15 @@ public class TestAutoPaths extends LinearOpMode{
             long startTime = System.currentTimeMillis();
             robot.getMoreBalls();
             elapsedTime = System.currentTimeMillis()-startTime;
-            robot.drive.driveMotorsHeadingsFR(0,0,1000);
-            teamUtil.pause(500);
-            robot.drive.stopMotors();
+//            robot.drive.driveMotorsHeadingsFR(0,0,1000);
+//            teamUtil.pause(500);
+//            robot.drive.stopMotors();
             robot.intake.intakeStop();
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
         if (gamepad1.dpadRightWasReleased()) {
             robot.intake.resetIntakeDetector();
+            robot.intake.intakeNum = 0;
         }
 
         if (gamepad1.dpadLeftWasReleased()){

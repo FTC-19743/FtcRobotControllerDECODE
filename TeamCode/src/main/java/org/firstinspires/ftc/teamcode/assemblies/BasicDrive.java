@@ -1722,6 +1722,7 @@ public class BasicDrive{
     public static double HOLDING_LINE_DECL_COEF_STRAFE = 2.4;
 
     public boolean moveToXHoldingLine(double velocity, double xTarget, double yTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
+        driveHeading = adjustAngle(driveHeading);
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         loop();
@@ -1730,8 +1731,16 @@ public class BasicDrive{
         //TODO: Detect a drive heading that is incompatible with encoder readings and fail out (e.g. drive heading of 0 with x target < x start)  Fix Y version as well.
         if(xTarget-startEncoder >=0){
             goingUp = true;
+            if(driveHeading > 90 && driveHeading < 270){ // 0-90 and 270-360 is a valid range
+                teamUtil.log("moveToXHoldingLine called with a conflicting driveHeading and direction based on endpoint");
+                return false;
+            }
         }else{
             goingUp=false;
+            if(driveHeading < 90 || driveHeading > 270){ // 90-270 is a valid range
+                teamUtil.log("moveToXHoldingLine called with a conflicting driveHeading and direction based on endpoint");
+                return false;
+            }
         }
         if (endVelocity == 0) {
             endVelocity = HOLDING_LINE_MIN_END_VELOCITY;
@@ -1769,6 +1778,7 @@ public class BasicDrive{
         return true;
     }
     public boolean moveToYHoldingLine(double velocity, double yTarget, double xTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
+        driveHeading = adjustAngle(driveHeading);
         long startTime = System.currentTimeMillis();
         long timeoutTime = startTime+timeout;
         loop();
@@ -1776,8 +1786,16 @@ public class BasicDrive{
         boolean goingUp;
         if(yTarget-startEncoder >=0){
             goingUp = true;
+            if(driveHeading > 180) { // 0 - 180 is valid
+                teamUtil.log("moveToYHoldingLine called with a conflicting driveHeading and direction based on endpoint");
+                return false;
+            }
         }else{
             goingUp=false;
+            if(driveHeading < 180){ // 180 - 360 is valid
+                teamUtil.log("moveToYHoldingLine called with a conflicting driveHeading and direction based on endpoint");
+                return false;
+            }
         }
         if (endVelocity == 0) {
             endVelocity = HOLDING_LINE_MIN_END_VELOCITY;

@@ -228,9 +228,13 @@ public class Intake {
     // Load state is updated to NONE when ARTIFACT is fully released
     // Long running operation! Use in separate thread if you need control!
     public void unloadFlipper(Location location, Location nextLocation) {
-        teamUtil.log("unloadFlipper: " + location);
+        teamUtil.log("unloadFlipper location: " + location+ " nextLocation: "+nextLocation);
         switch (location) {
             case LEFT:
+                if (nextLocation==Location.RIGHT) {
+                    right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    pinned = nextLocation;
+                }
                 if (servoPositionIs(left_flipper,FLIPPER_TRANSFER)) {
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
                     leftLoad = ARTIFACT.NONE;
@@ -240,12 +244,13 @@ public class Intake {
                 left_flipper.setPosition(FLIPPER_CEILING);
                 leftLoad = ARTIFACT.NONE;
 
-                if (nextLocation==Location.RIGHT) {
-                    right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
-                    pinned = nextLocation;
-                }
+
                 break;
             case RIGHT:
+                if (nextLocation==Location.LEFT) {
+                    left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
+                    pinned = nextLocation;
+                }
                 if (servoPositionIs(right_flipper,FLIPPER_TRANSFER)) {
                     right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
                     rightLoad = ARTIFACT.NONE;
@@ -255,19 +260,9 @@ public class Intake {
                 right_flipper.setPosition(FLIPPER_CEILING);
                 rightLoad = ARTIFACT.NONE;
 
-                if (nextLocation==Location.LEFT) {
-                    left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
-                    pinned = nextLocation;
-                }
+
                 break;
             case CENTER:
-                if (servoPositionIs(middle_flipper,FLIPPER_TRANSFER)) {
-                    middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
-                    middleLoad = ARTIFACT.NONE;
-                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
-                    pinned = Location.NONE;
-                }
-                middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE);
                 if (nextLocation==Location.LEFT) {
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
                     pinned = nextLocation;
@@ -276,6 +271,13 @@ public class Intake {
                     right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER);
                     pinned = nextLocation;
                 }
+                if (servoPositionIs(middle_flipper,FLIPPER_TRANSFER)) {
+                    middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+                    middleLoad = ARTIFACT.NONE;
+                    teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
+                    pinned = Location.NONE;
+                }
+                middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE);
                 break;
             default:
         }

@@ -773,12 +773,14 @@ public class Robot {
     public static double B99_PARK_TIME = 1500;
     public static double B99_MOVE_OFF_LINE_TIME = 1500;
 
+    public static double B08_MORE_BALLS_THRESHOLD = 6000;
+
 
     public static boolean emptyRamp = true;
     public static int emptyRampPause = 2000;
     public static long gateElapsedTime = 0;
 
-    public void goalSideV2(boolean useArms, boolean useIntakeDetector, long gateLeaveTime) {
+    public void goalSideV2(boolean useArms, boolean useIntakeDetector, long gateLeaveTime, boolean getMore) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
         double savedDeclination;
@@ -939,16 +941,24 @@ public class Robot {
 
 
         /////////////////////////////Park
+        boolean enoughTime = System.currentTimeMillis() - startTime < 30000 - B08_MORE_BALLS_THRESHOLD; // check that there is enough time and we want to get more
         teamUtil.log("==================== Park ================");
-        intake.intakeStop();
-        intake.stopIntakeDetector();
         shooter.stopShooter();
+        if(getMore && enoughTime){
+            getMoreBalls(); // grab stuff from the loading zone
 
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
-        drive.stopMotors(); // help kill the sideways momentum
-        teamUtil.pause(B06_SETUP1_PAUSE);
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
-
+            // park
+            if (!drive.mirroredMoveToXHoldingLine(C03_PARK_VELOCITY, B07_RAMP_X - C03_PARK_DRIFT_X,B06_PICKUP1_Y,0, 0, B07_PICKUP_RAMP_END_VEL, null, 0, 2500)) return;
+        }else {
+            intake.intakeStop();
+            intake.stopIntakeDetector();
+            if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y, B06_SETUP1_X, B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500))
+                return;
+            drive.stopMotors(); // help kill the sideways momentum
+            teamUtil.pause(B06_SETUP1_PAUSE);
+            if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_RAMP_X + B07_RAMP_X_DRIFT, B06_PICKUP1_Y, B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500))
+                return;
+        }
         /////////////////////////////Wrap up
         stopRobot();
     }
@@ -966,13 +976,19 @@ public class Robot {
     public static double C02_BALL_APPROACH_VELOCITY = 800;
     public static long C02_BALL_APPROACH_TIMEOUT = 1000;
     public static float C02_BALL_APPROACH_POWER = .25f;
-    public static double C02_BALL_APPROACH_STALL_VEL = 50;
+    public static double C02_BALL_APPROACH_STALL_VEL = 10;
+    public static double C01_FAST_APPROACH_Y_OFFSET = -140;
+    public static double C01_FAST_APPROACH_X_OFFSET = 200;
+
 
     public static int C02_GRAB_VEL = 600;
     public static int C02_GRAB_X_LIMIT = -1430;
-    public static double C02_GRAB_Y_WALL_OFFSET = 25;
+    public static double C02_GRAB_Y_WALL_OFFSET = 15;
     public static double C02_GRAB_INTAKE_POWER = .9;
     public static long C02_GRAB_TIME = 2000;
+    public static double C03_PARK_DRIFT_X = 500;
+    public static double C03_PARK_VELOCITY = B00_PICKUP_VELOCITY;
+
 
 
     public boolean getMoreBalls(){
@@ -982,8 +998,8 @@ public class Robot {
         intake.getReadyToIntakeNoWait();
 
         // Drive towards wall fast
-        if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, C01_FAST_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 1500)) return false;
-
+        if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X+C01_FAST_APPROACH_X_OFFSET,C01_FAST_APPROACH_Y+C01_FAST_APPROACH_Y_OFFSET,C01_FAST_APPROACH_DRIVE_HEADING, C01_FAST_APPROACH_ROBOT_HEADING, C01_FAST_APPROACH_END_VELOCITY, null, 0, 1500)) return false;
+        if (!drive.mirroredMoveToXHoldingLine(C01_FAST_APPROACH_VELOCITY, C01_FAST_APPROACH_X,C01_FAST_APPROACH_Y,C01_FAST_APPROACH_DRIVE_HEADING, 0, C01_FAST_APPROACH_END_VELOCITY, null, 0, 1500)) return false;
         // spin to final heading and snug up against wall using stall detection. shouldn't time out but OK if it does
         drive.mirroredStallY(C02_BALL_APPROACH_POWER, C02_BALL_APPROACH_DRIVE_HEADING, C02_BALL_APPROACH_ROBOT_HEADING, C02_BALL_APPROACH_STALL_VEL, C02_BALL_APPROACH_TIMEOUT);
         // spin to final heading and snug up against wall (intended to time out) (before stall detection)
@@ -992,9 +1008,11 @@ public class Robot {
         // move off the wall just a bit to make intake work better
         if (!drive.mirroredMoveToYHoldingLine(C02_GRAB_VEL, Math.abs(drive.oQlocalizer.posY_mm)-C02_GRAB_Y_WALL_OFFSET,drive.oQlocalizer.posX_mm,C02_BALL_APPROACH_DRIVE_HEADING+180, C02_BALL_APPROACH_ROBOT_HEADING, C02_GRAB_VEL, null, 0, 1500)) return false;
 
+        intake.intakeNum = 0; // dont return instantly from grab3
+
         // pick up the balls
         if (!grab3(C02_GRAB_VEL, C02_GRAB_X_LIMIT, C02_GRAB_TIME)) return false;
-        drive.stopMotors();
+
         Intake.INTAKE_IN_POWER = stored; // restore intake speed default
         return true;
     }
@@ -1005,7 +1023,7 @@ public class Robot {
     public boolean grab3(int velocity, int xThreshold, long timeOut) {
         teamUtil.log("grab3");
         long timeOutTime = System.currentTimeMillis()+timeOut;
-        while (teamUtil.keepGoing(timeOutTime) && intake.intakeNum<3 && drive.oQlocalizer.posX_mm > xThreshold) {
+        while (teamUtil.keepGoing(timeOutTime) && intake.intakeNum < 3 && drive.oQlocalizer.posX_mm > xThreshold) {
             drive.loop();
             intake.detectIntakeArtifactsV2();
             intake.signalArtifacts();

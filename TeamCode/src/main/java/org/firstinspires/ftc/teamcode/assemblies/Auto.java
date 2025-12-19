@@ -17,6 +17,7 @@ public class Auto extends LinearOpMode {
     boolean shootingMode = false;
     boolean useIntakeDetector = false;
     long gateLeaveTime = Robot.gateElapsedTime;
+    boolean getMore = false;
 
 
     public void runOpMode() {
@@ -89,11 +90,43 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
+            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
+            if(getMore){
+                if(!robot.limeLightActive()){
+                    robot.intake.startIntakeDetector();
+                }else{
+                    robot.intake.detectIntakeArtifactsV2();
+                    robot.intake.signalArtifacts();
+                }
+            }
+            if (gamepad1.dpadUpWasPressed()) {
+                getMore = true;
+            }
+            if(gamepad1.dpadDownWasPressed()){
+                getMore = false;
+            }
+            teamUtil.telemetry.update();
+            teamUtil.pause(20);
+        }
+        if (isStopRequested()) return;
+
+        robot.intake.intakeNum = 0;
+        Intake.leftIntake = Intake.ARTIFACT.NONE;
+        Intake.middleIntake = Intake.ARTIFACT.NONE;
+        Intake.rightIntake = Intake.ARTIFACT.NONE;
+        robot.intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE); // turn off signals
 
         teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
         teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
         teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
         teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+        teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
         teamUtil.telemetry.addLine("----------------------------------");
         teamUtil.telemetry.addLine("Press A to Localize and start CV");
         teamUtil.telemetry.update();
@@ -108,6 +141,7 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
@@ -122,6 +156,7 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
             teamUtil.telemetry.addLine("Green goes on the power switch side");
             robot.drive.localizerTelemetry();
             robot.detectPattern();
@@ -148,7 +183,7 @@ public class Auto extends LinearOpMode {
             //teamUtil.pause(delay);
 
             if (teamUtil.SIDE == teamUtil.Side.GOAL) {
-                robot.goalSideV2(true, useIntakeDetector, gateLeaveTime);
+                robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, getMore);
             } else {
                 robot.humanSide(true);
             }
