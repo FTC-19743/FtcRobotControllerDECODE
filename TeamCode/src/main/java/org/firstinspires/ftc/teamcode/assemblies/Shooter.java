@@ -216,15 +216,17 @@ public class Shooter {
     public static double A09_SHORT_AIM_B = .2775;
     public static double A09_LONG_AIM_M = .000118464;
     public static double A09_LONG_AIM_B = .18204;
+    public static double A09_DEEP_VELOCITY_M = 0.297372;
+    public static double A09_DEEP_VELOCITY_B = 472.75242;
 
     public double getVelocityNeeded(double distance){
         double velocityNeeded;
         if (distance<MID_SHORT_DISTANCE_THRESHOLD){
             velocityNeeded =A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
-        }else if (distance<MID_DISTANCE_THRESHOLD){
+        }else if (distance<MID_DISTANCE_THRESHOLD){ // are the first two not the same?
             velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
         }else{
-            velocityNeeded = 0.297372*distance + 472.75242;
+            velocityNeeded = A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B; // was this tuned? it shouldn't be linear
         }
         return velocityNeeded;
     }
@@ -294,7 +296,7 @@ public class Shooter {
         if(distance<MID_DISTANCE_THRESHOLD){
             return pitchA + pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
         }else{
-            return longPitch;
+            return longPitch; // was the velocity really tuned with this in mind?
         }
     }
 
