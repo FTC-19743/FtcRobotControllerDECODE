@@ -40,8 +40,8 @@ public class Robot {
 
     public Servo foot;
     private ColorSensor footColorSensor;
-    public static double FOOT_CALIBRATE_POS = .1;
-    public static double FOOT_EXTENDED_POS = .6; // 6-7 seconds TODO: Maybe lower to closer to ground while setting up to save a second or two
+    public static double FOOT_CALIBRATE_POS = .0;
+    public static double FOOT_EXTENDED_POS = .6; // 1 second
 
     public static boolean details = false;
 
