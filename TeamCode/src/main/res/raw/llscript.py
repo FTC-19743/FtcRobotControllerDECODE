@@ -5,7 +5,8 @@ import statistics
 
 # --- Global Variables for State Maintenance ---
 HISTORY_LENGTH = 5
-history = deque([(0, 0, 0)] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
+intakeHistory = deque([(0, 0, 0)] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
+loadedHistory = deque([(0, 0, 0)] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
 
 # Mode Constants (as before)
 MODE_INTAKE = 1  # OpMode sends 1 for INTAKE mode
@@ -19,59 +20,46 @@ left_result = NONE
 middle_result = NONE
 right_result = NONE
 
-# --- FTC DECODE ARTIFACT HSV Ranges ---
-# These are typical ranges for these colors under good lighting. You may need to fine-tune these.
-
 # LL Settings
 # 640x480
 # Exposure 2000
 # Sensor Gain 10
 # Red/Blue Balance 1300/1975  Defaults are 1200/1975
-# Green ARTIFACT (typically a distinct, high-saturation green)
-# Hue: around 50-70. Saturation/Value: High
+
 LOWER_GREEN = np.array([40, 100, 70])
 UPPER_GREEN = np.array([100, 255, 255]) #was 80 before led strip
 
-# Purple ARTIFACT (requires wrapping the hue for some shades, but let's stick to a single main band)
-# Hue: around 125-165. Saturation/Value: High
 LOWER_PURPLE = np.array([118, 50, 50])
 UPPER_PURPLE = np.array([135, 255, 255])
 
 # ---  BLUR FACTOR ---
 # Must be a positive, odd integer (e.g., 3, 5, 7, 9).
 # Larger number = more blur. Start with 5 and tune as needed.
-BLUR_KERNEL_SIZE_INTAKE = 11
-BLUR_KERNEL_SIZE_LOADED = 21
+BLUR_KERNEL_SIZE = 11
 
 # --- Clean up tape edges and other noise
 # --- MORPHOLOGICAL KERNEL ---
-MORPH_KERNEL_INTAKE = np.ones((5, 5), np.uint8)
-MORPH_KERNEL_LOADED = np.ones((15, 15), np.uint8)
+MORPH_KERNEL = np.ones((5, 5), np.uint8)
 
 # Minimum Bounding Box Area (Adjust based on your target size/distance)
-MIN_AREA_CONSTRAINT_INTAKE = 5000.0
-MIN_AREA_CONSTRAINT_LOADED = 200.0
-
-DOUBLE_BALL_MAX = 0
-DOUBLE_BALL_MAX_INTAKE = 410
-DOUBLE_BALL_MAX_LOADED = 600
-SINGLE_BALL_MAX = 0
-SINGLE_BALL_MAX_INTAKE = 210
-SINGLE_BALL_MAX_LOADED = 500
-LEFT_DOUBLE_THRESHOLD = 320
-LEFT_THRESHOLD = 0
-LEFT_THRESHOLD_INTAKE = 200
-LEFT_THRESHOLD_LOADED = 275
-RIGHT_THRESHOLD = 0
-RIGHT_THRESHOLD_INTAKE = 400
-RIGHT_THRESHOLD_LOADED = 550
+MIN_AREA_CONSTRAINT = 5000.0
 
 CROP_BOTTOM_PIXELS = 240
 CROP_TOP_PIXELS = 100
 CROP_RIGHT_PIXELS = 50
 
+DOUBLE_BALL_MAX = 410
+SINGLE_BALL_MAX = 210
+LEFT_DOUBLE_THRESHOLD = 320
+LEFT_THRESHOLD = 200
+RIGHT_THRESHOLD = 400
+LEFT_LOADED_THRESHOLD = 25
+RIGHT_LOADED_THRESHOLD = 640-CROP_RIGHT_PIXELS - 30
+MIDDLE_LOADED_CENTER = 300
 
-def detect(boxes, color):
+
+
+def intakeDetect(boxes, color):
     global left_result, middle_result, right_result
 
     for x, y, w, h, area, cx, cy in boxes:
@@ -97,6 +85,20 @@ def detect(boxes, color):
     #print(f" Left: {left_result} | Middle : {middle_result} | Right: {right_result}")
 
 
+def loadedDetect(boxes, color):
+    global left_result, middle_result, right_result
+
+    for x, y, w, h, area, cx, cy in boxes:
+        if (x < LEFT_LOADED_THRESHOLD): # something on far left
+            left_result = color
+        if (x+w > RIGHT_LOADED_THRESHOLD): # something on far right
+            right_result = color
+        if (x < MIDDLE_LOADED_CENTER and x+w > MIDDLE_LOADED_CENTER ):
+            middle_result = color
+        #print(f"Box: Area {area} | w: {w} | X,Y: {cx}, {cy}")
+    #print(f" Left: {left_result} | Middle : {middle_result} | Right: {right_result}")
+
+
 def runPipeline(image, llrobot):
     global history
     global DOUBLE_BALL_MAX, SINGLE_BALL_MAX, LEFT_THRESHOLD, RIGHT_THRESHOLD, MIN_AREA_CONSTRAINT
@@ -117,23 +119,9 @@ def runPipeline(image, llrobot):
     # Crop rear wall
     image[crop_height_start:height, 0:width] = 0
 
-    if current_mode == MODE_INTAKE:
-        kernel = (BLUR_KERNEL_SIZE_INTAKE, BLUR_KERNEL_SIZE_INTAKE)
-        MIN_AREA_CONSTRAINT = MIN_AREA_CONSTRAINT_INTAKE
-        DOUBLE_BALL_MAX = DOUBLE_BALL_MAX_INTAKE
-        SINGLE_BALL_MAX = SINGLE_BALL_MAX_INTAKE
-        LEFT_THRESHOLD = LEFT_THRESHOLD_INTAKE
-        RIGHT_THRESHOLD = RIGHT_THRESHOLD_INTAKE
-        image[0:CROP_TOP_PIXELS, 0:width] = 0 # crop top
-        image[CROP_TOP_PIXELS:crop_height_start, crop_width_start:width] = 0 # crop far right
-
-    else:
-        kernel = (BLUR_KERNEL_SIZE_LOADED, BLUR_KERNEL_SIZE_LOADED)
-        MIN_AREA_CONSTRAINT = MIN_AREA_CONSTRAINT_LOADED
-        DOUBLE_BALL_MAX = DOUBLE_BALL_MAX_LOADED
-        SINGLE_BALL_MAX = SINGLE_BALL_MAX_LOADED
-        LEFT_THRESHOLD = LEFT_THRESHOLD_LOADED
-        RIGHT_THRESHOLD = RIGHT_THRESHOLD_LOADED
+    kernel = (BLUR_KERNEL_SIZE, BLUR_KERNEL_SIZE)
+    image[0:CROP_TOP_PIXELS, 0:width] = 0 # crop top
+    image[CROP_TOP_PIXELS:crop_height_start, crop_width_start:width] = 0 # crop far right
 
     # Apply Gaussian Blur to the HSV image
     # This reduces noise and helps smooth the edges of the blobs.
@@ -142,20 +130,13 @@ def runPipeline(image, llrobot):
     # Convert to HSV color space once
     img_hsv = cv2.cvtColor(img_blurred, cv2.COLOR_BGR2HSV)
 
-
-
-    # --- 2. Identify and Separate Blobs ---
-
     # Create masks using the blurred HSV image
     mask_green = cv2.inRange(img_hsv, LOWER_GREEN, UPPER_GREEN)
     mask_purple = cv2.inRange(img_hsv, LOWER_PURPLE, UPPER_PURPLE)
 
-    if current_mode == MODE_INTAKE:
-        mask_purple = cv2.erode(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
-        mask_purple = cv2.dilate(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
-    else:
-        mask_purple = cv2.erode(mask_purple, MORPH_KERNEL_LOADED, iterations=1)
-        mask_purple = cv2.dilate(mask_purple, MORPH_KERNEL_INTAKE, iterations=1)
+    # clean up purple mask with erosion and dilation
+    mask_purple = cv2.erode(mask_purple, MORPH_KERNEL, iterations=1)
+    mask_purple = cv2.dilate(mask_purple, MORPH_KERNEL, iterations=1)
 
     # Dictionaries to hold the bounding boxes: {'color': [(x, y, w, h), ...]}
     green_boxes = []
@@ -190,13 +171,6 @@ def runPipeline(image, llrobot):
     if all_contours: # check that all_contours isn't empty
         largestContour = max(all_contours, key=cv2.contourArea)
 
-    # --- 3. Process the Bounding Box Lists (Your Custom Game Logic) ---
-
-    # NOTE: You will replace this placeholder logic with your actual game logic.
-    # The logic must use 'green_boxes' and 'purple_boxes' and output three integers.
-
-    # Placeholder Logic: Example using the number of blobs found
-
     num_green = len(green_boxes)
     num_purple = len(purple_boxes)
     # Print the counts and the current mode for debugging
@@ -206,48 +180,64 @@ def runPipeline(image, llrobot):
     middle_result = NONE
     right_result = NONE
     # Run through detections
-    detect (green_boxes, GREEN)
-    detect (purple_boxes, PURPLE)
+    intakeDetect (green_boxes, GREEN)
+    intakeDetect (purple_boxes, PURPLE)
+    intakeHistory.append((left_result, middle_result, right_result))
 
-    # --- 4. Maintain Stats (History Update) ---
-    history.append((left_result, middle_result, right_result))
+    left_result = NONE
+    middle_result = NONE
+    right_result = NONE
+    # Run through detections
+    loadedDetect (green_boxes, GREEN)
+    loadedDetect (purple_boxes, PURPLE)
+    loadedHistory.append((left_result, middle_result, right_result))
 
-    # --- 5. Return Most Common Value (Temporal Smoothing) ---
-
-    left_values = [res[0] for res in history]
-    middle_values = [res[1] for res in history]
-    right_values = [res[2] for res in history]
-
-    # Calculate the most common (mode) for each list
+    # Calculate most common values in the temporal history
+    left_values = [res[0] for res in intakeHistory]
+    middle_values = [res[1] for res in intakeHistory]
+    right_values = [res[2] for res in intakeHistory]
     try:
-        most_common_left = statistics.mode(left_values)
-        most_common_middle = statistics.mode(middle_values)
-        most_common_right = statistics.mode(right_values)
+        most_common_left_intake = statistics.mode(left_values)
+        most_common_middle_intake = statistics.mode(middle_values)
+        most_common_right_intake = statistics.mode(right_values)
     except statistics.StatisticsError:
         # Fallback to the latest value if all are unique
-        most_common_left = left_values[-1]
-        most_common_middle = middle_values[-1]
-        most_common_right = right_values[-1]
+        most_common_left_intake = left_values[-1]
+        most_common_middle_intake = middle_values[-1]
+        most_common_right_intake = right_values[-1]
 
-    print(f"Mode: {current_mode} | Left: {most_common_left} | Middle : {most_common_middle} | Right: {most_common_right}")
+    # Calculate most common values in the temporal history
+    left_values = [res[0] for res in loadedHistory]
+    middle_values = [res[1] for res in loadedHistory]
+    right_values = [res[2] for res in loadedHistory]
+    try:
+        most_common_left_loaded = statistics.mode(left_values)
+        most_common_middle_loaded = statistics.mode(middle_values)
+        most_common_right_loaded = statistics.mode(right_values)
+    except statistics.StatisticsError:
+        # Fallback to the latest value if all are unique
+        most_common_left_loaded = left_values[-1]
+        most_common_middle_loaded = middle_values[-1]
+        most_common_right_loaded = right_values[-1]
+
+    print(f"INTAKE L: {most_common_left_intake} | M : {most_common_middle_intake} | R: {most_common_right_intake} LOADED L: {most_common_left_loaded} | M : {most_common_middle_loaded} | R: {most_common_right_loaded}")
 
     # Populate the llpython array with the smoothed results and status
     llpython = [0.0] * 8
 
-    # llpython[0]: What mode did we use for detection
-    llpython[0] = float(current_mode)
+    # llpython[0]: Signal valid data
+    llpython[0] = 23
 
     # llpython[1]: Flag (1.0 if targets found, 0.0 otherwise)
     llpython[1] = float(1.0) if (green_boxes or purple_boxes) else float(0.0)
 
     # llpython[2], [3], [4]: Smoothed (most common) results
-    llpython[2] = float(most_common_left)
-    llpython[3] = float(most_common_middle)
-    llpython[4] = float(most_common_right)
-
-    # Optional: Return raw count data for debugging
-    llpython[5] = float(num_green)
-    llpython[6] = float(num_purple)
+    llpython[2] = float(most_common_left_intake)
+    llpython[3] = float(most_common_middle_intake)
+    llpython[4] = float(most_common_right_intake)
+    llpython[5] = float(most_common_left_loaded)
+    llpython[6] = float(most_common_middle_loaded)
+    llpython[7] = float(most_common_right_loaded)
 
     # Return the required tuple
     #return largestContour, mask_purple, llpython
