@@ -168,7 +168,7 @@ public class Teleop extends LinearOpMode {
                 }
 
                 if(gamepad2.rightBumperWasReleased()){
-                    //robot.shootAllArtifactsNoWait(); // replaced by shootIfCanTeleop
+                    robot.resetFlippersAndPusherNoWait(500);
                 }
                 if(gamepad2.bWasReleased()){
                     robot.shootArtifactLocationNoWait(Intake.Location.RIGHT);

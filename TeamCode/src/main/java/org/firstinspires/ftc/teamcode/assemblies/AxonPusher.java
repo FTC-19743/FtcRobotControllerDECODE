@@ -161,6 +161,8 @@ public class AxonPusher {
         }
     }
 
+
+
     public int nextEncoderTarget(int currentEncoder){
         float distanceFromStart = currentEncoder - ENCODER_LOAD_POSITION_1;
         float pushesFromStart = distanceFromStart/((float)REV_ENCODER_TICS_PER_REVOLUTION/2);

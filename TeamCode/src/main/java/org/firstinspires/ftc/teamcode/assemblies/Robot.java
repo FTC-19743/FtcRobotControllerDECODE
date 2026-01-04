@@ -364,6 +364,23 @@ public class Robot {
         thread.start();
     }
 
+    public void resetFlippersAndPusher(long pause){
+        intake.flippersToCeiling();
+        shooter.pushOneBackwards(pause);
+        shooter.pushOne();
+    }
+
+    public void resetFlippersAndPusherNoWait(long pause){
+        teamUtil.log("Launching Thread to shootArtifactLocationNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                resetFlippersAndPusher(pause);
+            }
+        });
+        thread.start();
+    }
+
 
 
     public int left = 1;
@@ -516,19 +533,35 @@ public class Robot {
     public static short SHOOT_VELOCITY_THRESHOLD = 1000; // mm/s
 
     public boolean shootIfCanTeleop(){
-
+        boolean details = false;
         // Don't shoot if the robot is moving too fast
         if(Math.sqrt(Math.pow(drive.oQlocalizer.velX_mmS, 2) + Math.pow(drive.oQlocalizer.velY_mmS, 2)) > SHOOT_VELOCITY_THRESHOLD){
+            if(details){
+                teamUtil.log("Shootifcan fail: Robot moving too fast too shoot");
+            }
             return false;
         }
         // Don't attempt to shoot if we are currently shooting
-        if (shooter.pusher.moving.get()) return false;
+        if (shooter.pusher.moving.get()){
+            if(details){
+                teamUtil.log("Shootifcan fail: Robot currently shooting");
+            }
+            return false;
+        }
 
         // Don't attempt to shoot if our heading is not accurate enough
-        if(!shooterHeadingReady()) return false;
+        if(!shooterHeadingReady()){
+            if(details){
+                teamUtil.log("Shootifcan fail: Heading not accurate enough to shoot");
+            }
+            return false;
+        }
 
         // Don't attempt to shoot if there is no ball in the shooter
         if(!shooter.isLoaded()){
+            if(details){
+                teamUtil.log("Shootifcan fail: No ball in shooter");
+            }
             return false;
         }
 
@@ -536,7 +569,12 @@ public class Robot {
         double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
         // Don't attempt to shoot if flywheel speed is not in acceptable range
-        if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
+        if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)){
+            if(details){
+                teamUtil.log("Shootifcan fail: Flywheel Speed not in acceptable range");
+            }
+            return false;
+        }
         // Launch it
         shooter.pushOneNoWait();
         logShot(flyWheelVelocity);

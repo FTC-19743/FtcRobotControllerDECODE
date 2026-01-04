@@ -77,8 +77,8 @@ public class Intake {
     static public double INTAKE_OUT_POWER = -0.7;
 
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
-    static public float FLIPPER_CEILING = 0.86f;
-    static public float FLIPPER_CEILING_MIDDLE = 0.82f;
+    static public float FLIPPER_CEILING = 0.81f;
+    static public float FLIPPER_CEILING_MIDDLE = 0.77f;
     static public float FLIPPER_TRANSFER = 0.7f;
     static public float MIDDLE_FLIPPER_SHOOTER_TRANSFER = 0.05f;
     static public float EDGE_FLIPPER_SHOOTER_TRANSFER = 0.15f;
@@ -284,8 +284,12 @@ public class Intake {
 
     }
 
+
+    public static long middleFlipToSensor = 0;
+    public static long outsideFlipToSensor = 800;
+
     // Fast transfer from flipper to shooter without worrying about colors
-    public void flipNextFast(){
+    public long flipNextFastInternal(){
         if(middleLoad != ARTIFACT.NONE){
             middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
             if(leftLoad != ARTIFACT.NONE){
@@ -297,14 +301,18 @@ public class Intake {
             teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
             middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
             middleLoad = ARTIFACT.NONE;
+            return middleFlipToSensor;
             // TODO: Should we release the left or right at this point?
         }else{
             if (servoPositionIs(left_flipper,EDGE_FLIPPER_SHOOTER_TRANSFER)) { // left already pinned
                 left_flipper.setPosition(FLIPPER_CEILING); // release left
                 leftLoad = ARTIFACT.NONE;
+                return outsideFlipToSensor;
             }else if(servoPositionIs(right_flipper,EDGE_FLIPPER_SHOOTER_TRANSFER)){ // right already pinned
                 right_flipper.setPosition(FLIPPER_CEILING); // release right
                 rightLoad = ARTIFACT.NONE;
+                return outsideFlipToSensor;
+
             }else{ // Nothing in middle and nothing pinned
                 if(leftLoad != ARTIFACT.NONE){
                     left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip left
@@ -314,13 +322,35 @@ public class Intake {
                     teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
                     left_flipper.setPosition(FLIPPER_CEILING); // release left
                     leftLoad = ARTIFACT.NONE;
+                    return outsideFlipToSensor;
+
                 }else if(rightLoad != ARTIFACT.NONE) {
                     right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip right
                     rightLoad = ARTIFACT.NONE;
                     teamUtil.pause(FLIPPER_UNLOAD_PAUSE);
                     right_flipper.setPosition(FLIPPER_CEILING); // release right
                     rightLoad = ARTIFACT.NONE;
+                    return outsideFlipToSensor;
+
+                }else{
+                    return middleFlipToSensor; //nothing so 0
                 }
+            }
+        }
+    }
+
+    public void flipNextFast(){
+        long timeOutTime = System.currentTimeMillis()+2500;
+        while(numBallsInFlippers()>0 && teamUtil.keepGoing(timeOutTime)){
+            teamUtil.log("Attempting to load shooter");
+            long detectTime = System.currentTimeMillis() + flipNextFastInternal();
+            while(!teamUtil.robot.shooter.isLoaded() && teamUtil.keepGoing(detectTime)){
+
+                teamUtil.pause(20);
+            }
+            if(teamUtil.robot.shooter.isLoaded()){
+                teamUtil.log("Shooter Successfully loaded");
+                return;
             }
         }
     }
@@ -698,6 +728,8 @@ public class Intake {
         rightLoad = getArtifactColor(llOutput[4]);
         return true;
     }
+
+
 
     ///  ////////////////////////////////////////////////////////////////////////////////
     // Old Color Sensor detection code

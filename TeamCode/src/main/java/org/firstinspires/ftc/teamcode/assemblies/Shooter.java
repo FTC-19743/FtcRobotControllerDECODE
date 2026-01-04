@@ -160,6 +160,12 @@ public class Shooter {
         return aimer.getPosition();
     }
 
+    public void pushOneBackwards(long pause){
+        pusher.setPower(-1);
+        teamUtil.pause(pause);
+        pusher.setPower(0);
+    }
+
     public void pushOne(){
         pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 2500);
     }
