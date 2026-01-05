@@ -165,9 +165,9 @@ public class Intake {
     public void intakeStart(){
         teamUtil.log("intakeStart");
         intakeIn();
-        startIntakeDetector();
+        startDetector();
+        detectorMode = DETECTION_MODE.INTAKE;
         flippersToCeiling();
-
     }
 
     public void intakeOut(){
@@ -448,7 +448,8 @@ public class Intake {
             flippersToCeiling();
 
             intakeIn();
-            startIntakeDetector();
+            startDetector();
+            detectorMode = DETECTION_MODE.INTAKE;
 
             teamUtil.log("getReadyToIntake Finished");
             return true;
@@ -554,12 +555,12 @@ public class Intake {
             setLoadedArtifacts(ARTIFACT.NONE, ARTIFACT.NONE, ARTIFACT.NONE);
 
             elevator.setPower(0);
-            stopIntakeDetector();
+            stopDetector();
             elevatorMoving.set(false);
             failedOut.set(true);
             return false;
         }
-        stopIntakeDetector();
+        stopDetector();
 
         // Hold at unload position
         elevator.setTargetPosition(ELEVATOR_UNLOAD_ENCODER);
@@ -642,23 +643,22 @@ public class Intake {
     public static boolean KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = true;
 
     // Tell the limelight where to look for ARTIFACTS
-    public boolean startIntakeDetector() {
+    public boolean startDetector() {
         if (teamUtil.robot.limeLightActive()) {
-            teamUtil.log("WARNING: startIntakeDetector called while limelight active.  Ignored.");
+            teamUtil.log("WARNING: startDetector called while limelight active.  Ignored.");
         } else {
-            teamUtil.log("startIntakeDetector: Result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
+            teamUtil.log("startDetector: Result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
         }
-        detectorMode = DETECTION_MODE.INTAKE;
         return true;
     }
 
-    public void stopIntakeDetector() {
-        teamUtil.log("stopIntakeDetector");
+    public void stopDetector() {
+        teamUtil.log("stopDetector");
         detectorMode = DETECTION_MODE.NONE;
         if (KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) {
-            teamUtil.log("stopIntakeDetector: Leaving Limelight Intake Detector pipeline running");
+            teamUtil.log("stopDetector: Leaving Limelight Detector pipeline running");
         } else {
-            teamUtil.log("stopIntakeDetector: Result: " + teamUtil.robot.stopLimeLight());
+            teamUtil.log("stopDetector: Result: " + teamUtil.robot.stopLimeLight());
         }
     }
 
@@ -667,9 +667,10 @@ public class Intake {
         teamUtil.log("resetIntakeDetector");
         boolean stored = KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;
         KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = false; // force stop of limelight
-        stopIntakeDetector();
+        stopDetector();
         teamUtil.pause(LL_RESET_PAUSE);
-        startIntakeDetector();
+        startDetector();
+        detectorMode = DETECTION_MODE.INTAKE;
         KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = stored; // restore previous value
         return true;
     }
@@ -687,8 +688,8 @@ public class Intake {
             return null;
         }
         int mode = (int) Math.round( llOutput[0]);
-        if (mode != detectorMode.ordinal()) {
-            teamUtil.log("ERROR: Limelight reported mode: "+mode+ " But we are in "+detectorMode+" whose ordinal value is " + detectorMode.ordinal());
+        if (mode != 23) {
+            teamUtil.log("WARNING: Limelight Detector Pipeline returned data not valid");
             if (DETECTOR_FAILSAFE) {
                 teamUtil.log("Attempting to restart Limelight Intake Detector with result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
             }
@@ -722,10 +723,10 @@ public class Intake {
         if (llOutput == null){
             return false;
         }
-        //teamUtil.log("Detect Loaded worked...Codes: " + llOutput[2] +", "+ llOutput[3]+", "+ llOutput[4]);
-        leftLoad = getArtifactColor(llOutput[2]);
-        middleLoad = getArtifactColor(llOutput[3]);
-        rightLoad = getArtifactColor(llOutput[4]);
+        //teamUtil.log("Detect Loaded worked...Codes: " + llOutput[5] +", "+ llOutput[6]+", "+ llOutput[7]);
+        leftLoad = getArtifactColor(llOutput[5]);
+        middleLoad = getArtifactColor(llOutput[6]);
+        rightLoad = getArtifactColor(llOutput[7]);
         return true;
     }
 

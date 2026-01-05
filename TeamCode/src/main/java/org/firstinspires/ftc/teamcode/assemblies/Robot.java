@@ -841,7 +841,8 @@ public class Robot {
             loadPatternShotNoWait(1); // get the first ARTIFACT in the shooter
         }
         if (useIntakeDetector) {
-            if (intake.startIntakeDetector()) {
+            if (intake.startDetector()) {
+                intake.detectorMode = Intake.DETECTION_MODE.INTAKE; // start in intake mode
                 teamUtil.log("Started Intake Detector");
             } else {
                 useIntakeDetector = false;
@@ -989,7 +990,7 @@ public class Robot {
             if (!drive.mirroredMoveToXHoldingLine(C03_PARK_VELOCITY, B07_RAMP_X - C03_PARK_DRIFT_X,B06_PICKUP1_Y,0, 0, B07_PICKUP_RAMP_END_VEL, null, 0, 2500)) return;
         }else {
             intake.intakeStop();
-            intake.stopIntakeDetector();
+            intake.stopDetector();
             if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y, B06_SETUP1_X, B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500))
                 return;
             drive.stopMotors(); // help kill the sideways momentum

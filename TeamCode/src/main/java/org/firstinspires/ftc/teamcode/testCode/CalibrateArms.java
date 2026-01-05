@@ -91,7 +91,7 @@ public class CalibrateArms extends LinearOpMode {
             return;
         }
 
-        robot.intake.startIntakeDetector();
+        robot.intake.startDetector();
 
         while (opModeIsActive()) {
             telemetry.addLine("MODE : " + AA_Operation);
@@ -221,10 +221,13 @@ public class CalibrateArms extends LinearOpMode {
 
         if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
             robot.intake.detectIntakeArtifactsV2();
+            robot.intake.signalArtifacts();
         } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
-            //robot.intake.detectLoadedArtifactsV2();
+            robot.intake.detectLoadedArtifactsV2();
+            robot.intake.signalArtifacts();
+        } else {
+            robot.intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
         }
-        robot.intake.signalArtifacts();
 
         telemetry.addLine("Loaded: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R:" + robot.intake.rightLoad);
         telemetry.addLine("Intake: Num: " + robot.intake.intakeNum + " L: " + robot.intake.leftIntake + " M: " + robot.intake.middleIntake + " R: " + robot.intake.rightIntake);
@@ -250,8 +253,8 @@ public class CalibrateArms extends LinearOpMode {
             Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = ! Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;
         }
         if (gamepad1.dpadRightWasReleased()) { // break it
-            robot.intake.stopIntakeDetector();
-            robot.intake.startIntakeDetector();
+            robot.intake.stopDetector();
+            robot.intake.startDetector();
         }
         if (gamepad1.dpadLeftWasReleased()) {
             robot.startLimeLightPipeline(Robot.PIPELINE_VIEW);
@@ -261,6 +264,9 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.yWasReleased()) {
             robot.intake.elevatorToFlippersV2(false);
+            if (robot.limeLightActive()) {
+                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
+            }
             teamUtil.log("Detectors at Top: L: " + robot.intake.leftLoad + " M: " + robot.intake.rightLoad + " R: " + robot.intake.middleLoad);
         }
         if (gamepad1.aWasReleased()) {
@@ -271,6 +277,9 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.leftBumperWasReleased()) {
             robot.intake.getReadyToIntake();
+            if (robot.limeLightActive()) {
+                robot.intake.detectorMode = Intake.DETECTION_MODE.INTAKE;
+            }
         }
         if (gamepad1.xWasReleased()) {
             teamUtil.log(teamUtil.robot.limelight.getStatus().toString());

@@ -97,9 +97,9 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
             teamUtil.telemetry.addLine("----------------------------------");
             teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
-            if(getMore){
+            if(getMore){ // TODO: Revisit this code, what exactly is it doing/accomplishing?
                 if(!robot.limeLightActive()){
-                    robot.intake.startIntakeDetector();
+                    robot.intake.startDetector();
                 }else{
                     robot.intake.detectIntakeArtifactsV2();
                     robot.intake.signalArtifacts();

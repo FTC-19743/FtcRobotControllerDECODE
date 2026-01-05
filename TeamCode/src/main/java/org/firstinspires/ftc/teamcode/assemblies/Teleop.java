@@ -231,7 +231,7 @@ public class Teleop extends LinearOpMode {
                 if(gamepad2.left_trigger > .8){ // Set up for a manual (Human Player) load
                     robot.intake.flippersToTransfer();
                     robot.intake.intakeOut();
-                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) robot.intake.stopIntakeDetector();
+                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) robot.intake.stopDetector();
                     robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: Update once we have a detector that works at the top
                 }
 

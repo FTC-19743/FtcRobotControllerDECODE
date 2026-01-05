@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
-import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.BLUE;
 import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.RED;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -9,12 +8,9 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
-import org.firstinspires.ftc.teamcode.assemblies.Shooter;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 @Config
@@ -161,7 +157,8 @@ public class TestAutoPaths extends LinearOpMode{
                 robot.intake.resetIntakeDetector();
                 teamUtil.pause(100);
             }
-            robot.intake.startIntakeDetector();
+            robot.intake.startDetector();
+            robot.intake.detectorMode = Intake.DETECTION_MODE.INTAKE;
             robot.intake.getReadyToIntake();
             teamUtil.pause(1000);
             long startTime = System.currentTimeMillis();
