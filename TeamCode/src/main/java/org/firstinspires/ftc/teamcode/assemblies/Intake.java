@@ -345,14 +345,16 @@ public class Intake {
             teamUtil.log("Attempting to load shooter");
             long detectTime = System.currentTimeMillis() + flipNextFastInternal();
             while(!teamUtil.robot.shooter.isLoaded() && teamUtil.keepGoing(detectTime)){
-
                 teamUtil.pause(20);
             }
             if(teamUtil.robot.shooter.isLoaded()){
                 teamUtil.log("Shooter Successfully loaded");
                 return;
+            } else {
+                teamUtil.log("WARNING: flipNextFast: Unable to load shooter, moving to next shot");
             }
         }
+        teamUtil.log("WARNING: flipNextFast: Unable to load any shots, giving up");
     }
 
     public void flipNextFastNoWait() {
@@ -482,7 +484,7 @@ public class Intake {
     public void elevatorToShooterFast(){
         teamUtil.log("elevatorToShooterFast");
         if(leftIntake == ARTIFACT.NONE && middleIntake == ARTIFACT.NONE && rightIntake == ARTIFACT.NONE){
-            teamUtil.log("elevatorToShooterFast called without loaded artifacts");
+            teamUtil.log("WARNING: elevatorToShooterFast called without loaded artifacts");
             elevatorMoving.set(false);
             failedOut.set(true);
             return;
@@ -526,7 +528,7 @@ public class Intake {
 
         // TODO: Consider turning the intake wheel off at this point, it might make it slightly more difficult for the elevator to go up but avoid pulling in extra balls
 
-        // "transfer" the sensor readings to the loaded level TODO: Once we have a detector that we trust at the top, we can use that instead
+        // "transfer" the sensor readings to the loaded level, this is a backup for the loaded detector
         setLoadedArtifacts(leftIntake, middleIntake, rightIntake);
 
         // Move flippers out of the way
@@ -560,7 +562,6 @@ public class Intake {
             failedOut.set(true);
             return false;
         }
-        stopDetector();
 
         // Hold at unload position
         elevator.setTargetPosition(ELEVATOR_UNLOAD_ENCODER);
@@ -572,15 +573,21 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
-        //setDetectorModeLoaded(); // Tell Limelight to shift to loaded mode  NOT USING THIS CURRENTLY
+        detectorMode = DETECTION_MODE.LOADED;
         teamUtil.pause(ELEVATOR_PAUSE_2);
 
         if (waitForGround) {
             boolean success =  elevatorToGroundV2();
+            detectLoadedArtifactsV2();
+            signalArtifacts();
+            //stopDetector();
             teamUtil.log("elevatorToFlippersV2 Finished");
             return success;
         } else {
             elevatorToGroundV2NoWait();
+            detectLoadedArtifactsV2();
+            signalArtifacts();
+            //stopDetector();
             teamUtil.log("elevatorToFlippersV2 Finished while elevator returning to ground");
             return true;
         }

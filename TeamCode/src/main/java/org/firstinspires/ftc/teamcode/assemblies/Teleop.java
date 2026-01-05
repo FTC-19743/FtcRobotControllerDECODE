@@ -231,8 +231,8 @@ public class Teleop extends LinearOpMode {
                 if(gamepad2.left_trigger > .8){ // Set up for a manual (Human Player) load
                     robot.intake.flippersToTransfer();
                     robot.intake.intakeOut();
-                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) robot.intake.stopDetector();
-                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: Update once we have a detector that works at the top
+                    robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED; // tell detector to focus on loaded position
+                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // failsafe in case LL not working
                 }
 
                 if(gamepad2.leftBumperWasReleased()){
@@ -245,8 +245,12 @@ public class Teleop extends LinearOpMode {
                         robot.intake.elevatorToShooterFastNoWait();
                     }
                 }
-                if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE && !limelightOverride) {
-                    robot.intake.detectIntakeArtifactsV2();
+                if (!limelightOverride) {
+                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
+                        robot.intake.detectIntakeArtifactsV2();
+                    } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED){
+                        robot.intake.detectLoadedArtifactsV2();
+                    }
                 }
 
                 if(gamepad2.backWasPressed()){
