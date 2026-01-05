@@ -663,30 +663,36 @@ public class Robot {
     public void autoShootFastPreload() {
         intake.flipNextFastNoWait();
     }
+
     // Assumes robot is in position, 3 balls were in flippers and flipNextFast has already been called once.
     // stops motors and fires all 3 shots as quickly as possible
     public boolean autoShootFast(boolean useArms, long timeOut) {
-        teamUtil.log("autoShootFast ");
         long timeOutTime = System.currentTimeMillis() + timeOut;
         long shot3Time =  2100;
         int numshots = 0;
+        int totalShots = intake.numBallsInFlippers() + 1; // previous call to flipNextFast unloaded one
+        teamUtil.log("autoShootFast. Total Planned Shots: " + totalShots);
+
         blinkin.setSignal(Blinkin.Signals.GOLD);
 
-        while (teamUtil.keepGoing(timeOutTime) && numshots < 3) {
+        while (teamUtil.keepGoing(timeOutTime) && numshots < totalShots) {
             drive.loop();
             double shotHeading = drive.robotGoalHeading();
             drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
             if (useArms) {
                 if (shootIfCan()) { // try to take a shot asap
                     numshots++;
-                    if (numshots < 3) intake.flipNextFastNoWait(); // load next when the shot happens
+                    if (numshots < totalShots) {
+                        // TODO: Do we need a pause here to make sure previous shot (still sitting in shooter) doesn't trigger flipNextFast to think it is done?
+                        intake.flipNextFastNoWait(); // load next when the shot happens
+                    }
                     intake.signalArtifacts();
                 }
             } else if (System.currentTimeMillis() > shot3Time) {
                 break;
             }
         }
-        // Empty out shooter in case something got left behind. Not worried about aiming at this point.
+        // FAILSAFE: Empty out shooter in case something got left behind. Not worried about aiming at this point.
         while (shooter.isLoaded() && !shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
             teamUtil.log("autoShootFast --------------- Leftovers in shooter! Emptying");
             shooter.pushOneNoWait();
@@ -833,12 +839,15 @@ public class Robot {
         if (useArms) {
             shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots
             Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
-            //autoShootFastPreload(); // go fast on preloads--don't bother with pattern
+            autoShootFastPreload(); // go fast on preloads--don't bother with pattern
+
+            /*
             teamUtil.Pattern stored = teamUtil.pattern;
             teamUtil.pattern = PPG; // fake out Shot Order to ensure relatively fast shots on preloads
             determineShotOrderAutoPattern(); // sets up the data for loadPattern
             teamUtil.pattern = stored;
             loadPatternShotNoWait(1); // get the first ARTIFACT in the shooter
+             */
         }
         if (useIntakeDetector) {
             if (intake.startDetector()) {
@@ -860,8 +869,8 @@ public class Robot {
         // Shoot preloads
         intake.signalArtifacts(); // flippers were operating in another thread while we were moving to this point.
         //shooter.flywheelNormal(); // set flywheel to normal PIDF coefs
-        //if (!autoShootFast(useArms,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
-        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,5000)) return;
+        if (!autoShootFast(useArms,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
+        //if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B05_SHOOT1_H-180) : 360-B05_SHOOT1_H-180,B00_SHOOT_VELOCITY,5000)) return;
 
 
         /////////////////////////////Intake 2nd group and shoot
