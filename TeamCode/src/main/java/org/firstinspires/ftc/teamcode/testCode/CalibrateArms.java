@@ -263,7 +263,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.calibrateElevators();
         }
         if (gamepad1.yWasReleased()) {
-            robot.intake.elevatorToFlippersV2(false);
+            robot.intake.elevatorToFlippersV2(false, true);
             //if (robot.limeLightActive()) {
             //    robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
             //}
@@ -327,7 +327,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.calibrateElevators();
         }
         if (gamepad1.yWasReleased()) {
-            robot.intake.elevatorToFlippersV2(true);
+            robot.intake.elevatorToFlippersV2(true, true);
         }
         if (gamepad1.aWasReleased()) {
             robot.intake.elevatorToGroundV2();
@@ -451,7 +451,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
         }
         if(gamepad1.xWasPressed()){
-            robot.intake.elevatorToFlippersV2(true);
+            robot.intake.elevatorToFlippersV2(true, true);
         }
         if(gamepad1.bWasPressed()) {
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1000);

@@ -481,7 +481,7 @@ public class Intake {
 
     // Transfer from ground to flippers and preload for fast shots
     // Does not worry about colors
-    public void elevatorToShooterFast(){
+    public void elevatorToShooterFast(boolean detectLoaded){
         teamUtil.log("elevatorToShooterFast");
         if(leftIntake == ARTIFACT.NONE && middleIntake == ARTIFACT.NONE && rightIntake == ARTIFACT.NONE){
             teamUtil.log("WARNING: elevatorToShooterFast called without loaded artifacts");
@@ -489,14 +489,14 @@ public class Intake {
             failedOut.set(true);
             return;
         }
-        if(elevatorToFlippersV2(false)){
+        if(elevatorToFlippersV2(false, detectLoaded)){
             flipNextFast();
         }
         teamUtil.log("elevatorToShooterFast finished");
         elevatorMoving.set(false);
     }
 
-    public void elevatorToShooterFastNoWait(){
+    public void elevatorToShooterFastNoWait(boolean detectLoaded){
         if (elevatorMoving.get()) {
             teamUtil.log("WARNING: elevatorToShooterNoWait called while elevatorMoving is true--Ignored");
             return;
@@ -507,7 +507,7 @@ public class Intake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                elevatorToShooterFast();
+                elevatorToShooterFast(detectLoaded);
             }
         });
         thread.start();
@@ -515,7 +515,7 @@ public class Intake {
 
     // Transfer from ground to flippers and optionally wait for elevator to get back to ground before returning
     // Returns false if the elevator stalls or times out
-    public boolean elevatorToFlippersV2(boolean waitForGround){
+    public boolean elevatorToFlippersV2(boolean waitForGround, boolean detectLoaded){
         teamUtil.log("elevatorToFlippersV2NoWait");
 
         failedOut.set(false);
@@ -578,14 +578,14 @@ public class Intake {
 
         if (waitForGround) {
             boolean success =  elevatorToGroundV2();
-            detectLoadedArtifactsV2();
+            if (detectLoaded) detectLoadedArtifactsV2();
             signalArtifacts();
             //stopDetector();
             teamUtil.log("elevatorToFlippersV2 Finished");
             return success;
         } else {
             elevatorToGroundV2NoWait();
-            detectLoadedArtifactsV2();
+            if (detectLoaded) detectLoadedArtifactsV2();
             signalArtifacts();
             //stopDetector();
             teamUtil.log("elevatorToFlippersV2 Finished while elevator returning to ground");
@@ -593,7 +593,7 @@ public class Intake {
         }
     }
 
-    public void elevatorToFlippersV2NoWait(){
+    public void elevatorToFlippersV2NoWait(boolean detectLoaded){
         if (elevatorMoving.get()) {
             teamUtil.log("WARNING: elevatorToFlippersV2NoWait called while moving--Ignored");
             return;
@@ -604,7 +604,7 @@ public class Intake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                elevatorToFlippersV2(true);
+                elevatorToFlippersV2(true, detectLoaded);
             }
         });
         thread.start();

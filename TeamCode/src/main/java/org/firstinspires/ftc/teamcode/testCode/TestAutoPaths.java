@@ -137,14 +137,18 @@ public class TestAutoPaths extends LinearOpMode{
         }
         if (gamepad1.dpadDownWasPressed()){
             long startTime = System.currentTimeMillis();
-            robot.getMoreBallsV2();
+            robot.goalSideV3(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime);
+            robot.drive.stopMotors();
+            //robot.getMoreBallsV2();
             elapsedTime = System.currentTimeMillis()-startTime;
+            /*
             robot.drive.driveMotorsHeadingsFR(90,90,1000);
             teamUtil.pause(350);
             robot.intake.detectIntakeArtifactsV2();
             robot.intake.signalArtifacts();
             robot.drive.stopMotors();
             robot.intake.intakeStop();
+             */
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
         if (gamepad1.dpadRightWasReleased()) {
