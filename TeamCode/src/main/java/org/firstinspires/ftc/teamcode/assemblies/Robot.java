@@ -1037,7 +1037,64 @@ public class Robot {
     public static double C03_PARK_DRIFT_X = 500;
     public static double C03_PARK_VELOCITY = B00_PICKUP_VELOCITY;
 
+    public static double C04_FAST_APPROACH_VELOCITY = B00_MAX_SPEED;
+    public static double C04_FAST_APPROACH_X = -900;
+    public static double C04_FAST_APPROACH_Y = 1100;
+    public static double C04_FAST_APPROACH_DRIVE_HEADING = 170;
+    public static double C04_FAST_APPROACH_ROBOT_HEADING = 180 + C04_FAST_APPROACH_DRIVE_HEADING;
+    public static double C04_FAST_APPROACH_END_VELOCITY = B00_CORNER_VELOCITY;
 
+    public static int C04_GRAB_VEL = 1000;
+    public static int C04_GRAB_Y_LIMIT = 1430;
+    public static long C04_GRAB_TIME = 2000;
+    public static float C04_GRAB_POWER = .3f;
+    public static long C04_GRAB_PAUSE = 250;
+
+    public boolean getMoreBallsV2(){
+        // get Intake Ready
+        double stored = Intake.INTAKE_IN_POWER;
+        Intake.INTAKE_IN_POWER = C02_GRAB_INTAKE_POWER; // adjust intake speed for this operation
+        intake.getReadyToIntakeNoWait();
+
+        // Drive towards wall fast
+        if (!drive.mirroredMoveToXHoldingLine(C04_FAST_APPROACH_VELOCITY, C04_FAST_APPROACH_X,C04_FAST_APPROACH_Y,C04_FAST_APPROACH_DRIVE_HEADING, C04_FAST_APPROACH_ROBOT_HEADING, C04_FAST_APPROACH_END_VELOCITY, null, 0, 2100)) return false;
+        intake.intakeNum = 0; // don't return instantly from grab3
+        if (!grab3V2(C04_GRAB_VEL, C04_GRAB_Y_LIMIT, C04_GRAB_TIME)) return false;
+
+        Intake.INTAKE_IN_POWER = stored; // restore intake speed default
+        return true;
+    }
+
+    // rolls straight at 90 or 270 trying to pickup 3 balls
+    // returns when it has 3, runs out of time, or when it reaches a certain y threshold
+    // assumes intake is on and intake detector is running
+    public boolean grab3V2(int velocity, int yThreshold, long timeOut) {
+        teamUtil.log("grab3V2");
+        long timeOutTime = System.currentTimeMillis()+timeOut;
+        double driveHeading = teamUtil.alliance== teamUtil.Alliance.BLUE ? 90 : 270;
+        double robotHeading = teamUtil.alliance== teamUtil.Alliance.BLUE ? 270 : 90;
+        while (teamUtil.keepGoing(timeOutTime) && intake.intakeNum < 3 && ( teamUtil.alliance== teamUtil.Alliance.BLUE ? drive.oQlocalizer.posY_mm < yThreshold : drive.oQlocalizer.posY_mm > -yThreshold)) {
+            drive.loop();
+            intake.detectIntakeArtifactsV2();
+            intake.signalArtifacts();
+            drive.driveMotorsHeadingsFR(driveHeading, robotHeading, velocity);
+        }
+        if (Math.abs( drive.oQlocalizer.posY_mm) >= yThreshold ) {
+            teamUtil.log("grab3V2 Reached Y Threshold: " + drive.oQlocalizer.posY_mm);
+        }
+        drive.driveMotorsHeadingsFRPower(driveHeading, robotHeading, C04_GRAB_POWER);
+        teamUtil.pause(C04_GRAB_PAUSE); // give a little more time for intake to do its thing while pushing/stalling towards the wall
+        drive.stopMotors();
+        intake.detectIntakeArtifactsV2();
+        intake.signalArtifacts();
+        if (System.currentTimeMillis() >= timeOutTime) {
+            teamUtil.log("grab3V2 TIMED OUT.");
+            intake.intakeStop();
+            return false;
+        }
+        teamUtil.log("grab3V2 Finished with " + intake.intakeNum + " artifacts.");
+        return true;
+    }
 
     public boolean getMoreBalls(){
         // get Intake Ready
@@ -1089,6 +1146,9 @@ public class Robot {
         teamUtil.log("grab3 Finished with " + intake.intakeNum + " artifacts.");
         return true;
     }
+
+
+
 
 
     ///  ///////////////////////////////////////////////////////
