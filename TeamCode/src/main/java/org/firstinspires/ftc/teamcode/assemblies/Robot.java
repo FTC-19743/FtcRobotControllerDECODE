@@ -462,6 +462,7 @@ public class Robot {
         long timeOutTime = System.currentTimeMillis() + timeOut;
         teamUtil.pause(pause);
         if (intake.elevatorToFlippersV2(false, detectLoaded)) {
+            intake.logDetectorOutput(); // for debugging purposes
             determineShotOrderAutoPattern(); // sets global shotOrder
             teamUtil.log("Shot Order: " + shotOrder[1] + "/"+ shotOrder[2] + "/"+ shotOrder[3]);
             intake.unloadFlipper(shotOrder[1], shotOrder[2]); // preload next if possible
@@ -492,9 +493,10 @@ public class Robot {
 
     public void autoTransferAndLoadFast(long pause, long timeOut) {
         transferring.set(true);
-        teamUtil.log("autoTransferAndLoadFast");
+        teamUtil.log("autoTransferAndLoadFast with pause:  " + pause);
         teamUtil.pause(pause);
         if(intake.elevatorToFlippersV2(false, false)){ // Don't attempt to detect loaded artifacts
+            intake.logDetectorOutput(); // for debugging purposes
             intake.flipNextFast();
         }
         transferring.set(false);
@@ -802,6 +804,7 @@ public class Robot {
 
 
     public static double B07_PICKUP1_X = 420;
+    public static double B07_PICKUP1_ADJ = 30;
     public static double B07_PICKUP_RAMP_END_VEL = 750;
     public static double B07_GATE_END_VEL = 500;
 
@@ -918,11 +921,12 @@ public class Robot {
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 2
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X+B07_PICKUP1_ADJ,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
         // prepare to shoot
         if (useIntakeDetector) {
             intake.detectIntakeArtifactsV2();
         } else {
+            intake.logDetectorOutput(); // for debugging purposes
             // Manually set what is loaded in intake
             if (teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
                 intake.setIntakeArtifacts(GPP);
@@ -967,6 +971,7 @@ public class Robot {
         if (useIntakeDetector) {
             intake.detectIntakeArtifactsV2();
         } else {
+            intake.logDetectorOutput(); // for debugging purposes
             intake.setIntakeArtifacts(PGP);
             intake.setLoadedArtifacts(PGP); // Assumes artifacts are preloaded in this order!!
         }
@@ -998,6 +1003,7 @@ public class Robot {
         if (useIntakeDetector) {
             intake.detectIntakeArtifactsV2();
         } else {
+            intake.logDetectorOutput(); // for debugging purposes
             if (teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
                 intake.setIntakeArtifacts(PPG);
                 intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!

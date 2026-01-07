@@ -712,6 +712,15 @@ public class Intake {
         else return ARTIFACT.NONE;
     }
 
+    public void logDetectorOutput() {
+        double[] llOutput = getDetectorOutput();
+        if (llOutput == null) {
+            return;
+        }
+        teamUtil.log("Detector Intake " + getArtifactColor(llOutput[2]) + "/" + getArtifactColor(llOutput[3]) + "/" + getArtifactColor(llOutput[4]) +
+                "  Loaded: " + getArtifactColor(llOutput[5]) + "/" + getArtifactColor(llOutput[6]) + "/" + getArtifactColor(llOutput[7]));
+    }
+
     public boolean detectIntakeArtifactsV2() {
         double[] llOutput = getDetectorOutput();
         if (llOutput == null){
