@@ -275,8 +275,11 @@ public class Teleop extends LinearOpMode {
                 //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
                 //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
                 //telemetry.addLine("Hang Manual: " + hangManualControl);
-                telemetry.addLine((endgameMode ? "ENDGAME ":"")+"ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
-                telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "Red" : "Blue"));
+                if (endgameMode) {
+                    telemetry.addLine("----- END GAME ----");
+                }
+                telemetry.addLine(String.format("X: %d Y: %d Heading: %.1f", robot.drive.oQlocalizer.posX_mm, robot.drive.oQlocalizer.posY_mm, robot.drive.getHeadingODO()));
+                telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "RED" : "BLUE"));
                 //telemetry.addLine("Detector Mode: " + robot.intake.detectorMode + " Left: " + Intake.leftIntake);
                 telemetry.update();
             }
