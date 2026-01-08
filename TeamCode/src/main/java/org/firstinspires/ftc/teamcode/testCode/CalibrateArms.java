@@ -385,8 +385,11 @@ public class CalibrateArms extends LinearOpMode {
     public void testShooter(){
         robot.drive.loop(); // get updated localizer data
         telemetry.addData("AdjustShootMode: " , adjustShootMode);
-        telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
-        telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
+        double distance = robot.drive.robotGoalDistance() ;
+        double velocity = robot.shooter.getVelocityNeeded(distance);
+        double pitch = robot.shooter.calculatePitch(distance, velocity);
+        telemetry.addLine(String.format("Distance: %.0f Velocity: %.0f Pitch: %.3f" , distance , velocity , pitch));
+        telemetry.addLine("Reported Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
         telemetry.addData("Can we shoot?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
