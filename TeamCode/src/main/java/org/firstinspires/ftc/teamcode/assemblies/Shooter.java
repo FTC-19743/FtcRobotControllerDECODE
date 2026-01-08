@@ -225,6 +225,8 @@ public class Shooter {
     public static double A09_DEEP_VELOCITY_M = 0.297372;
     public static double A09_DEEP_VELOCITY_B = 472.75242;
 
+    public static double MANUAL_FLYWHEEL_ADJUST = 0;
+
     public double getVelocityNeeded(double distance){
         double velocityNeeded;
         if (distance<MID_SHORT_DISTANCE_THRESHOLD){
@@ -234,7 +236,7 @@ public class Shooter {
         }else{
             velocityNeeded = A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B; // was this tuned? it shouldn't be linear
         }
-        return velocityNeeded;
+        return velocityNeeded + MANUAL_FLYWHEEL_ADJUST;
     }
 
     /*
@@ -298,11 +300,13 @@ public class Shooter {
     public static double pitchF = 2.67729e-7;
     public static double longPitch = .44;
 
+    public static double LONG_MANUAL_PITCH_ADJUST = 0;
+
     public double calculatePitch(double distance, double velocity) {
         if(distance<MID_DISTANCE_THRESHOLD){
             return pitchA + pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
         }else{
-            return longPitch; // was the velocity really tuned with this in mind?
+            return longPitch + LONG_MANUAL_PITCH_ADJUST; // was the velocity really tuned with this in mind?
         }
     }
 
