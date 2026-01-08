@@ -858,7 +858,7 @@ public class Robot {
     public static double B08_SHOOT4_END_VEL = 1000; // was 400 before GoalSideV3
 
 
-
+    public static double B08_SHOT5_VELOCITY = 820;
     public static double B08_SHOOT5_X = 1000;
     public static double B08_SHOOT5_Y = 450 ;
     public static double B08_SHOOT5_OFFSET = 600;
@@ -1030,6 +1030,8 @@ public class Robot {
 
         ///////////////////////////// Intake 5th group and shoot
         teamUtil.log("==================== Group 5 ================");
+        if (useArms) shooter.setShootSpeed(B08_SHOT5_VELOCITY);
+        Shooter.VELOCITY_COMMANDED = B08_SHOT5_VELOCITY;
         if (!getMoreBallsV2()) return;
         if (useArms) autoTransferAndLoadNoWait(B08_SHOT5_INTAKE_PAUSE, true,3000);
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;
