@@ -17,7 +17,6 @@ public class Auto extends LinearOpMode {
     boolean shootingMode = false;
     boolean useIntakeDetector = false;
     long gateLeaveTime = Robot.gateElapsedTime;
-    boolean getMore = false;
 
 
     public void runOpMode() {
@@ -96,23 +95,13 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
             teamUtil.telemetry.addLine("----------------------------------");
-            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
-            if(getMore){ // TODO: Revisit this code, what exactly is it doing/accomplishing?
-                if(!robot.limeLightActive()){
-                    robot.intake.startDetector();
-                }else{
-                    robot.intake.detectIntakeArtifactsV2();
-                    robot.intake.signalArtifacts();
-                }
+            teamUtil.telemetry.addLine("Check Limelight functionality");
+            if(!robot.limeLightActive()){
+                robot.intake.startDetector();
+            }else{
+                robot.intake.detectIntakeArtifactsV2();
+                robot.intake.signalArtifacts();
             }
-            if (gamepad1.dpadUpWasPressed()) {
-                getMore = true;
-            }
-            if(gamepad1.dpadDownWasPressed()){
-                getMore = false;
-            }
-            teamUtil.telemetry.update();
-            teamUtil.pause(20);
         }
         if (isStopRequested()) return;
 
@@ -126,7 +115,6 @@ public class Auto extends LinearOpMode {
         teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
         teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
         teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-        teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
         teamUtil.telemetry.addLine("----------------------------------");
         teamUtil.telemetry.addLine("Press A to Localize and start CV");
         teamUtil.telemetry.update();
@@ -141,7 +129,6 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
@@ -156,7 +143,6 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
             teamUtil.telemetry.addLine("Green goes on the power switch side");
             robot.drive.localizerTelemetry();
             robot.detectPattern();
@@ -183,7 +169,7 @@ public class Auto extends LinearOpMode {
             //teamUtil.pause(delay);
 
             if (teamUtil.SIDE == teamUtil.Side.GOAL) {
-                robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, getMore);
+                robot.goalSideV3(true, useIntakeDetector, gateLeaveTime);
             } else {
                 robot.humanSide(true);
             }

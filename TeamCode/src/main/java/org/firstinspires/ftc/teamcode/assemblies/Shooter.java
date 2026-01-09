@@ -222,10 +222,14 @@ public class Shooter {
     public static double A09_SHORT_AIM_B = .2775;
     public static double A09_LONG_AIM_M = .000118464;
     public static double A09_LONG_AIM_B = .18204;
-    public static double A09_DEEP_VELOCITY_M = 0.297372;
-    public static double A09_DEEP_VELOCITY_B = 472.75242;
+//    public static double A09_DEEP_VELOCITY_M = 0.297372;
+//    public static double A09_DEEP_VELOCITY_B = 472.75242;
+    public static double A09_DEEP_VELOCITY_M = 0.15748;
+    public static double A09_DEEP_VELOCITY_B = 1127.55906;
 
     public static double MANUAL_FLYWHEEL_ADJUST = 0;
+    public static double LONG_MANUAL_FLYWHEEL_ADJUST = 0;
+
 
     public double getVelocityNeeded(double distance){
         double velocityNeeded;
@@ -234,7 +238,7 @@ public class Shooter {
         }else if (distance<MID_DISTANCE_THRESHOLD){ // are the first two not the same?
             velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
         }else{
-            velocityNeeded = A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B; // was this tuned? it shouldn't be linear
+            velocityNeeded = Math.round((A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B+LONG_MANUAL_FLYWHEEL_ADJUST) / 20.0) * 20.0;
         }
         return velocityNeeded + MANUAL_FLYWHEEL_ADJUST;
     }
@@ -298,7 +302,7 @@ public class Shooter {
     public static double pitchD = -8.07697e-8;
     public static double pitchE = -3.01755e-7;
     public static double pitchF = 2.67729e-7;
-    public static double longPitch = .44;
+    public static double longPitch = .48; // .44 with the old function
 
     public static double LONG_MANUAL_PITCH_ADJUST = 0;
 
@@ -324,10 +328,11 @@ public class Shooter {
             }
             return true;
         }else{
-            if(Math.abs(velocity-getVelocityNeeded(distance))>VELOCITY_COMMANDED_THRESHOLD){
-                return false;
-            }
-            return true;
+//            if(Math.abs(velocity-getVelocityNeeded(distance))>VELOCITY_COMMANDED_THRESHOLD){
+//                return false;
+//            }
+//            return true;
+            return Math.abs(velocity-getVelocityNeeded(distance)) < .0001;
         }
     }
 }

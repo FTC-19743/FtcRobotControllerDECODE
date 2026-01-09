@@ -347,8 +347,7 @@ public class Robot {
             shooter.pushOne();
             teamUtil.log("shootArtifactLocation: Moved right flipper");
         }
-        int ball_num = intake.numBallsInFlippers();
-        if(ball_num == 0){
+        if(!intake.ballsLeftToShoot()){
             intake.intakeStart();
         }
     }
@@ -607,7 +606,7 @@ public class Robot {
         logShot(flyWheelVelocity);
         teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
         //0 balls in the flippers
-        if(intake.numBallsInFlippers()==0){
+        if(!intake.ballsLeftToShoot()){
             intake.intakeStart();
         }
         intake.flipNextFastNoWait();
@@ -872,6 +871,12 @@ public class Robot {
     public static double B08_5TH_SHOT_THRESHOLD = 3000;
     public static long B08_SHOT5_INTAKE_PAUSE = 300;
 
+    public static long B09_PARK_TIME_CUTOFF = 2000;
+    public static double B09_PARK_END_VELOCITY = 1500;
+    public static double B09_PARK_X = 200;
+    public static double B09_PARK_Y = 1000;
+    public static double B09_PARK_DRIVE = 105;
+
     public static boolean emptyRamp = true;
     public static int emptyRampPause = 1000;
     public static long gateElapsedTime = 0;
@@ -1036,6 +1041,7 @@ public class Robot {
         if (useArms) autoTransferAndLoadNoWait(B08_SHOT5_INTAKE_PAUSE, true,3000);
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_X,B08_SHOOT5_Y,B08_SHOOT5_DH, B08_SHOOT5_RH, B08_SHOOT5_END_VEL, null, 0, 4000)) return;
+
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
             stopRobot();
@@ -1050,6 +1056,12 @@ public class Robot {
                 return;
         } else {
             teamUtil.log("Not enough time to launch 3. Stopping");
+        }
+
+        if(System.currentTimeMillis() - startTime < 30000 - B09_PARK_TIME_CUTOFF){ // 2 seconds left
+            if(!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B09_PARK_Y, B09_PARK_X, B09_PARK_DRIVE, 0, B09_PARK_END_VELOCITY, null, 0, 3000)) return;
+        }else{
+            teamUtil.log("Not enough time to park. Stopping");
         }
 
         /////////////////////////////Wrap up

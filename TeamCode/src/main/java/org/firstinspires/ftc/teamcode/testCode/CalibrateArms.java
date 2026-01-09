@@ -425,9 +425,9 @@ public class CalibrateArms extends LinearOpMode {
             //robot.shootAllArtifacts();
             long startTime = System.currentTimeMillis();
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
-            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity) {} // detect contact between flywheels and ball
-            teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
+//            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
+//            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity) {} // detect contact between flywheels and ball
+//            teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
         }
 
     }

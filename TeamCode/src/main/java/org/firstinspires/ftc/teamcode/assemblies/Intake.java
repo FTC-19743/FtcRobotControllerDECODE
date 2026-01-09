@@ -341,7 +341,7 @@ public class Intake {
 
     public void flipNextFast(){
         long timeOutTime = System.currentTimeMillis()+2500;
-        while(numBallsInFlippers()>0 && teamUtil.keepGoing(timeOutTime)){
+        while(ballsLeftToShoot() && teamUtil.keepGoing(timeOutTime)){
             teamUtil.log("Attempting to load shooter");
             long detectTime = System.currentTimeMillis() + flipNextFastInternal();
             while(!teamUtil.robot.shooter.isLoaded() && teamUtil.keepGoing(detectTime)){
@@ -354,7 +354,11 @@ public class Intake {
                 teamUtil.log("WARNING: flipNextFast: Unable to load shooter, moving to next shot");
             }
         }
-        teamUtil.log("WARNING: flipNextFast: Unable to load any shots, giving up");
+        if(!teamUtil.keepGoing(timeOutTime)){
+            teamUtil.log("flipNextFast timed out");
+        }else {
+            teamUtil.log("WARNING: flipNextFast: Unable to load any shots, giving up");
+        }
     }
 
     public void flipNextFastNoWait() {
@@ -366,6 +370,14 @@ public class Intake {
             }
         });
         thread.start();
+    }
+
+    public boolean ballsLeftToShoot(){
+        teamUtil.log("left: "+left_flipper.getPosition()+", middle: "+middle_flipper.getPosition()+", right: "+right_flipper.getPosition()+", balls: "+numBallsInFlippers());
+        return servoPositionIs(left_flipper, EDGE_FLIPPER_SHOOTER_TRANSFER) ||
+                servoPositionIs(middle_flipper, MIDDLE_FLIPPER_SHOOTER_TRANSFER) ||
+                servoPositionIs(right_flipper, EDGE_FLIPPER_SHOOTER_TRANSFER) ||
+                numBallsInFlippers() > 0;
     }
 
     public boolean elevatorToGroundV2() {

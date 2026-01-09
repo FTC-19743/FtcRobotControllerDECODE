@@ -9,6 +9,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -127,7 +128,19 @@ public class TestAutoPaths extends LinearOpMode{
         else return "N";
     }
 
+    public static double PARK_VELOCITY = Robot.B00_MAX_SPEED;
+    public static double PARK_END_VELOCITY = 0;
+    public static double PARK_X = 0;
+    public static double PARK_Y = 1100;
+    public static double PARK_DRIVE = 90;
+    public static double PARK_ROBOT = 0;
+
+
     public void testGoalSide() {
+        if(gamepad1.bWasPressed()){
+            robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
+            robot.drive.stopMotors();
+        }
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
             robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime, GET_MORE_BALLS);
@@ -174,6 +187,8 @@ public class TestAutoPaths extends LinearOpMode{
             teamUtil.pause(250);
             robot.intake.intakeStop();
         }
+
+
 
         if (gamepad1.xWasReleased()) {
             // test shot order logic
