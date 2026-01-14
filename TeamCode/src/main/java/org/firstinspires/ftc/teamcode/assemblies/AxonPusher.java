@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -21,14 +22,16 @@ public class AxonPusher {
     public final int ODO_PUSHER = 3; // Pusher encoder octoquad port
     public static int REV_ENCODER_TICS_PER_REVOLUTION = 8192;
     public final double AXON_POT_FULL_REVOLUTION = 3.3f;
-    public final double AXON_LOAD_1 = 1.12; // TODO: Calibrate
-    public final double AXON_LOAD_2 = AXON_LOAD_1 + AXON_POT_FULL_REVOLUTION/2;
+    public static double AXON_LOAD_1 = .04;
+    public final int PUSHER_PADDLES = 2;
+    //public final double AXON_LOAD_2 = AXON_LOAD_1 + AXON_POT_FULL_REVOLUTION/2;
     public int ENCODER_LOAD_POSITION_1 = 0;
-    public int ENCODER_LOAD_POSITION_2 = 0;
-    public static long RUN_TO_ENCODER_PAUSE = 15;
-    public static double RUN_TO_ENCODER_DRIFT = 0;
-    public static float PUSH_SLOW_VELOCITY = .1f;
-    public static int PUSH_FAST_THRESHOLD = 4100; //3172
+    //public int ENCODER_LOAD_POSITION_2 = 0;
+    public static long RUN_TO_ENCODER_PAUSE = 10;
+    public static double RUN_TO_ENCODER_DRIFT = 800;
+    public static double RUN_TO_ENCODER_SLOW = 1000;
+
+    public static float PUSH_SLOW_VELOCITY = .5f; // NO slow velocity for now
     public static int PUSH_N_PAUSE = 300;
 
 
@@ -49,6 +52,7 @@ public class AxonPusher {
     public void initialize(){
         teamUtil.log("Init Pusher");
         servo = hardwareMap.crservo.get("pusher");
+        servo.setDirection(DcMotorSimple.Direction.FORWARD);
         servoPot = hardwareMap.analogInput.get("pusherPotentiometer");
         teamUtil.robot.oq.setSingleEncoderDirection(ODO_PUSHER,  OctoQuadFWv3.EncoderDirection.FORWARD);
     }
@@ -68,15 +72,23 @@ public class AxonPusher {
             thread.start();
         }
     }
+
+    // Use the AxonMax potentiometer to calibrate the Rev Through Bore Encoder.
+    // WARNING: This relies on the AxonMax NOT being in the weird state where the potentiometer returns bad data near 0 and 3.3
+    // TODO: Move the Axon forward until the potentiometer is returning good data?
     public void calibrate() {
         timedOut.set(false);
         CALIBRATED = false;
-        teamUtil.log("Calibrating Pusher");
         double currentPot = servoPot.getVoltage();
         int currentEncoder = getPositionEncoder();
-        ENCODER_LOAD_POSITION_1 = (int) (-(AXON_LOAD_2-currentPot)/AXON_POT_FULL_REVOLUTION * REV_ENCODER_TICS_PER_REVOLUTION + currentEncoder);
-        ENCODER_LOAD_POSITION_2 = ENCODER_LOAD_POSITION_1 + REV_ENCODER_TICS_PER_REVOLUTION/2;
-        teamUtil.log("Pusher encoder load 1: "+ENCODER_LOAD_POSITION_1+" Pusher encoder load 2: "+ENCODER_LOAD_POSITION_2);
+        // Determine portion of 360 degrees that we need to offset from current position to be in a load position
+        double offsetRatio = (AXON_LOAD_1-currentPot)/AXON_POT_FULL_REVOLUTION;
+        offsetRatio = offsetRatio * -1; // pot decreases moving forward while encoder increases
+        teamUtil.log(String.format("Calibrating Pusher. Pot: %.1f Enc: %d Offset: %.2f", currentPot, currentEncoder, offsetRatio));
+        // Use the current encoder position to determine the correct encoder position for a launch using the offsetRatio
+        ENCODER_LOAD_POSITION_1 = (int) (offsetRatio * REV_ENCODER_TICS_PER_REVOLUTION + currentEncoder);
+        //ENCODER_LOAD_POSITION_2 = ENCODER_LOAD_POSITION_1 + REV_ENCODER_TICS_PER_REVOLUTION/2;
+        teamUtil.log("Pusher encoder load 1: "+ENCODER_LOAD_POSITION_1);
         CALIBRATED = true;
     }
 
@@ -106,7 +118,7 @@ public class AxonPusher {
         servo.setPower(power);
     }
 
-    private void runToTargetEncoder (double target, float velocity, long timeOut) {
+    private void runToTargetEncoderInternal(double target, float velocity, long timeOut) {
         moving.set(true);
         if (details) teamUtil.log("Pusher runToTargetEncoder: " + (int)target + " at power: "+ velocity);
         long timeoutTime = System.currentTimeMillis()+timeOut;
@@ -118,6 +130,10 @@ public class AxonPusher {
                 teamUtil.log("Tics from Target: " + ticsFromTarget + " Power: " + velocity);
             teamUtil.pause(RUN_TO_ENCODER_PAUSE);
             ticsFromTarget = target - getPositionEncoder();
+            if (ticsFromTarget < RUN_TO_ENCODER_SLOW) {
+                setPower(PUSH_SLOW_VELOCITY);
+                velocity = PUSH_SLOW_VELOCITY;
+            }
         }
         servo.setPower(0);
         moving.set(false);
@@ -139,7 +155,7 @@ public class AxonPusher {
         timedOut.set(false);
         moving.set(true);
         if (details) teamUtil.log("Pusher Run to Position Target Encoder : " + (int)target);
-        runToTargetEncoder(target, velocity, timeOut);
+        runToTargetEncoderInternal(target, velocity, timeOut);
         if (details) teamUtil.log("Pusher Run to Position Target Encoder Finished at : " + (int)getPositionEncoder());
     }
 
@@ -165,8 +181,8 @@ public class AxonPusher {
 
     public int nextEncoderTarget(int currentEncoder){
         float distanceFromStart = currentEncoder - ENCODER_LOAD_POSITION_1;
-        float pushesFromStart = distanceFromStart/((float)REV_ENCODER_TICS_PER_REVOLUTION/2);
-        return (Math.round(pushesFromStart+1)*(REV_ENCODER_TICS_PER_REVOLUTION/2)+ENCODER_LOAD_POSITION_1); // TODO: fix if the pusher is just behind the target
+        float pushesFromStart = distanceFromStart/((float)REV_ENCODER_TICS_PER_REVOLUTION/PUSHER_PADDLES);
+        return (Math.round(pushesFromStart+1)*(REV_ENCODER_TICS_PER_REVOLUTION/PUSHER_PADDLES)+ENCODER_LOAD_POSITION_1); // TODO: fix if the pusher is just behind the target
     }
 
     public void pushN(int num, float velocity, long timeout) {

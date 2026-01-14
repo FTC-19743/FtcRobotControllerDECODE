@@ -401,6 +401,15 @@ public class CalibrateArms extends LinearOpMode {
             //robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
             robot.shooter.changeAim(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity());
         }
+        if (gamepad1.rightBumperWasReleased()){
+            //robot.shooter.pusher.calibrate();
+            robot.shooter.pusher.setPower(robot.shooter.pusher.RTP_MAX_VELOCITY);
+        }
+        if (gamepad1.leftBumperWasReleased()){
+            //robot.shooter.pusher.calibrate();
+            robot.shooter.pusher.setPower(0);
+        }
+
         if(gamepad1.dpadUpWasReleased()){
             robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
         }if(gamepad1.dpadDownWasReleased()){

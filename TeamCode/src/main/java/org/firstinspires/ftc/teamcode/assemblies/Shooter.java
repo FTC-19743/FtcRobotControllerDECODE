@@ -23,8 +23,9 @@ public class Shooter {
 
     public boolean details;
     public static float AIMER_CALIBRATE = .4f;
+    public static float PUSHER_CALIBRATE_PITCH = .57f;
     public static float AIMER_MIN = .3f;
-    public static float AIMER_MAX = .55f;
+    public static float AIMER_MAX = .54f;
 
     public static double SHOOTER_FAR_VELOCITY = 1300;
     public static float PUSHER_VELOCITY = .5f;
@@ -125,11 +126,16 @@ public class Shooter {
 
         teamUtil.log("Shooter Initialized");
     }
+
+
+
+
     public void calibrate(){
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
         pusher.setPower(0);
-        pusher.calibrate();
+        //calibratePusherV2(); // New stall based calibration
+        pusher.calibrate(); // Old calibration for pusher using AxonMax potentiometer
         pushOne();
     }
     public void outputTelemetry(){
@@ -334,5 +340,34 @@ public class Shooter {
 //            return true;
             return Math.abs(velocity-getVelocityNeeded(distance)) < .0001;
         }
+    }
+
+    /// ////////////////////////////////////////////////////////
+    // NOT USED
+    // New calibration for pusher: Stall pusher at an extreme pitch
+    public static float  PUSHER_CALIBRATE_POWER = .1f;
+    public static int PUSHER_CALIBRATE_OFFSET = 500;
+    public void calibratePusherV2() {
+        pusher.CALIBRATED = false;
+        long timeOutTime = System.currentTimeMillis() + 2000;
+        teamUtil.log("Calibrating Pusher V2");
+        aimer.setPosition(PUSHER_CALIBRATE_PITCH);
+        teamUtil.pause(200); // wait for it to start moving
+
+        pusher.servo.setPower(PUSHER_CALIBRATE_POWER);
+        float lastPusherPosition = pusher.getPositionEncoder();
+        teamUtil.pause(250);
+        while (pusher.getPositionEncoder() != lastPusherPosition && teamUtil.keepGoing(timeOutTime)) {
+            lastPusherPosition = pusher.getPositionEncoder();
+            if (details) teamUtil.log("Calibrate Pusher: " + lastPusherPosition);
+            teamUtil.pause(50);
+        }
+        pusher.servo.setPower(0);
+        pusher.ENCODER_LOAD_POSITION_1 = pusher.getPositionEncoder() - PUSHER_CALIBRATE_OFFSET;
+
+        aimer.setPosition(AIMER_CALIBRATE);
+        teamUtil.pause(250);
+        teamUtil.log("Calibrate PusherV2: ENCODER_LOAD_POSITION_1: "+ pusher.ENCODER_LOAD_POSITION_1);
+        pusher.CALIBRATED = false;
     }
 }
