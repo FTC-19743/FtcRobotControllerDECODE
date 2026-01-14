@@ -16,7 +16,8 @@ public class Shooter {
     Telemetry telemetry;
     public DcMotorEx leftFlywheel;
     public DcMotorEx rightFlywheel;
-    public AxonPusher pusher;
+    //public AxonPusher pusher;
+    public FiveTurnPusher pusher;
     private Servo aimer;
     private DigitalChannel loadedSensor;
     private Servo rgb1;
@@ -96,7 +97,9 @@ public class Shooter {
         teamUtil.log("Constructing Shooter");
         hardwareMap = teamUtil.theOpMode.hardwareMap;
         telemetry = teamUtil.theOpMode.telemetry;
-        pusher = new AxonPusher();
+        //pusher = new AxonPusher();
+        pusher = new FiveTurnPusher();
+
     }
     public void setFlywheelCoefficients(double P, double I, double D, double F){
         leftFlywheel.setVelocityPIDFCoefficients(P, I, D, F);
@@ -133,10 +136,10 @@ public class Shooter {
     public void calibrate(){
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
-        pusher.setPower(0);
+        //pusher.setPower(0);
         //calibratePusherV2(); // New stall based calibration
         pusher.calibrate(); // Old calibration for pusher using AxonMax potentiometer
-        pushOne();
+        // pushOne(); // Not needed with FiveTurnPusher
     }
     public void outputTelemetry(){
         telemetry.addLine("Loaded: "+loadedSensor.getState());
@@ -167,9 +170,13 @@ public class Shooter {
     }
 
     public void pushOneBackwards(long pause){
+        pusher.reverse1(1000);
+        /*
         pusher.setPower(-1);
         teamUtil.pause(pause);
         pusher.setPower(0);
+
+         */
     }
 
     public void pushOne(){
@@ -345,6 +352,7 @@ public class Shooter {
     /// ////////////////////////////////////////////////////////
     // NOT USED
     // New calibration for pusher: Stall pusher at an extreme pitch
+/*
     public static float  PUSHER_CALIBRATE_POWER = .1f;
     public static int PUSHER_CALIBRATE_OFFSET = 500;
     public void calibratePusherV2() {
@@ -370,4 +378,6 @@ public class Shooter {
         teamUtil.log("Calibrate PusherV2: ENCODER_LOAD_POSITION_1: "+ pusher.ENCODER_LOAD_POSITION_1);
         pusher.CALIBRATED = false;
     }
+
+ */
 }

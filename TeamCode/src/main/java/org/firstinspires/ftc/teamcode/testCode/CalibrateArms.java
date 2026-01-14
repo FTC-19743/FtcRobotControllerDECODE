@@ -403,11 +403,14 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.rightBumperWasReleased()){
             //robot.shooter.pusher.calibrate();
-            robot.shooter.pusher.setPower(robot.shooter.pusher.RTP_MAX_VELOCITY);
+            //robot.shooter.pusher.setPower(robot.shooter.pusher.RTP_MAX_VELOCITY);
+            robot.shooter.pusher.servo.setPosition(robot.shooter.pusher.servo.getPosition()+.01);
         }
         if (gamepad1.leftBumperWasReleased()){
             //robot.shooter.pusher.calibrate();
-            robot.shooter.pusher.setPower(0);
+            //robot.shooter.pusher.setPower(0);
+            robot.shooter.pusher.servo.setPosition(robot.shooter.pusher.servo.getPosition()-.01);
+
         }
 
         if(gamepad1.dpadUpWasReleased()){
@@ -429,14 +432,16 @@ public class CalibrateArms extends LinearOpMode {
         }
         if(gamepad1.yWasPressed()){
             //robot.shootAllArtifacts();
+            robot.shooter.pusher.reset(true);
         }
         if(gamepad1.bWasPressed()){ // Time pusher
             //robot.shootAllArtifacts();
             long startTime = System.currentTimeMillis();
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-//            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
-//            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity) {} // detect contact between flywheels and ball
-//            teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
+            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
+            long timeOutTime = System.currentTimeMillis() + 1000;
+            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity && teamUtil.keepGoing(timeOutTime)) {} // detect contact between flywheels and ball
+            teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
         }
 
     }
