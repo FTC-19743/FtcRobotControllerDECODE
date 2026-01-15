@@ -45,6 +45,7 @@ public class Intake {
 
     public AtomicBoolean elevatorMoving = new AtomicBoolean(false);
     public AtomicBoolean failedOut = new AtomicBoolean(false);
+    public AtomicBoolean flipping = new AtomicBoolean(false);
 
     public AtomicBoolean detecting = new AtomicBoolean(false);
     public AtomicBoolean stopDetector = new AtomicBoolean(false);
@@ -57,7 +58,7 @@ public class Intake {
 
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
     static public int ELEVATOR_GROUND = 5;
-    static public long ELEVATOR_PAUSE_1 = 500;
+    static public long ELEVATOR_PAUSE_1 = 300;
     static public long ELEVATOR_PAUSE_2 = 500;
     public static float ELEVATOR_UP_POWER = .5f;
     public static float ELEVATOR_DOWN_POWER = -.5f;
@@ -285,6 +286,45 @@ public class Intake {
     }
 
 
+    public static long FAST3_UNLOAD_PAUSE = 400;
+    public static long FAST3_LEFT_ROLL_PAUSE = 600; // use big number for timing based stuff.  Set to small number if relying on shooter detector
+    public static long FAST3_RIGHT_ROLL_PAUSE = 600;
+
+    public void fastUnloadStep1() {
+        flipping.set(true);
+        middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
+        left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin left
+        right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin right
+        teamUtil.pause(FAST3_UNLOAD_PAUSE);
+        middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
+        left_flipper.setPosition(FLIPPER_CEILING); // release left
+        middleLoad = ARTIFACT.NONE;
+        leftLoad = ARTIFACT.NONE;
+        flipping.set(false);
+        teamUtil.log("fastUnloadStep1 Finished");
+    }
+
+    public void fastUnloadStep1NoWait() {
+        teamUtil.log("Launching Thread to fastUnloadStep1");
+        if (flipping.get()) {
+            teamUtil.log("WARNING: fastUnloadStep1NoWait called while flipping--Ignored");
+            return;
+        }
+        flipping.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                fastUnloadStep1();
+            }
+        });
+        thread.start();
+    }
+
+    public void fastUnloadStep2() {
+        right_flipper.setPosition(FLIPPER_CEILING); // release right
+        rightLoad = ARTIFACT.NONE;
+    }
+
     public static long middleFlipToSensor = 0;
     public static long outsideFlipToSensor = 800;
 
@@ -340,6 +380,7 @@ public class Intake {
     }
 
     public void flipNextFast(){
+        flipping.set(true);
         long timeOutTime = System.currentTimeMillis()+2500;
         while(ballsLeftToShoot() && teamUtil.keepGoing(timeOutTime)){
             teamUtil.log("Attempting to load shooter");
@@ -349,6 +390,7 @@ public class Intake {
             }
             if(teamUtil.robot.shooter.isLoaded()){
                 teamUtil.log("Shooter Successfully loaded");
+                flipping.set(false);
                 return;
             } else {
                 teamUtil.log("WARNING: flipNextFast: Unable to load shooter, moving to next shot");
@@ -359,10 +401,16 @@ public class Intake {
         }else {
             teamUtil.log("WARNING: flipNextFast: Unable to load any shots, giving up");
         }
+        flipping.set(false);
     }
 
     public void flipNextFastNoWait() {
         teamUtil.log("Launching Thread to flipNextFast.");
+        if (flipping.get()) {
+            teamUtil.log("WARNING: flipNextFastNoWait called while flipping--Ignored");
+            return;
+        }
+        flipping.set(true);
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {

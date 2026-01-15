@@ -22,6 +22,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+import java.sql.Time;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -516,6 +517,33 @@ public class Robot {
         thread.start();
     }
 
+    public void autoTransferAndLoadFastV2(long pause, long timeOut) {
+        transferring.set(true);
+        teamUtil.log("autoTransferAndLoadFastV2 with pause:  " + pause);
+        teamUtil.pause(pause);
+        if(intake.elevatorToFlippersV2(false, false)){ // Don't attempt to detect loaded artifacts
+            intake.logDetectorOutput(); // for debugging purposes
+            autoShootFastPreloadV2();
+        }
+        transferring.set(false);
+    }
+
+    public void autoTransferAndLoadFastNoWaitV2 (long pause, long timeOut) {
+        if (transferring.get()) {
+            teamUtil.log("WARNING: Attempt to autoTransferAndLoadFastNoWaitV2 while transferring. Ignored.");
+            return;
+        }
+        transferring.set(true);
+        teamUtil.log("Launching Thread to autoTransferAndLoadFastNoWaitV2");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                autoTransferAndLoadFastV2(pause,timeOut);
+            }
+        });
+        thread.start();
+    }
+
     public void logShot(double flyWheelVelocity) {
         drive.loop();
         double goalDistance = drive.robotGoalDistance();
@@ -529,7 +557,7 @@ public class Robot {
 
     // Checks a number of conditions to make sure we can shoot and then launches if possible
     // Returns true if it did shoot, false otherwise
-    public boolean shootIfCan(){
+    public boolean shootIfCan(boolean requireLoaded){
         // Don't attempt to shoot if we are currently shooting
         if (shooter.pusher.moving.get()) return false;
 
@@ -537,7 +565,7 @@ public class Robot {
         if(!shooterHeadingReady()) return false;
 
         // Don't attempt to shoot if there is no ball in the shooter
-        if(!shooter.isLoaded()){
+        if(requireLoaded && !shooter.isLoaded()){
             return false;
         }
 
@@ -631,7 +659,7 @@ public class Robot {
             drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
             if (useArms) {
                 // TODO: Should we make sure a minimum amount of time has passed since last shot to make sure they hit ramp in the correct order?
-                if (shootIfCan()) {
+                if (shootIfCan(true)) {
                     velocity = 0; // stop driving once we have a good shot (but keep rotating!)
                     nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++;
@@ -715,7 +743,7 @@ public class Robot {
             double shotHeading = drive.robotGoalHeading();
             drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
             if (useArms) {
-                if (shootIfCan()) { // try to take a shot asap
+                if (shootIfCan(true)) { // try to take a shot asap
                     numshots++;
                     if (numshots < totalShots) {
                         // TODO: Do we need a pause here to make sure previous shot (still sitting in shooter) doesn't trigger flipNextFast to think it is done?
@@ -744,6 +772,138 @@ public class Robot {
             return true;
         } else {
             teamUtil.log("autoShootFast TIMED OUT");
+            return false;
+        }
+    }
+
+    public void autoShootFastPreloadV2() {
+            intake.fastUnloadStep1NoWait();
+    }
+
+    public void waitForUnloaded(long timeOut) {
+        long startTime = System.currentTimeMillis();
+        long TimeOutTime = startTime + timeOut;
+        if (details) teamUtil.log("Waiting for UNloaded detector");
+        if (!shooter.isLoaded()) { // if the shooter is not showing loaded, we need to let the pusher go by before we exit or WaitForLoaded might see it
+            if (details) teamUtil.log("Nothing loaded so wait for pusher from last shot to rotate through");
+            teamUtil.pause(FAST3_PUSH_TIME);
+        }
+        while (shooter.isLoaded() && teamUtil.keepGoing(TimeOutTime)) {
+            teamUtil.pause(25);
+        }
+        if (System.currentTimeMillis() > TimeOutTime) {
+            teamUtil.log("waitForUnloaded TIMED OUT");
+        } else {
+            if (details) teamUtil.log("Unloaded at " + (System.currentTimeMillis() - startTime));
+        }
+    }
+
+    public void waitForLoaded(long timeOut) {
+        long startTime = System.currentTimeMillis();
+        long rollWaitTimeOut = startTime + timeOut;
+
+        if (details) teamUtil.log("Waiting for loaded detector");
+        while (!shooter.isLoaded() && teamUtil.keepGoing(rollWaitTimeOut)) {
+            teamUtil.pause(25);
+        }
+
+        // Thought this was needed to keep pusher from going to soon, but it appears unneeded as long as we don't get a false positive above
+        //if (details) teamUtil.log("Waiting for Artifact to drop fully");
+        //teamUtil.pause(Intake.FAST3_ROLL_PAUSE);
+
+        if (System.currentTimeMillis() > rollWaitTimeOut) {
+            teamUtil.log("waitForLoaded TIMED OUT");
+        } else {
+            if (details) teamUtil.log("Loaded at " + (System.currentTimeMillis() - startTime));
+        }
+    }
+
+    // Assumes robot is in position, 3 balls were in flippers and autoShootFastPreloadV2 has already been called.
+    // stops motors and fires all 3 shots as quickly as possible
+    public static long FAST3_PUSH_TIME = 150;
+    public static long FAST3_ROLL_TIMEOUT = 500;
+    public static long FAST3_INITIAL_ROLL_TIMEOUT = 1000;
+
+    public boolean autoShootFastV2(boolean useArms, long timeOut) {
+        long startTime = System.currentTimeMillis();
+        long timeOutTime = startTime + timeOut;
+
+        // wait for initial transfer/flip to complete
+        if (transferring.get() || intake.flipping.get()) {
+            teamUtil.log("autoShootFastV2 waiting on transfer/flip");
+            while ((transferring.get() || intake.flipping.get()) && teamUtil.keepGoing(timeOutTime)) {
+                drive.loop();
+                double shotHeading = drive.robotGoalHeading();
+                drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
+            }
+        }
+        long shot3Time =  startTime + 1550;
+        int numshots = 0;
+        int totalShots = 3; // assume 3 loaded even if not
+        teamUtil.log("autoShootFastV2. Total Planned Shots: " + totalShots);
+
+        blinkin.setSignal(Blinkin.Signals.GOLD);
+
+        if (!shooter.isLoaded()) { // handle edge case where nothing in middle flipper and something in left flipper
+            waitForLoaded(FAST3_INITIAL_ROLL_TIMEOUT);
+        }
+        while (teamUtil.keepGoing(timeOutTime) && numshots < totalShots) {
+            drive.loop();
+            double shotHeading = drive.robotGoalHeading();
+            drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
+            if (useArms) {
+                //long shotTime = System.currentTimeMillis();
+                // try to take a shot asap without checking for loaded (that is handled in the post shot logic below. RETURNS IMMEDIATELY and runs pusher in separate thread
+                if (shootIfCan(false)) {
+                    numshots++;
+                    waitForUnloaded(1000); // Wait until we are sure the pusher has launched the artifact
+                    if (numshots < 3) {
+                        waitForLoaded(FAST3_ROLL_TIMEOUT); // get shots 2/3 into the shooter before we call ShootIfCan again
+                    }
+                    if (numshots == 1) {
+                        intake.fastUnloadStep2(); // release right artifact so it can roll down to left (currently in shooter)
+                    }
+                    /* This code is purely timing based, attempts to do things fast without using the loaded detector at all
+                    teamUtil.pause(FAST3_PUSH_TIME);
+                    if (numshots == 1) {
+                        // Wait for left artifact to roll into shooter
+                        long extraPause = intake.FAST3_LEFT_ROLL_PAUSE - (System.currentTimeMillis() - shotTime);
+                        if (details) teamUtil.log("After Shot 1, pausing an extra " + extraPause);
+                        teamUtil.pause(extraPause); // make sure left artifact has time to get into shooter
+                        intake.fastUnloadStep2(); // release right artifact so it can roll down to left (currently in shooter)
+                    } else if (numshots == 2) {
+                        // Wait for right artifact to roll into shooter
+                        long extraPause = intake.FAST3_RIGHT_ROLL_PAUSE - (System.currentTimeMillis() - shotTime);
+                        if (details) teamUtil.log("After Shot 2, pausing an extra " + extraPause);
+                        teamUtil.pause(extraPause); // make sure right artifact has time to get into shooter
+                    }
+                     */
+                }
+            } else if (System.currentTimeMillis() > shot3Time) {
+                break;
+            }
+        }
+        // FAILSAFE: Empty out shooter in case something got left behind. Not worried about aiming at this point.
+        while (!shooter.pusher.moving.get() && shooter.isLoaded() &&  teamUtil.keepGoing(timeOutTime)) {
+            teamUtil.log("autoShootFastV2 --------------- Leftovers in shooter! Emptying");
+            shooter.pushOneNoWait();
+            logShot(shooter.leftFlywheel.getVelocity());
+        }
+
+        blinkin.setSignal(Blinkin.Signals.OFF);
+        if (System.currentTimeMillis() <= timeOutTime) {
+            // Wait for last shot to finish before pusher reset or moving
+            while (shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
+                teamUtil.pause(25);
+            }
+            shooter.pusher.reset(false);
+            drive.stopMotors();
+            teamUtil.log("autoShootFastV2 Finished in " + (System.currentTimeMillis() - startTime));
+            return true;
+        } else {
+            shooter.pusher.reset(false);
+            drive.stopMotors();
+            teamUtil.log("autoShootFastV2 TIMED OUT");
             return false;
         }
     }
@@ -895,7 +1055,7 @@ public class Robot {
         if (useArms) {
             shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots
             Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
-            autoShootFastPreload(); // go fast on preloads--don't bother with pattern
+            autoShootFastPreloadV2(); // go fast on preloads--don't bother with pattern
         }
         if (useIntakeDetector) {
             if (intake.startDetector()) {
@@ -916,7 +1076,7 @@ public class Robot {
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
         // Shoot preloads
         intake.signalArtifacts(); // flippers were operating in another thread while we were moving to this point.
-        if (!autoShootFast(useArms,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
+        if (!autoShootFastV2(useArms,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
 
         /////////////////////////////Intake 2nd group and shoot
         // Setup to pickup group 2
@@ -943,7 +1103,7 @@ public class Robot {
             }
         }
         intake.signalArtifacts();
-        if (useArms) autoTransferAndLoadFastNoWait(0, 3000);
+        if (useArms) autoTransferAndLoadFastNoWaitV2(0, 3000);
         // Drive back to shooting zone
         if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         if(intake.failedOut.get()){
@@ -952,8 +1112,12 @@ public class Robot {
             return;
         }
         // shoot second set of balls
-        if (!autoShootFast(useArms,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
+        if (!autoShootFastV2(useArms,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
 
+        if (true) {
+            stopRobot();
+            return;
+        }
         /////////////////////////////Intake 3rd group, empty ramp and shoot
         if (useArms) shooter.setShootSpeed(B06_SHOT34_VELOCITY);
         Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;

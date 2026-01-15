@@ -68,6 +68,7 @@ public class CalibrateArms extends LinearOpMode {
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
+        teamUtil.alliance = teamUtil.Alliance.RED;
 
         robot.calibrate();
         if (useCV) {
@@ -427,7 +428,7 @@ public class CalibrateArms extends LinearOpMode {
 
         if(gamepad1.aWasPressed()){
 //            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            boolean result = robot.shootIfCan();
+            boolean result = robot.shootIfCan(true);
             teamUtil.log("shootIfCan returned "+result);
         }
         if(gamepad1.yWasPressed()){
@@ -444,6 +445,17 @@ public class CalibrateArms extends LinearOpMode {
             teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
         }
 
+        if (gamepad1.xWasReleased()) {
+            robot.intake.flippersToTransfer();
+        }
+        if (gamepad1.left_trigger > .5) {
+            while (gamepad1.left_trigger > .5) {}
+            robot.autoShootFastPreloadV2();
+        }
+        if (gamepad1.right_trigger > .5) {
+            while (gamepad1.right_trigger > .5) {}
+            robot.autoShootFastV2(true,3000);
+        }
     }
 
     public static double SHOOTER_OVERSHOOT = 200;
