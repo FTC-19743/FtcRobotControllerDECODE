@@ -426,10 +426,13 @@ public class CalibrateArms extends LinearOpMode {
             robot.shooter.aim(robot.shooter.currentAim()+.01);
         }
 
-        if(gamepad1.aWasPressed()){
+        if(gamepad1.aWasReleased()){
+            robot.shooter.sidePushersHold();
+            while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
+            robot.shooter.shoot3SuperFast();
 //            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            boolean result = robot.shootIfCan(true);
-            teamUtil.log("shootIfCan returned "+result);
+            //boolean result = robot.shootIfCan(true);
+            //teamUtil.log("shootIfCan returned "+result);
         }
         if(gamepad1.yWasPressed()){
             //robot.shootAllArtifacts();

@@ -20,9 +20,18 @@ public class Shooter {
     public FiveTurnPusher pusher;
     private Servo aimer;
     private DigitalChannel loadedSensor;
-    private Servo rgb1;
+    private Servo leftPusher;
+    private Servo rightPusher;
 
     public boolean details;
+
+    public static float LEFT_PUSHER_STOW = .38f;
+    public static float LEFT_PUSHER_HOLD = .5f;
+    public static float LEFT_PUSHER_PUSH = .73f;
+    public static float RIGHT_PUSHER_STOW = .644f;
+    public static float RIGHT_PUSHER_HOLD = .59f;
+    public static float RIGHT_PUSHER_PUSH = .34f;
+
     public static float AIMER_CALIBRATE = .4f;
     public static float PUSHER_CALIBRATE_PITCH = .57f;
     public static float AIMER_MIN = .3f;
@@ -124,6 +133,9 @@ public class Shooter {
         flywheelStartup();
         pusher.initialize();
         aimer = hardwareMap.get(Servo.class,"aimer");
+        leftPusher = hardwareMap.get(Servo.class,"leftpusher");
+        rightPusher = hardwareMap.get(Servo.class,"rightpusher");
+
         loadedSensor = hardwareMap.get(DigitalChannel.class, "loaded");
         loadedSensor.setMode(DigitalChannel.Mode.INPUT);
 
@@ -139,6 +151,7 @@ public class Shooter {
         //pusher.setPower(0);
         //calibratePusherV2(); // New stall based calibration
         pusher.calibrate(); // Old calibration for pusher using AxonMax potentiometer
+        sidePushersStow();
         // pushOne(); // Not needed with FiveTurnPusher
     }
     public void outputTelemetry(){
@@ -200,7 +213,41 @@ public class Shooter {
             }
     }
 
+    public static long SF_SHOT_PAUSE = 100;
+    public static long SF_LEFT_PUSH_PAUSE = 250;
+    public static long SF_RIGHT_PUSH_PAUSE = 250;
+    public static long SF_LAST_SHOT_PAUSE = 200;
 
+
+    // Assumes 3 artifacts are loaded into the shooter and all 3 flippers are retracted
+    // Does not use sensors in any way, doesn't detect stalls, etc.
+    public void shoot3SuperFast() {
+        long startTime = System.currentTimeMillis();
+        teamUtil.log("Shoot3Fast");
+        pusher.push1NoWait();
+        teamUtil.pause(SF_SHOT_PAUSE);
+        leftPusher.setPosition(LEFT_PUSHER_PUSH);
+        teamUtil.pause(SF_LEFT_PUSH_PAUSE);
+        leftPusher.setPosition(LEFT_PUSHER_STOW);
+        pusher.push1NoWait();
+        teamUtil.pause(SF_SHOT_PAUSE);
+        rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+        teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
+        pusher.push1NoWait();
+        teamUtil.pause(SF_LAST_SHOT_PAUSE);
+        rightPusher.setPosition(RIGHT_PUSHER_STOW);
+        pusher.reset(false);
+        teamUtil.log("Shoot3Fast Finished in " + (System.currentTimeMillis() - startTime));
+    }
+
+    public void sidePushersStow() {
+        leftPusher.setPosition(LEFT_PUSHER_STOW);
+        rightPusher.setPosition(RIGHT_PUSHER_STOW);
+    }
+    public void sidePushersHold() {
+        leftPusher.setPosition(LEFT_PUSHER_HOLD);
+        rightPusher.setPosition(RIGHT_PUSHER_HOLD);
+    }
     // for aimer:
     // close: .000069913x + .218222
     // far: .0000328084x + .415

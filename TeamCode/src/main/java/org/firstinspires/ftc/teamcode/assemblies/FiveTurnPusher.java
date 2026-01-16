@@ -146,6 +146,20 @@ public class FiveTurnPusher {
         }
     }
 
+    // This starts the pusher servo and doesn't wait to see what happens, no stall detection, etc.
+    public void push1NoWait() {
+        teamUtil.log("push1NoWait");
+        timedOut.set(false);
+        moving.set(false);
+        int nextPos = getNextPushPosition();
+        if (nextPos == 0) {
+            teamUtil.log("WARNING: push1NoWait called when no next position available. Ignoring");
+            return;
+        }
+        servo.setPosition(READY_POS[nextPos]);
+        // Don't wait to see what happened.
+    }
+
     // Run the servo to the next position if there is one
     // This method returns when the servo is in the new position
     public static int ENCODER_DONE_THRESHOLD = 1500;
