@@ -22,7 +22,6 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
-import java.sql.Time;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -780,15 +779,21 @@ public class Robot {
             intake.fastUnloadStep1NoWait();
     }
 
-    public void waitForUnloaded(long timeOut) {
+    public void autoHoldShotHeading() {
+        drive.loop();
+        double shotHeading = drive.robotGoalHeading();
+        drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
+    }
+    public void autoWaitForUnloaded(long timeOut) {
         long startTime = System.currentTimeMillis();
         long TimeOutTime = startTime + timeOut;
         if (details) teamUtil.log("Waiting for UNloaded detector");
         if (!shooter.isLoaded()) { // if the shooter is not showing loaded, we need to let the pusher go by before we exit or WaitForLoaded might see it
             if (details) teamUtil.log("Nothing loaded so wait for pusher from last shot to rotate through");
-            teamUtil.pause(FAST3_PUSH_TIME);
+            teamUtil.pause(FAST3_PUSH_TIME); // WARNING, no drive control during this time, OK if not so long
         }
         while (shooter.isLoaded() && teamUtil.keepGoing(TimeOutTime)) {
+            autoHoldShotHeading();
             teamUtil.pause(25);
         }
         if (System.currentTimeMillis() > TimeOutTime) {
@@ -798,12 +803,13 @@ public class Robot {
         }
     }
 
-    public void waitForLoaded(long timeOut) {
+    public void autoWaitForLoaded(long timeOut) {
         long startTime = System.currentTimeMillis();
         long rollWaitTimeOut = startTime + timeOut;
 
         if (details) teamUtil.log("Waiting for loaded detector");
         while (!shooter.isLoaded() && teamUtil.keepGoing(rollWaitTimeOut)) {
+            autoHoldShotHeading();
             teamUtil.pause(25);
         }
 
@@ -828,13 +834,13 @@ public class Robot {
         long startTime = System.currentTimeMillis();
         long timeOutTime = startTime + timeOut;
 
-        // wait for initial transfer/flip to complete
-        if (transferring.get() || intake.flipping.get()) {
-            teamUtil.log("autoShootFastV2 waiting on transfer/flip");
-            while ((transferring.get() || intake.flipping.get()) && teamUtil.keepGoing(timeOutTime)) {
-                drive.loop();
-                double shotHeading = drive.robotGoalHeading();
-                drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
+        if (useArms){
+            // wait for initial transfer/flip to complete
+            if (transferring.get() || intake.flipping.get()) {
+                teamUtil.log("autoShootFastV2 waiting on transfer/flip");
+                while ((transferring.get() || intake.flipping.get()) && teamUtil.keepGoing(timeOutTime)) {
+                    autoHoldShotHeading();
+                }
             }
         }
         long shot3Time =  startTime + 1550;
@@ -844,21 +850,19 @@ public class Robot {
 
         blinkin.setSignal(Blinkin.Signals.GOLD);
 
-        if (!shooter.isLoaded()) { // handle edge case where nothing in middle flipper and something in left flipper
-            waitForLoaded(FAST3_INITIAL_ROLL_TIMEOUT);
+        if (useArms && !shooter.isLoaded()) { // handle edge case where nothing in middle flipper and something in left flipper
+            autoWaitForLoaded(FAST3_INITIAL_ROLL_TIMEOUT);
         }
         while (teamUtil.keepGoing(timeOutTime) && numshots < totalShots) {
-            drive.loop();
-            double shotHeading = drive.robotGoalHeading();
-            drive.driveMotorsHeadingsFR(shotHeading, shotHeading, 0); // continue to rotate to match shot heading
+            autoHoldShotHeading();
             if (useArms) {
                 //long shotTime = System.currentTimeMillis();
                 // try to take a shot asap without checking for loaded (that is handled in the post shot logic below. RETURNS IMMEDIATELY and runs pusher in separate thread
                 if (shootIfCan(false)) {
                     numshots++;
-                    waitForUnloaded(1000); // Wait until we are sure the pusher has launched the artifact
+                    autoWaitForUnloaded(1000); // Wait until we are sure the pusher has launched the artifact
                     if (numshots < 3) {
-                        waitForLoaded(FAST3_ROLL_TIMEOUT); // get shots 2/3 into the shooter before we call ShootIfCan again
+                        autoWaitForLoaded(FAST3_ROLL_TIMEOUT); // get shots 2/3 into the shooter before we call ShootIfCan again
                     }
                     if (numshots == 1) {
                         intake.fastUnloadStep2(); // release right artifact so it can roll down to left (currently in shooter)
@@ -883,6 +887,7 @@ public class Robot {
                 break;
             }
         }
+        drive.stopMotors();
         // FAILSAFE: Empty out shooter in case something got left behind. Not worried about aiming at this point.
         while (!shooter.pusher.moving.get() && shooter.isLoaded() &&  teamUtil.keepGoing(timeOutTime)) {
             teamUtil.log("autoShootFastV2 --------------- Leftovers in shooter! Emptying");
@@ -953,7 +958,9 @@ public class Robot {
 
     public static double B06_PICKUP1_Y = 1200;
     public static double B06_SETUP_Y_DRIFT = 200;
+    public static double B06_SETUP_Y_DRIFTV3 = 170;
     public static double B06_SETUP1_Y = B06_PICKUP1_Y-B06_SETUP_Y_DRIFT;
+    public static double B06_SETUP1_YV3 = B06_PICKUP1_Y-B06_SETUP_Y_DRIFTV3;
     public static double B06_SETUP1_X = 670;
     public static double B06_SETUP1_DH = 90;
     public static double B06_SETUP1_H = 0;
@@ -963,7 +970,7 @@ public class Robot {
 
 
     public static double B07_PICKUP1_X = 420;
-    public static double B07_PICKUP1_ADJ = 30;
+    public static double B07_PICKUP1_ADJ = 0;
     public static double B07_PICKUP_RAMP_END_VEL = 750;
     public static double B07_GATE_END_VEL = 500;
 
@@ -985,16 +992,19 @@ public class Robot {
 
     public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
     public static double B07_SETUP2_DH = 105;
-    public static double B07_SETUP_Y_DRIFT = 150;
+    public static double B07_SETUP_Y_DRIFT = 170;
     public static double B07_SETUP2_Y = B06_PICKUP1_Y-B07_SETUP_Y_DRIFT;
     public static double B07_SETUP2_X = B06_SETUP1_X-B01_TILE_LENGTH+50;
 
     public static double B07_SETUP4_X = B06_SETUP1_X-B01_TILE_LENGTH;
     public static double B07_SETUP4_Y = B06_PICKUP1_Y-100;
 
+    public static double B08_SHOOT2_MID_X = B07_PICKUP1_X;
+    public static double B08_SHOOT2_MID_Y = 1100;
     public static double B08_SHOOT2_Y = 650;
     public static double B08_SHOOT2_DRIFT = 200;
-    public static double B08_SHOOT2_X = 650;
+    public static double B08_SHOOT2_DRIFTV3 = 300;
+    public static double B08_SHOOT2_X = 550;
     public static double B08_SHOOT2_H = 45;
     public static double B08_SHOOT2_DH = 315;
     public static double B08_SHOOT2_END_VEL = 1000; // was 400 before GoalSideV3
@@ -1082,7 +1092,7 @@ public class Robot {
         // Setup to pickup group 2
         teamUtil.log("==================== Group 2 ================");
         if (useArms) { intake.getReadyToIntakeNoWait(); }
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_Y,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_YV3,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
         drive.stopMotors(); // help kill the sideways momentum
         teamUtil.pause(B06_SETUP1_PAUSE);
         // Pickup group 2
@@ -1096,16 +1106,20 @@ public class Robot {
             if (teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
                 intake.setIntakeArtifacts(GPP);
                 intake.setLoadedArtifacts(GPP); // Assumes artifacts are preloaded in this order!!
-
             } else {
                 intake.setIntakeArtifacts(PPG);
                 intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
             }
         }
+        // Drive back to shooting zone
+        drive.stopMotors(); // kill forward momentum without tipping robot (odo pods) off of ground
+        teamUtil.pause(B07_REVERSE_PAUSE);
         intake.signalArtifacts();
         if (useArms) autoTransferAndLoadFastNoWaitV2(0, 3000);
-        // Drive back to shooting zone
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
+        // back up without turning robot to ensure we clear group 3
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT2_MID_X, B08_SHOOT2_MID_Y,B08_SHOOT2_DH, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        // rotate and strafe to shooting position
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFTV3,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
             stopRobot();
@@ -1114,10 +1128,7 @@ public class Robot {
         // shoot second set of balls
         if (!autoShootFastV2(useArms,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
 
-        if (true) {
-            stopRobot();
-            return;
-        }
+
         /////////////////////////////Intake 3rd group, empty ramp and shoot
         if (useArms) shooter.setShootSpeed(B06_SHOT34_VELOCITY);
         Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
@@ -1146,7 +1157,7 @@ public class Robot {
         }
         intake.signalArtifacts();
         // prepare shot
-        if (useArms) autoTransferAndLoadNoWait(0, false, 3000);
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, false, 3000);
         // Allow balls to exit ramp
         teamUtil.pause(emptyRampPause);
         // Allow more time for alliance partner
@@ -1162,6 +1173,10 @@ public class Robot {
         // shoot 3rd set of balls
         if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,5000)) return;
 
+        if (true) {
+            stopRobot();
+            return;
+        }
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
@@ -1232,6 +1247,46 @@ public class Robot {
         stopRobot();
     }
 
+    public double calculateAngleFromSecondToFirst(double x1, double y1, double x2, double y2) {
+        // 1. Calculate the difference from the second point (origin) to the first
+        double dx = x1 - x2;
+        double dy = y1 - y2;
+
+        // 2. Handle the edge case where both points are the same
+        if (dx == 0 && dy == 0) {
+            return 0.0;
+        }
+
+        // 3. Use standard atan2(dy, dx)
+        // This natively treats positive x as 0° and positive y as 90°.
+        double radians = Math.atan2(dy, dx);
+
+        // 4. Convert radians to degrees
+        double degrees = Math.toDegrees(radians);
+
+        // 5. Normalize the result to a [0, 360) range.
+        // atan2 returns values between -180 and 180.
+        return (degrees < 0) ? (degrees + 360) : degrees;
+    }
+    public static double STRAIGHT_PERCENT = .6;
+    public static double DRIFT_PERCENT = .8;
+
+    public boolean mirroredDriveToShotPositionFast(double xTarget, double yTarget, double shotHeading, double endVelocity) {
+        int currentX = drive.oQlocalizer.posX_mm;
+        int currentY = drive.oQlocalizer.posY_mm;
+        if (teamUtil.alliance== teamUtil.Alliance.RED) {
+            currentY = currentY *-1;
+        }
+        double driveHeading = calculateAngleFromSecondToFirst(xTarget, yTarget, currentX, currentY);
+        double straightX = (xTarget - currentX) * STRAIGHT_PERCENT + currentX;
+        double straightY = (yTarget - currentY) * STRAIGHT_PERCENT + currentY;
+        double driftX = (xTarget - currentX) * DRIFT_PERCENT + currentX;
+        double driftY = (yTarget - currentY) * DRIFT_PERCENT + currentY;
+        teamUtil.log(String.format("DH: %.1f Target: %.0f,%.0f Straight %.0f,%.0f Drift %.0f,%.0f", driveHeading, xTarget, yTarget, straightX, straightY, driftX, driftY));
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, straightX, straightY, driveHeading, driveHeading,B00_CORNER_VELOCITY,null, 0, 3000 )) return false;
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, driftX, driftY, driveHeading, shotHeading,endVelocity,null, 0, 3000 )) return false;
+        return true;
+    }
     public void goalSideV2(boolean useArms, boolean useIntakeDetector, long gateLeaveTime, boolean getMore) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
@@ -1418,6 +1473,8 @@ public class Robot {
         /////////////////////////////Wrap up
         stopRobot();
     }
+
+
 
     public static double C01_FAST_APPROACH_X = -400;
     public static double C01_FAST_APPROACH_Y = 1250;

@@ -180,8 +180,7 @@ public class Teleop extends LinearOpMode {
                     robot.shootArtifactLocationNoWait(Intake.Location.CENTER);
                 }
                 if(gamepad2.aWasReleased()){
-                    robot.shooter.pusher.calibrateNoWait( );
-                    robot.shooter.pushOneNoWait();
+                    robot.shooter.pusher.reset(false);
                 }
                 if(gamepad2.right_trigger > .6f && shootingMode){
                     robot.shootIfCanTeleop(); // blinkin based on the result?

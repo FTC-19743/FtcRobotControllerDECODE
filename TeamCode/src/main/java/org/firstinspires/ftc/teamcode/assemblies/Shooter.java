@@ -228,9 +228,18 @@ public class Shooter {
 
     }
 
+    public static double A09_VELOCITY_A = 0.0000303382;
+    public static double A09_VELOCITY_B = 0.13061;
+    public static double A09_VELOCITY_C = 655.50668;
+
+    /* OLD VALUES
     public static double A09_VELOCITY_A = 0.000239375;
     public static double A09_VELOCITY_B = -0.431755;
     public static double A09_VELOCITY_C = 984.33854;
+
+     */
+
+
     public static double A09_SHORT_AIM_M = .000025;
     public static double A09_SHORT_AIM_B = .2775;
     public static double A09_LONG_AIM_M = .000118464;
@@ -309,6 +318,15 @@ public class Shooter {
         return (calculateMinSpeed(distance) + calculateMaxSpeed(distance) ) / 2;
     }
 
+    public static double pitchA = 0;
+    public static double pitchB = 0.0004007;
+    public static double pitchC = 0;
+    public static double pitchD = 9.91034e-8;
+    public static double pitchE = 4.73733e-7;
+    public static double pitchF = -6.27271e-7;
+    public static double longPitch = .48; // .44 with the old function
+
+    /*
     public static double pitchA = 0.012;
     public static double pitchB = -0.0000044767;
     public static double pitchC = 0.000457262;
@@ -316,6 +334,10 @@ public class Shooter {
     public static double pitchE = -3.01755e-7;
     public static double pitchF = 2.67729e-7;
     public static double longPitch = .48; // .44 with the old function
+
+     */
+
+
 
     public static double LONG_MANUAL_PITCH_ADJUST = 0;
 
@@ -325,6 +347,22 @@ public class Shooter {
         }else{
             return longPitch + LONG_MANUAL_PITCH_ADJUST; // was the velocity really tuned with this in mind?
         }
+    }
+
+    public static double pitchANew = -4.682e-8;
+    public static double pitchBNew = 0.0002388;
+    public static double pitchCNew = 0.1178;
+
+    public double calculatePitchV2(double distance){
+        return pitchANew*distance*distance+pitchBNew*distance+pitchCNew;
+    }
+
+    public static double velocityANew = 0.0000317;
+    public static double velocityBNew = 0.114291;
+    public static double velocityCNew = 675.9;
+
+    public double calculateVelocityV2(double distance){
+        return velocityANew*distance*distance+velocityBNew*distance+velocityCNew;
     }
 
     public void changeAim(double distance, double velocity){ // account for robot velocity?

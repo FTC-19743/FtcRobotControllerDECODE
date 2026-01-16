@@ -9,7 +9,6 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.assemblies.BasicDrive;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -138,7 +137,8 @@ public class TestAutoPaths extends LinearOpMode{
 
     public void testGoalSide() {
         if(gamepad1.bWasPressed()){
-            robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
+            //robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
+            robot.mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL);
             robot.drive.stopMotors();
         }
         if(gamepad1.dpadUpWasReleased()){
