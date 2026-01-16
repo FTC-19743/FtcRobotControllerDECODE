@@ -214,8 +214,8 @@ public class Shooter {
     }
 
     public static long SF_SHOT_PAUSE = 100;
-    public static long SF_LEFT_PUSH_PAUSE = 250;
-    public static long SF_RIGHT_PUSH_PAUSE = 250;
+    public static long SF_LEFT_PUSH_PAUSE = 200;
+    public static long SF_RIGHT_PUSH_PAUSE = 200;
     public static long SF_LAST_SHOT_PAUSE = 200;
 
 
