@@ -297,11 +297,11 @@ public class Intake {
         right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin right
         teamUtil.pause(FAST3_UNLOAD_PAUSE);
         middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
-        if (!middleLoaded && leftLoaded) {
-            left_flipper.setPosition(FLIPPER_CEILING); // release left and give it a head start on the right
-            teamUtil.pause(FAST3_LEFT_ROLL_PAUSE);
+        if (!middleLoaded && rightLoaded) {
+            right_flipper.setPosition(FLIPPER_CEILING); // release right and give it a head start on the left
+            teamUtil.pause(FAST3_RIGHT_ROLL_PAUSE);
         }
-        left_flipper.setPosition(FLIPPER_CEILING); // release left and give it a head start on the right
+        left_flipper.setPosition(FLIPPER_CEILING); // release left
         right_flipper.setPosition(FLIPPER_CEILING); // release right
 
         flipping.set(false);

@@ -218,7 +218,8 @@ public class Shooter {
     public static long SF_SHOT_PAUSE = 100;
     public static long SF_LEFT_PUSH_PAUSE = 200;
     public static long SF_RIGHT_PUSH_PAUSE = 200;
-    public static long SF_LAST_SHOT_PAUSE = 200;
+    public static long SF_LAST_SHOT_PAUSE = 100;
+    public static long SF_LAST_PADDLE_PAUSE = 100;
 
     public AtomicBoolean superFastShooting = new AtomicBoolean(false);
     // Assumes 1-3 artifacts are loaded into the shooter and at least one has settled in to the shooter itself.  all 3 flippers are retracted
@@ -226,7 +227,7 @@ public class Shooter {
     public void shoot3SuperFast(boolean pushLeftFirst, boolean reset, boolean logShots) {
         superFastShooting.set(true);
         long startTime = System.currentTimeMillis();
-        teamUtil.log("Shoot3Fast");
+        teamUtil.log("shoot3SuperFast");
         if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
         pusher.push1NoWait();
         teamUtil.pause(SF_SHOT_PAUSE);
@@ -242,7 +243,8 @@ public class Shooter {
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
             pusher.push1NoWait();
             teamUtil.pause(SF_LAST_SHOT_PAUSE);
-            rightPusher.setPosition(RIGHT_PUSHER_STOW);
+            rightPusher.setPosition(RIGHT_PUSHER_STOW); // start moving this back so it doesn't trigger the loaded detector
+            teamUtil.pause(SF_LAST_PADDLE_PAUSE);
         } else {
             rightPusher.setPosition(RIGHT_PUSHER_PUSH);
             teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
@@ -256,6 +258,7 @@ public class Shooter {
             pusher.push1NoWait();
             teamUtil.pause(SF_LAST_SHOT_PAUSE);
             leftPusher.setPosition(LEFT_PUSHER_STOW);
+            teamUtil.pause(SF_LAST_PADDLE_PAUSE); // start moving this back so it doesn't trigger the loaded detector
         }
         if (reset) pusher.reset(false);
         teamUtil.log("shoot3SuperFast Finished in " + (System.currentTimeMillis() - startTime));
@@ -288,6 +291,21 @@ public class Shooter {
         leftPusher.setPosition(LEFT_PUSHER_HOLD);
         rightPusher.setPosition(RIGHT_PUSHER_HOLD);
     }
+
+    public static long LEFT_PUSH_PAUSE = 250;
+    public static long RIGHT_PUSH_PAUSE = 250;
+    public void pushLeft() {
+        leftPusher.setPosition(LEFT_PUSHER_PUSH);
+        teamUtil.pause(LEFT_PUSH_PAUSE);
+        leftPusher.setPosition(LEFT_PUSHER_STOW);
+    }
+    public void pushRight() {
+        rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+        teamUtil.pause(RIGHT_PUSH_PAUSE);
+        rightPusher.setPosition(RIGHT_PUSHER_STOW);
+    }
+
+
     // for aimer:
     // close: .000069913x + .218222
     // far: .0000328084x + .415

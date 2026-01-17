@@ -193,7 +193,7 @@ public class Auto extends LinearOpMode {
                 if(useV3) {
                     robot.goalSideV3(true, useIntakeDetector, gateLeaveTime);
                 }else{
-                    robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, true);
+                    //robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, true);
                 }
             } else {
                 robot.humanSide(true);

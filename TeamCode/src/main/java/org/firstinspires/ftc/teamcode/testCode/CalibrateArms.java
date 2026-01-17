@@ -383,15 +383,19 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public static double SHOOTER_VELOCITY = 800;
+    public static teamUtil.Pattern TEST_PATTERN = teamUtil.Pattern.PPG;
     public void testShooter(){
         robot.drive.loop(); // get updated localizer data
         telemetry.addData("AdjustShootMode: " , adjustShootMode);
         double distance = robot.drive.robotGoalDistance() ;
         double velocity = robot.shooter.getVelocityNeeded(distance);
         double pitch = robot.shooter.calculatePitch(distance, velocity);
-        telemetry.addLine(String.format("Distance: %.0f Velocity: %.0f Pitch: %.3f" , distance , velocity , pitch));
-        telemetry.addLine("Reported Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
-        telemetry.addData("Can we shoot?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        telemetry.addLine(String.format("Distance: %.0f " , distance ));
+        telemetry.addLine(String.format("IDEAL Velocity: %.0f IDEAL Pitch: %.3f" , velocity , pitch));
+        telemetry.addLine("ACTUAL Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
+        telemetry.addData("FlywheelSpeed OK?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        telemetry.addData("Heading OK?: " , robot.shooterHeadingReady());
+        telemetry.addLine("-------------------------------------");
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
 
@@ -453,11 +457,15 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.left_trigger > .5) {
             while (gamepad1.left_trigger > .5) {}
-            robot.autoShootFastPreloadV2();
+            robot.intake.setIntakeArtifacts(TEST_PATTERN);
+            robot.autoTransferAndLoadNoWait(0, false, 5000);
+            //robot.autoShootFastPreloadV2();
         }
         if (gamepad1.right_trigger > .5) {
             while (gamepad1.right_trigger > .5) {}
-            robot.autoShootFastV2(true,3000);
+            robot.driveWhileShootingPattern(true, 45, 0, 5000);
+            robot.intake.intakeStop();
+            //robot.autoShootFastV2(true,3000);
         }
     }
 
