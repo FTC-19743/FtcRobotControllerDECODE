@@ -543,6 +543,34 @@ public class Robot {
         thread.start();
     }
 
+    public void autoTransferAndLoadSuperFast(long pause, long timeOut) {
+        transferring.set(true);
+        teamUtil.log("autoTransferAndLoadSuperFast with pause:  " + pause);
+        teamUtil.pause(pause);
+        if(intake.elevatorToFlippersV2(false, false)){ // Don't attempt to detect loaded artifacts
+            intake.logDetectorOutput(); // for debugging purposes
+            autoShootSuperFastPreload();
+        }
+        transferring.set(false);
+    }
+    public void autoTransferAndLoadSuperFastNoWait (long pause, long timeOut) {
+        if (transferring.get()) {
+            teamUtil.log("WARNING: Attempt to autoTransferAndLoadSuperFastNoWait while transferring. Ignored.");
+            return;
+        }
+        transferring.set(true);
+        teamUtil.log("Launching Thread to autoTransferAndLoadSuperFastNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                autoTransferAndLoadSuperFast(pause,timeOut);
+            }
+        });
+        thread.start();
+    }
+
+
+
     public void logShot(double flyWheelVelocity) {
         drive.loop();
         double goalDistance = drive.robotGoalDistance();
@@ -554,9 +582,8 @@ public class Robot {
         teamUtil.log("------------ Ideal Flywheel: " + midSpeed + " Aimer Pitch: " + shooter.calculatePitch(goalDistance, midSpeed));
     }
 
-    // Checks a number of conditions to make sure we can shoot and then launches if possible
-    // Returns true if it did shoot, false otherwise
-    public boolean shootIfCan(boolean requireLoaded){
+    public boolean canShoot(boolean requireLoaded)
+    {
         // Don't attempt to shoot if we are currently shooting
         if (shooter.pusher.moving.get()) return false;
 
@@ -574,13 +601,25 @@ public class Robot {
         // Don't attempt to shoot if flywheel speed is not in acceptable range
         if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
 
-        // Adjust the pitch of the shooter to match distance and flywheel velocity
-        shooter.changeAim(goalDistance, flyWheelVelocity);
-
-        // Launch it
-        shooter.pushOneNoWait();
-        logShot(flyWheelVelocity);
         return true;
+    }
+    // Checks a number of conditions to make sure we can shoot and then launches if possible
+    // Returns true if it did shoot, false otherwise
+    public boolean shootIfCan(boolean requireLoaded){
+        if (canShoot(requireLoaded)) {
+            double goalDistance = drive.robotGoalDistance();
+            double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
+
+            // Adjust the pitch of the shooter to match distance and flywheel velocity
+            shooter.changeAim(goalDistance, flyWheelVelocity);
+
+            // Launch it
+            shooter.pushOneNoWait();
+            logShot(flyWheelVelocity);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static short SHOOT_VELOCITY_THRESHOLD = 1000; // mm/s
@@ -778,6 +817,28 @@ public class Robot {
     public void autoShootFastPreloadV2() {
             intake.fastUnloadStep1NoWait();
     }
+    public void autoShootSuperFastPreload() {
+        shooter.sidePushersStow();
+        intake.superFastUnload(Intake.leftLoad!= Intake.ARTIFACT.NONE, Intake.middleLoad != Intake.ARTIFACT.NONE, Intake.rightLoad != Intake.ARTIFACT.NONE);
+        shooter.sidePushersHold();
+    }
+    public void autoShootSuperFastPreloadNoWait() {
+        teamUtil.log("Launching Thread to autoShootSuperFastPreload");
+        if (intake.flipping.get()) {
+            teamUtil.log("WARNING: autoShootSuperFastPreload called while flipping--Ignored");
+            return;
+        }
+        intake.flipping.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                autoShootSuperFastPreload();
+            }
+        });
+        thread.start();
+
+    }
+
 
     public void autoHoldShotHeading() {
         drive.loop();
@@ -913,6 +974,69 @@ public class Robot {
         }
     }
 
+
+    public boolean autoShootSuperFast(boolean useArms, long timeOut) {
+        long startTime = System.currentTimeMillis();
+        long timeOutTime = startTime + timeOut;
+
+        if (useArms){
+            // wait for initial transfer/flip to complete
+            if (transferring.get() || intake.flipping.get()) {
+                teamUtil.log("autoShootSuperFast waiting on transfer/flip");
+                while ((transferring.get() || intake.flipping.get()) && teamUtil.keepGoing(timeOutTime)) {
+                    autoHoldShotHeading();
+                }
+            }
+            blinkin.setSignal(Blinkin.Signals.GOLD);
+
+            if(!shooterHeadingReady()) return false;
+
+            while (!shooterHeadingReady() && !shooter.isLoaded() && teamUtil.keepGoing(timeOutTime)) {
+                autoHoldShotHeading();
+            }
+            if (System.currentTimeMillis() >=timeOutTime) {
+                teamUtil.log("autoShootSuperFast TIMED OUT waiting for canShoot() to return true");
+            } else {
+                double goalDistance = drive.robotGoalDistance();
+                double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
+                // Adjust the pitch of the shooter to match distance and flywheel velocity
+                shooter.changeAim(goalDistance, flyWheelVelocity); // TODO: Consider adding this to autoHoldShotHeading()
+
+                shooter.shootSuperFastNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, false, true); // launch the shot sequence in another thread
+                // wait for it to finish while adjusting robot heading if needed
+                while (shooter.superFastShooting.get() && teamUtil.keepGoing(timeOutTime)) {
+                    autoHoldShotHeading();
+                }
+            }
+
+            drive.stopMotors();
+            // FAILSAFE: Empty out shooter in case something got left behind. Not worried about aiming at this point.
+            // TODO: This is getting triggered by the 3rd shot.
+            while (!shooter.pusher.moving.get() && shooter.isLoaded() &&  teamUtil.keepGoing(timeOutTime)) {
+                teamUtil.log("autoShootSuperFast --------------- Leftovers in shooter! Emptying");
+                shooter.pushOneNoWait();
+                logShot(shooter.leftFlywheel.getVelocity());
+            }
+        } else {
+            blinkin.setSignal(Blinkin.Signals.GOLD);
+            teamUtil.pause(1000);
+        }
+
+        blinkin.setSignal(Blinkin.Signals.OFF);
+        if (System.currentTimeMillis() <= timeOutTime) {
+            shooter.pusher.reset(false);
+            drive.stopMotors();
+            teamUtil.log("autoShootSuperFast Finished in " + (System.currentTimeMillis() - startTime));
+            return true;
+        } else {
+            shooter.pusher.reset(false);
+            drive.stopMotors();
+            teamUtil.log("autoShootSuperFast TIMED OUT");
+            return false;
+        }
+    }
+
+
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Main Auto Code
@@ -954,7 +1078,8 @@ public class Robot {
     public static double B05_SHOOT1_Y = 850;
     public static double B05_SHOOT1_X = 850;
     public static double B05_SHOOT1_H = 45;
-    public static double B05_SHOT1_VEL = 820;
+    public static double B05_SHOT1_VEL = 700;
+    public static float  B05_SHOT1_PITCH = .315f;
 
     public static double B06_PICKUP1_Y = 1200;
     public static double B06_SETUP_Y_DRIFT = 200;
@@ -966,7 +1091,8 @@ public class Robot {
     public static double B06_SETUP1_H = 0;
     public static double B06_SETUP_END_VEL = B00_CORNER_VELOCITY;
     public static long B06_SETUP1_PAUSE = 150;
-    public static double B06_SHOT34_VELOCITY = 840;
+    public static double B06_SHOT34_VELOCITY = 800;
+    public static float B06_SHOT34_PITCH = .315f;
 
 
     public static double B07_PICKUP1_X = 420;
@@ -1027,7 +1153,9 @@ public class Robot {
     public static double B08_SHOOT4_END_VEL = 1000; // was 400 before GoalSideV3
 
 
-    public static double B08_SHOT5_VELOCITY = 820;
+    public static double B08_SHOT5_VELOCITY = 760;
+    public static double B08_SHOT5_PITCH = .315f;
+
     public static double B08_SHOOT5_X = 1000;
     public static double B08_SHOOT5_Y = 450 ;
     public static double B08_SHOOT5_OFFSET = 600;
@@ -1063,9 +1191,11 @@ public class Robot {
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
-            shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots
+            shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots. ALSO set pitch!
             Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
-            autoShootFastPreloadV2(); // go fast on preloads--don't bother with pattern
+            shooter.aim(B05_SHOT1_PITCH);
+            shooter.sidePushersHold();
+            //autoShootSuperFastPreloadNoWait(); // Don't need this any more, load directly to shooter
         }
         if (useIntakeDetector) {
             if (intake.startDetector()) {
@@ -1086,7 +1216,7 @@ public class Robot {
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
         // Shoot preloads
         intake.signalArtifacts(); // flippers were operating in another thread while we were moving to this point.
-        if (!autoShootFastV2(useArms,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
+        if (!autoShootSuperFast(useArms,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
 
         /////////////////////////////Intake 2nd group and shoot
         // Setup to pickup group 2
@@ -1115,7 +1245,7 @@ public class Robot {
         drive.stopMotors(); // kill forward momentum without tipping robot (odo pods) off of ground
         teamUtil.pause(B07_REVERSE_PAUSE);
         intake.signalArtifacts();
-        if (useArms) autoTransferAndLoadFastNoWaitV2(0, 3000);
+        if (useArms) autoTransferAndLoadSuperFastNoWait(0, 3000);
         // back up without turning robot to ensure we clear group 3
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT2_MID_X, B08_SHOOT2_MID_Y,B08_SHOOT2_DH, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
         // rotate and strafe to shooting position
@@ -1126,12 +1256,18 @@ public class Robot {
             return;
         }
         // shoot second set of balls
-        if (!autoShootFastV2(useArms,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
+        if (!autoShootSuperFast(useArms,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
 
-
+        if (true) {
+            stopRobot();
+            return;
+        }
         /////////////////////////////Intake 3rd group, empty ramp and shoot
-        if (useArms) shooter.setShootSpeed(B06_SHOT34_VELOCITY);
-        Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
+        if (useArms) {
+            shooter.setShootSpeed(B06_SHOT34_VELOCITY);
+            Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
+            shooter.aim(B06_SHOT34_PITCH);
+        }
         // Setup to pickup group 3
         teamUtil.log("==================== Group 3 (empty ramp) ================");
         if (useArms) { intake.getReadyToIntakeNoWait(); }
@@ -1173,10 +1309,7 @@ public class Robot {
         // shoot 3rd set of balls
         if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,5000)) return;
 
-        if (true) {
-            stopRobot();
-            return;
-        }
+
         /////////////////////////////Intake 4th group and shoot
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
@@ -1214,8 +1347,12 @@ public class Robot {
 
         ///////////////////////////// Intake 5th group and shoot
         teamUtil.log("==================== Group 5 ================");
-        if (useArms) shooter.setShootSpeed(B08_SHOT5_VELOCITY);
-        Shooter.VELOCITY_COMMANDED = B08_SHOT5_VELOCITY;
+        if (useArms) {
+            shooter.setShootSpeed(B08_SHOT5_VELOCITY);
+            Shooter.VELOCITY_COMMANDED = B08_SHOT5_VELOCITY;
+            shooter.aim(B08_SHOT5_PITCH);
+
+        }
         if (!getMoreBallsV2()) return;
         if (useArms) autoTransferAndLoadNoWait(B08_SHOT5_INTAKE_PAUSE, true,3000);
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;

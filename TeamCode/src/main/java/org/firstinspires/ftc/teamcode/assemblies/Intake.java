@@ -290,6 +290,40 @@ public class Intake {
     public static long FAST3_LEFT_ROLL_PAUSE = 600; // use big number for timing based stuff.  Set to small number if relying on shooter detector
     public static long FAST3_RIGHT_ROLL_PAUSE = 600;
 
+    public void superFastUnload(boolean leftLoaded, boolean middleLoaded, boolean rightLoaded) {
+        flipping.set(true);
+        middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
+        left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin left
+        right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin right
+        teamUtil.pause(FAST3_UNLOAD_PAUSE);
+        middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
+        if (!middleLoaded && leftLoaded) {
+            left_flipper.setPosition(FLIPPER_CEILING); // release left and give it a head start on the right
+            teamUtil.pause(FAST3_LEFT_ROLL_PAUSE);
+        }
+        left_flipper.setPosition(FLIPPER_CEILING); // release left and give it a head start on the right
+        right_flipper.setPosition(FLIPPER_CEILING); // release right
+
+        flipping.set(false);
+        teamUtil.log("superFastUnload Finished");
+    }
+    public void superFastUnloadNoWait(boolean leftLoaded, boolean middleLoaded, boolean rightLoaded) {
+        teamUtil.log("Launching Thread to superFastUnload");
+        if (flipping.get()) {
+            teamUtil.log("WARNING: superFastUnload called while flipping--Ignored");
+            return;
+        }
+        flipping.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                superFastUnload( leftLoaded,  middleLoaded,  rightLoaded);
+            }
+        });
+        thread.start();
+    }
+
+
     public void fastUnloadStep1() {
         flipping.set(true);
         middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle

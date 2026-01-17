@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @Config
 public class Shooter {
     HardwareMap hardwareMap;
@@ -218,26 +220,64 @@ public class Shooter {
     public static long SF_RIGHT_PUSH_PAUSE = 200;
     public static long SF_LAST_SHOT_PAUSE = 200;
 
-
-    // Assumes 3 artifacts are loaded into the shooter and all 3 flippers are retracted
+    public AtomicBoolean superFastShooting = new AtomicBoolean(false);
+    // Assumes 1-3 artifacts are loaded into the shooter and at least one has settled in to the shooter itself.  all 3 flippers are retracted
     // Does not use sensors in any way, doesn't detect stalls, etc.
-    public void shoot3SuperFast() {
+    public void shoot3SuperFast(boolean pushLeftFirst, boolean reset, boolean logShots) {
+        superFastShooting.set(true);
         long startTime = System.currentTimeMillis();
         teamUtil.log("Shoot3Fast");
+        if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
         pusher.push1NoWait();
         teamUtil.pause(SF_SHOT_PAUSE);
-        leftPusher.setPosition(LEFT_PUSHER_PUSH);
-        teamUtil.pause(SF_LEFT_PUSH_PAUSE);
-        leftPusher.setPosition(LEFT_PUSHER_STOW);
-        pusher.push1NoWait();
-        teamUtil.pause(SF_SHOT_PAUSE);
-        rightPusher.setPosition(RIGHT_PUSHER_PUSH);
-        teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
-        pusher.push1NoWait();
-        teamUtil.pause(SF_LAST_SHOT_PAUSE);
-        rightPusher.setPosition(RIGHT_PUSHER_STOW);
-        pusher.reset(false);
-        teamUtil.log("Shoot3Fast Finished in " + (System.currentTimeMillis() - startTime));
+        if (pushLeftFirst) {
+            leftPusher.setPosition(LEFT_PUSHER_PUSH);
+            teamUtil.pause(SF_LEFT_PUSH_PAUSE);
+            leftPusher.setPosition(LEFT_PUSHER_STOW);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_SHOT_PAUSE);
+            rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+            teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_LAST_SHOT_PAUSE);
+            rightPusher.setPosition(RIGHT_PUSHER_STOW);
+        } else {
+            rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+            teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
+            rightPusher.setPosition(RIGHT_PUSHER_STOW);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_SHOT_PAUSE);
+            leftPusher.setPosition(LEFT_PUSHER_PUSH);
+            teamUtil.pause(SF_LEFT_PUSH_PAUSE);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_LAST_SHOT_PAUSE);
+            leftPusher.setPosition(LEFT_PUSHER_STOW);
+        }
+        if (reset) pusher.reset(false);
+        teamUtil.log("shoot3SuperFast Finished in " + (System.currentTimeMillis() - startTime));
+        superFastShooting.set(false);
+    }
+
+
+    public void shootSuperFastNoWait (boolean pushLeftFirst, boolean reset, boolean logShots) {
+        teamUtil.log("Launching Thread to shootSuperFastNoWait");
+        if (superFastShooting.get()) {
+            teamUtil.log("WARNING: shootSuperFastNoWait called while superFastShooting--Ignored");
+            return;
+        }
+        superFastShooting.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shoot3SuperFast(pushLeftFirst, reset, logShots);
+            }
+        });
+        thread.start();
+
     }
 
     public void sidePushersStow() {

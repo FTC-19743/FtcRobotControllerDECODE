@@ -125,7 +125,7 @@ public class Teleop extends LinearOpMode {
                 }
 
                 if(shootingMode){
-                    if(robot.canShoot()){
+                    if(robot.canShoot()){ // TODO: is this the right version of this method? Seems like it using old flywheel speed check logic
                         robot.blinkin.setSignal(Blinkin.Signals.READY_TO_SHOOT);
                     }else{
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);

@@ -429,7 +429,7 @@ public class CalibrateArms extends LinearOpMode {
         if(gamepad1.aWasReleased()){
             robot.shooter.sidePushersHold();
             while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
-            robot.shooter.shoot3SuperFast();
+            robot.shooter.shoot3SuperFast(true, true, true);
 //            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
             //boolean result = robot.shootIfCan(true);
             //teamUtil.log("shootIfCan returned "+result);
