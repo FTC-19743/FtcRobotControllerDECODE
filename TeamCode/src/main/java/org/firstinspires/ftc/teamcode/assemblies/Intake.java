@@ -584,7 +584,8 @@ public class Intake {
             return;
         }
         if(elevatorToFlippersV2(false, detectLoaded)){
-            flipNextFast();
+            superFastUnloadNoWait(leftLoad!= ARTIFACT.NONE,middleLoad!= ARTIFACT.NONE,rightLoad!= ARTIFACT.NONE);
+
         }
         teamUtil.log("elevatorToShooterFast finished");
         elevatorMoving.set(false);
@@ -667,7 +668,7 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
-        detectorMode = DETECTION_MODE.LOADED;
+        if(detectLoaded) detectorMode = DETECTION_MODE.LOADED;
         teamUtil.pause(ELEVATOR_PAUSE_2);
 
         if (waitForGround) {

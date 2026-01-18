@@ -388,12 +388,12 @@ public class CalibrateArms extends LinearOpMode {
         robot.drive.loop(); // get updated localizer data
         telemetry.addData("AdjustShootMode: " , adjustShootMode);
         double distance = robot.drive.robotGoalDistance() ;
-        double velocity = robot.shooter.getVelocityNeeded(distance);
-        double pitch = robot.shooter.calculatePitch(distance, velocity);
+        double velocity = robot.shooter.calculateVelocityV2(distance);
+        double pitch = robot.shooter.calculatePitchV2(distance);
         telemetry.addLine(String.format("Distance: %.0f " , distance ));
         telemetry.addLine(String.format("IDEAL Velocity: %.0f IDEAL Pitch: %.3f" , velocity , pitch));
         telemetry.addLine("ACTUAL Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
-        telemetry.addData("FlywheelSpeed OK?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        //telemetry.addData("FlywheelSpeed OK?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
         telemetry.addData("Heading OK?: " , robot.shooterHeadingReady());
         telemetry.addLine("-------------------------------------");
         robot.shooter.outputTelemetry();
@@ -402,10 +402,13 @@ public class CalibrateArms extends LinearOpMode {
         if(gamepad1.startWasReleased()){
             adjustShootMode= !adjustShootMode;
         }
+        /*
         if (adjustShootMode && robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity())) {
             //robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
             robot.shooter.changeAim(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity());
         }
+
+         */
         if (gamepad1.rightBumperWasReleased()){
             //robot.shooter.pusher.calibrate();
             //robot.shooter.pusher.setPower(robot.shooter.pusher.RTP_MAX_VELOCITY);

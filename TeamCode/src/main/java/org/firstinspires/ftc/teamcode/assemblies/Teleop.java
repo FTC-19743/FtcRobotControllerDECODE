@@ -118,7 +118,6 @@ public class Teleop extends LinearOpMode {
                     if(shootingMode){
                         shootingMode = false;
                         robot.blinkin.setSignal(Blinkin.Signals.OFF);
-                        robot.shooter.setShootSpeed(robot.shooter.IDLE_FLYWHEEL_VELOCITY);
                     }else{
                         shootingMode = true;
                     }
@@ -130,6 +129,8 @@ public class Teleop extends LinearOpMode {
                     }else{
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);
                     }
+                }else{
+                    robot.shooter.setShootSpeed(Math.min(robot.shooter.calculateVelocityV2(robot.drive.robotGoalDistance()),Shooter.MAX_IDLE_FLYWHEEL_VELOCITY));
                 }
                 if(shootingMode){
                     robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
@@ -164,26 +165,31 @@ public class Teleop extends LinearOpMode {
                 ////////////// SHOOTER ///////////////////////////
 
                 if(shootingMode){
-                    robot.shooter.adjustShooterV3(robot.drive.robotGoalDistance());
+                    robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
                 }
 
                 if(gamepad2.rightBumperWasReleased()){
                     robot.resetFlippersAndPusherNoWait(500);
                 }
                 if(gamepad2.bWasReleased()){
-                    robot.shootArtifactLocationNoWait(Intake.Location.RIGHT);
+                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
                 }
                 if(gamepad2.xWasReleased()){
-                    robot.shootArtifactLocationNoWait(Intake.Location.LEFT);
+                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
                 }
+
                 if(gamepad2.yWasReleased()){
-                    robot.shootArtifactLocationNoWait(Intake.Location.CENTER);
+                    robot.shooter.pushOneNoWait();
                 }
+
                 if(gamepad2.aWasReleased()){
+
                     robot.shooter.pusher.reset(false);
                 }
                 if(gamepad2.right_trigger > .6f && shootingMode){
-                    robot.shootIfCanTeleop(); // blinkin based on the result?
+                    if(!robot.shooter.superFastShooting.get()){
+                        robot.shootIfCanTeleop(); // blinkin based on the result?
+                    }
                 }
 
                 ///////////// ENDGAME //////////////////////////////
@@ -236,12 +242,12 @@ public class Teleop extends LinearOpMode {
 
                 if(gamepad2.leftBumperWasReleased()){
                     if(robot.intake.servoPositionIs(robot.intake.left_flipper, Intake.FLIPPER_TRANSFER)){
-                        robot.intake.flipNextFastNoWait();
+                        robot.intake.superFastUnloadNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,Intake.middleLoad!= Intake.ARTIFACT.NONE,Intake.rightLoad!= Intake.ARTIFACT.NONE);
                     }else{
                         if(limelightOverride){
                             robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
                         }
-                        robot.intake.elevatorToShooterFastNoWait(true); // use loaded detector
+                        robot.intake.elevatorToShooterFastNoWait(false); // use loaded detector
                     }
                 }
                 if (!limelightOverride) {

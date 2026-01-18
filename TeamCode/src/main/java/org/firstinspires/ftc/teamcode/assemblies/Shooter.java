@@ -75,8 +75,8 @@ public class Shooter {
     public static double MID_SHORT_DISTANCE_THRESHOLD = 1400;
 
     public static double VELOCITY_COMMANDED;
-    public static double VELOCITY_COMMANDED_THRESHOLD = 50;
-    public static double IDLE_FLYWHEEL_VELOCITY = 800;
+    public static double VELOCITY_COMMANDED_THRESHOLD = 30;
+    public static double MAX_IDLE_FLYWHEEL_VELOCITY = 800;
 
     /// /////////////OLD DATA////////////////////////
     // for aimer:
@@ -218,6 +218,10 @@ public class Shooter {
     public static long SF_SHOT_PAUSE = 100;
     public static long SF_LEFT_PUSH_PAUSE = 200;
     public static long SF_RIGHT_PUSH_PAUSE = 200;
+    public static long SF_LEFT_PUSH_PAUSE_NEAR = 200;
+    public static long SF_RIGHT_PUSH_PAUSE_NEAR = 200;
+    public static long SF_LEFT_PUSH_PAUSE_FAR = 300;
+    public static long SF_RIGHT_PUSH_PAUSE_FAR = 300;
     public static long SF_LAST_SHOT_PAUSE = 100;
     public static long SF_LAST_PADDLE_PAUSE = 100;
 
@@ -294,6 +298,7 @@ public class Shooter {
 
     public static long LEFT_PUSH_PAUSE = 250;
     public static long RIGHT_PUSH_PAUSE = 250;
+
     public void pushLeft() {
         leftPusher.setPosition(LEFT_PUSHER_PUSH);
         teamUtil.pause(LEFT_PUSH_PAUSE);
@@ -405,6 +410,15 @@ public class Shooter {
         if(details)teamUtil.log("adjustShooterV3 Finished");
     }
 
+    public void adjustShooterV4(double distance){
+        if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
+
+        VELOCITY_COMMANDED = calculateVelocityV2(distance);
+        setShootSpeed(VELOCITY_COMMANDED);
+        aim(calculatePitchV2(distance));
+        if(details)teamUtil.log("adjustShooterV3 Finished");
+    }
+
     public static double minSpeedA = 0.0000490408;
     public static double minSpeedB = 0.0601474;
     public static double minSpeedC = 638.0056;
@@ -429,7 +443,6 @@ public class Shooter {
     public static double pitchD = 9.91034e-8;
     public static double pitchE = 4.73733e-7;
     public static double pitchF = -6.27271e-7;
-    public static double longPitch = .48; // .44 with the old function
 
     /*
     public static double pitchA = 0.012;
@@ -454,27 +467,40 @@ public class Shooter {
         }
     }
 
-    public static double pitchANew = -4.682e-8;
-    public static double pitchBNew = 0.0002388;
-    public static double pitchCNew = 0.1178;
+    public static double pitchANew = -2.8869e-8;
+    public static double pitchBNew = 0.000186393;
+    public static double pitchCNew = 0.153392;
+    public static double longPitch = .44; // .44 with the old function
+
 
     public double calculatePitchV2(double distance){
-        return pitchANew*distance*distance+pitchBNew*distance+pitchCNew;
+        if (distance<MID_DISTANCE_THRESHOLD){
+            return pitchANew*distance*distance+pitchBNew*distance+pitchCNew;
+        }else{
+            return longPitch;
+        }
     }
 
-    public static double velocityANew = 0.0000317;
-    public static double velocityBNew = 0.114291;
-    public static double velocityCNew = 675.9;
+    public static double velocityANew = 0.000142857;
+    public static double shortVelocityBNew = -0.209524;
+    public static double velocityCNew = 895.83333;
+
+    public static double longVelocityM = 0.3;
+    public static double longVelocityB = 540;
 
     public double calculateVelocityV2(double distance){
-        return velocityANew*distance*distance+velocityBNew*distance+velocityCNew;
+        if (distance<MID_DISTANCE_THRESHOLD){
+            return velocityANew*distance*distance+shortVelocityBNew*distance+velocityCNew;
+        }else{
+            return longVelocityM*distance+longVelocityB;
+        }
     }
 
     public void changeAim(double distance, double velocity){ // account for robot velocity?
         double angle = calculatePitch(distance, velocity);
         aim(angle);
     }
-
+    /*
     public boolean flywheelSpeedOK(double distance, double velocity){
         if(distance<MID_DISTANCE_THRESHOLD) {
             double minV = calculateMinSpeed(distance);
@@ -491,6 +517,8 @@ public class Shooter {
             return Math.abs(velocity-getVelocityNeeded(distance)) < .0001;
         }
     }
+
+     */
 
     /// ////////////////////////////////////////////////////////
     // NOT USED

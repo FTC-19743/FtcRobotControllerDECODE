@@ -45,6 +45,7 @@ public class Robot {
 
     public static boolean details = false;
 
+
     // Set teamUtil.theOpMode before calling
     public Robot() {
         telemetry = teamUtil.theOpMode.telemetry;
@@ -73,6 +74,7 @@ public class Robot {
     }
 
     public void calibrate() {
+        foot.setPosition(FOOT_CALIBRATE_POS);
         drive.calibrate();
         intake.calibrate();
         shooter.calibrate();
@@ -246,6 +248,7 @@ public class Robot {
     }
 
     public void resetFlippersAndPusher(long pause){
+        shooter.sidePushersStow();
         intake.flippersToCeiling();
         shooter.pushOneBackwards(pause);
         shooter.pushOne();
@@ -282,12 +285,11 @@ public class Robot {
                 Math.abs(shooter.leftFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD;
     }
 
-    // TODO: Why do we have two of these?
     public boolean canShoot(){
         return shooterFlyWheelsReady() && shooterHeadingReady();
     }
 
-    public boolean canShoot(boolean requireLoaded) {
+    public boolean canShootAuto(boolean requireLoaded) {
         // Don't attempt to shoot if we are currently shooting
         if (shooter.pusher.moving.get()) return false;
 
@@ -303,7 +305,7 @@ public class Robot {
         double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
         // Don't attempt to shoot if flywheel speed is not in acceptable range
-        if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
+        //if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
 
         return true;
     }
@@ -311,7 +313,7 @@ public class Robot {
     // Checks a number of conditions to make sure we can shoot and then launches if possible
     // Returns true if it did shoot, false otherwise
     public boolean shootIfCanAuto(boolean requireLoaded){
-        if (canShoot(requireLoaded)) {
+        if (canShootAuto(requireLoaded)) {
             double goalDistance = drive.robotGoalDistance();
             double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
@@ -327,9 +329,11 @@ public class Robot {
         }
     }
 
+
+
     public static short SHOOT_VELOCITY_THRESHOLD = 1000; // mm/s
     public boolean shootIfCanTeleop(){
-        boolean details = false;
+        boolean details = true;
         // Don't shoot if the robot is moving too fast
         if(Math.sqrt(Math.pow(drive.oQlocalizer.velX_mmS, 2) + Math.pow(drive.oQlocalizer.velY_mmS, 2)) > SHOOT_VELOCITY_THRESHOLD){
             if(details){
@@ -365,21 +369,26 @@ public class Robot {
         double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
         // Don't attempt to shoot if flywheel speed is not in acceptable range
-        if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)){
+        if (!shooterFlyWheelsReady()){
             if(details){
                 teamUtil.log("Shootifcan fail: Flywheel Speed not in acceptable range");
             }
             return false;
         }
-        // Launch it
-        shooter.pushOneNoWait();
-        logShot(flyWheelVelocity);
-        teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
-        //0 balls in the flippers
-        if(!intake.ballsLeftToShoot()){
-            intake.intakeStart();
+
+        if(goalDistance < Shooter.MID_DISTANCE_THRESHOLD){
+            Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_NEAR;
+            Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_NEAR;
+        }else{
+            Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_FAR;
+            Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_FAR;
         }
-        intake.flipNextFastNoWait();
+        // Launch it
+        shooter.shootSuperFastNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,true,false);
+
+        teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
+        intake.intakeStart();
+
         return true;
     }
 
@@ -451,60 +460,71 @@ public class Robot {
     }
 
     //////////////////////// Artifact Color Based Single Shots
+    public AtomicBoolean shootingArtifactColor = new AtomicBoolean(false);
 
-//    public void shootArtifactColor(Intake.ARTIFACT color){
-//        teamUtil.log("shootArtifactColor called");
-//        intake.detectLoadedArtifacts();
-//        int ballCount = intake.loadedBallNum();
-//        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
-//        if(color == Intake.ARTIFACT.NONE){
-//            teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");
-//            return;
-//        }
-//        if(ballCount == 0) {
-//            teamUtil.log("shootArtifactColor called without any artifacts loaded");
-//            return;
-//        }
-//        if(loadedArtifacts[0] != color && loadedArtifacts[1] != color && loadedArtifacts[2] != color){
-//            teamUtil.log("shootArtifactColor called without a loaded artifact of the specified color");
-//            return;
-//        }
-//        if(color == loadedArtifacts[1]){
-//            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
-//            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-//            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
-//            shooter.pushOne();
-//            teamUtil.log("shootArtifactColor: Moved middle flipper");
-//        }else if(color == loadedArtifacts[0]){
-//            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
-//            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-//            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
-//            teamUtil.pause(EDGE_PUSHER_PAUSE);
-//            shooter.pushOne();
-//            teamUtil.log("shootArtifactColor: Moved left flipper");
-//        }else{
-//            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
-//            teamUtil.pause(FIRST_UNLOAD_PAUSE);
-//            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
-//            teamUtil.pause(EDGE_PUSHER_PAUSE);
-//            shooter.pushOne();
-//            teamUtil.log("shootArtifactColor: Moved right flipper");
-//        }
-//        if(ballCount == 1){
-//            intake.intakeStart();
-//        }
-//
-//    }
-//    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
-//        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
-//        Thread thread = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                shootArtifactColor(color);
-//            }
-//        });
-//        thread.start();
-//    }
+
+    public void shootArtifactColor(Intake.ARTIFACT color){
+
+        shootingArtifactColor.set(true);
+        teamUtil.log("shootArtifactColor called");
+        Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
+        if(color == Intake.ARTIFACT.NONE){
+            teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");
+            shootingArtifactColor.set(false);
+
+            return;
+        }
+        int ballCount = intake.numBallsInFlippers();
+
+        if(loadedArtifacts[0] != color && loadedArtifacts[1] != color && loadedArtifacts[2] != color){
+            teamUtil.log("shootArtifactColor called without a loaded artifact of the specified color");
+            shootingArtifactColor.set(false);
+
+            return;
+        }
+        if(color == loadedArtifacts[1]){
+            intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(Intake.FLIPPER_UNLOAD_PAUSE);
+            intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING);
+            shooter.pushOne();
+            teamUtil.log("shootArtifactColor: Moved middle flipper");
+        }else if(color == loadedArtifacts[0]){
+            intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
+            shooter.pushLeft();
+            shooter.pushOne();
+            teamUtil.log("shootArtifactColor: Moved left flipper");
+        }else{
+            intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
+            teamUtil.pause(FIRST_UNLOAD_PAUSE);
+            intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
+            shooter.pushRight();
+            shooter.pushOne();
+            teamUtil.log("shootArtifactColor: Moved right flipper");
+        }
+        if(ballCount == 1){
+            intake.intakeStart();
+        }
+        shootingArtifactColor.set(false);
+
+
+    }
+    public void shootArtifactColorNoWait(Intake.ARTIFACT color){
+        if (shootingArtifactColor.get()) {
+            teamUtil.log("WARNING: Attempt to shootArtifactColorNoWait while shootingArtifactColor. Ignored.");
+            return;
+        }
+        shootingArtifactColor.set(true);
+        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shootArtifactColor(color);
+            }
+        });
+        thread.start();
+    }
 
     //////////////////////// Auto Pattern Based Shooting
 
