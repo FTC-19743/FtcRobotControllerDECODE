@@ -141,7 +141,7 @@ public class TestAutoPaths extends LinearOpMode{
             //robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
             long startTime = System.currentTimeMillis();
 
-            robot.mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL);
+            robot.mirroredDriveToShotPositionFast(Robot.B05_SHOT_X, Robot.B05_SHOT_Y, Robot.B05_SHOT_RH, Robot.B05_SHOT_END_VEL, Robot.B05_SHOT_STRAIGHT_PERCENT, Robot.B05_SHOT_DRIFT_PERCENT);
             teamUtil.log("mirroredDriveToShotPositionFast finished in " + (System.currentTimeMillis() - startTime));
             robot.blinkin.setSignal(Blinkin.Signals.OFF);
             boolean targetHeadingWasOK = false;

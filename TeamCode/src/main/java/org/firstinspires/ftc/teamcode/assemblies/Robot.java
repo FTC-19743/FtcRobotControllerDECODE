@@ -682,8 +682,15 @@ public class Robot {
                     }
                 }
 
-            } else if (System.currentTimeMillis() > shot3Time) {
-                break;
+            } else {
+                if (numShots == 0) {
+                    teamUtil.log("USE ARMS is false. Logging position for first shot");
+                    logShot(0);
+                    numShots++;
+                }
+                if (System.currentTimeMillis() > shot3Time) {
+                    break;
+                }
             }
         }
         // Empty out shooter in case something got left behind. Not worried about aiming at this point.
@@ -810,6 +817,8 @@ public class Robot {
 
         } else {
             drive.stopMotors();
+            teamUtil.log("USE ARMS is false. Logging position for first shot");
+            logShot(0);
             blinkin.setSignal(Blinkin.Signals.GOLD);
             teamUtil.pause(1000);
         }
@@ -833,133 +842,41 @@ public class Robot {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Main Auto Code
 
-    public static int GOAL_LOCALIZE_X = 1617;
-    public static int GOAL_LOCALIZE_Y = 824;
-    public static double GOAL_LOCALIZE_H = 0;
-    public static int HUMAN_LOCALIZE_X = 0;
-    public static int HUMAN_LOCALIZE_Y = 0;
-    public static double HUMAN_LOCALIZE_H = 0;
+    // This is what we are aiming for throughout auto for max consistency while minimizing travel distances
+    public static int IDEAL_GOAL_DISTANCE = 1200;
+    public static int IDEAL_FLYWHEEL = 840;
+    public static float IDEAL_PITCH = 0.33f;
+
+    public static int LOCALIZE_GOAL_X = 1617;
+    public static int LOCALIZE_GOAL_Y = 824;
+    public static double LOCALIZE_GOAL_H = 0;
+    public static int LOCALIZE_HUMAN_X = 0;
+    public static int LOCALIZE_HUMAN_Y = 0;
+    public static double LOCALIZE_HUMAN_H = 0;
 
     public void setStartLocalizedPosition () {
         if (teamUtil.SIDE== teamUtil.Side.GOAL) {
             if (teamUtil.alliance== teamUtil.Alliance.BLUE) {
-                drive.setRobotPosition(GOAL_LOCALIZE_X, GOAL_LOCALIZE_Y, GOAL_LOCALIZE_H);
+                drive.setRobotPosition(LOCALIZE_GOAL_X, LOCALIZE_GOAL_Y, LOCALIZE_GOAL_H);
             } else {
-                drive.setRobotPosition(GOAL_LOCALIZE_X, -GOAL_LOCALIZE_Y, GOAL_LOCALIZE_H);
+                drive.setRobotPosition(LOCALIZE_GOAL_X, -LOCALIZE_GOAL_Y, LOCALIZE_GOAL_H);
             }
         } else {
             if (teamUtil.alliance== teamUtil.Alliance.BLUE) {
-                drive.setRobotPosition(HUMAN_LOCALIZE_X, HUMAN_LOCALIZE_Y, HUMAN_LOCALIZE_H);
+                drive.setRobotPosition(LOCALIZE_HUMAN_X, LOCALIZE_HUMAN_Y, LOCALIZE_HUMAN_H);
             } else {
-                drive.setRobotPosition(HUMAN_LOCALIZE_X, -HUMAN_LOCALIZE_Y, HUMAN_LOCALIZE_H);
+                drive.setRobotPosition(LOCALIZE_HUMAN_X, -LOCALIZE_HUMAN_Y, LOCALIZE_HUMAN_H);
             }
         }
     }
 
     public static double B00_MAX_SPEED = 2200;
     public static double B00_CORNER_VELOCITY = 1800;
-    public static double B00_SHOOT_VELOCITY = 0;
     public static double B00_PICKUP_VELOCITY = 2000;
-    public static double B00_PICKUP_END_VELOCITY = 2000;
-    public static double B01_TILE_LENGTH = 610;
-
-    public static double B05_DRIFT_1 = 50;
-    public static double B05_DRIFT_2 = 140;
-
-    public static double B05_SHOOT1_END_VEL = 400;
-    public static double B05_SHOOT1_Y = 850;
-    public static double B05_SHOOT1_X = 850;
-    public static double B05_SHOOT1_H = 45;
-    public static double B05_SHOT1_VEL = 700;
-    public static float  B05_SHOT1_PITCH = .315f;
-
-    public static double B06_PICKUP1_Y = 1200;
-    public static double B06_SETUP_Y_DRIFT = 200;
-    public static double B06_SETUP_Y_DRIFTV3 = 170;
-    public static double B06_SETUP1_Y = B06_PICKUP1_Y-B06_SETUP_Y_DRIFT;
-    public static double B06_SETUP1_YV3 = B06_PICKUP1_Y-B06_SETUP_Y_DRIFTV3;
-    public static double B06_SETUP1_X = 670;
-    public static double B06_SETUP1_DH = 90;
-    public static double B06_SETUP1_H = 0;
-    public static double B06_SETUP_END_VEL = B00_CORNER_VELOCITY;
-    public static long B06_SETUP1_PAUSE = 150;
-    public static double B06_SHOT34_VELOCITY = 800;
-    public static float B06_SHOT34_PITCH = .315f;
-
-
-    public static double B07_PICKUP1_X = 420;
-    public static double B07_PICKUP1_ADJ = 0;
-    public static double B07_PICKUP_RAMP_END_VEL = 750;
-    public static double B07_GATE_END_VEL = 500;
-
-    public static double B07_PICKUP1_H = 180;
-    public static double B07_RAMP_VELOCITY = 1000; // was 600 before GoalSideV3
-    public static double B07_RAMP_Y = B06_PICKUP1_Y+190;
-    public static double B07_RAMP_X = 200;
-    public static double B07_RAMP_X_DRIFT = 100;
-    public static double B07_RAMP_H = 90;
-    public static double B07_RAMP_FY = B06_PICKUP1_Y;
-    public static double B07_RAMP_FH = 270;
-    public static long B07_RAMP_TIMEOUT = 750;
-    public static long B07_PICKUP2_INTAKE_PAUSE = 500;
-    public static long B07_PICKUP3_INTAKE_PAUSE = 0;
-    public static long B07_PICKUP4_INTAKE_PAUSE = 0;
-
-    public static long B07_REVERSE_PAUSE = 200;
-    public static long B07_BACKUP_X = -200;
-
-    public static double B07_END_PICKUP_X_ADJUSTMENT = 100;
-    public static double B07_SETUP2_DH = 105;
-    public static double B07_SETUP_Y_DRIFT = 170;
-    public static double B07_SETUP2_Y = B06_PICKUP1_Y-B07_SETUP_Y_DRIFT;
-    public static double B07_SETUP2_X = B06_SETUP1_X-B01_TILE_LENGTH+50;
-
-    public static double B07_SETUP4_X = B06_SETUP1_X-B01_TILE_LENGTH;
-    public static double B07_SETUP4_Y = B06_PICKUP1_Y-100;
-
-    public static double B08_SHOOT2_MID_X = B07_PICKUP1_X;
-    public static double B08_SHOOT2_MID_Y = 1100;
-    public static double B08_SHOOT2_Y = 650;
-    public static double B08_SHOOT2_DRIFT = 200;
-    public static double B08_SHOOT2_DRIFTV3 = 300;
-    public static double B08_SHOOT2_X = 550;
-    public static double B08_SHOOT2_H = 45;
-    public static double B08_SHOOT2_DH = 315;
-    public static double B08_SHOOT2_END_VEL = 1000; // was 400 before GoalSideV3
-
-    public static long B08_PICKUP3_PAUSE = 150;
-    public static long B08_PICKUP4_PAUSE = 200;
-
-    public static double B08_SHOOT3_Y = B08_SHOOT2_Y;
-    public static double B08_SHOOT3_DRIFT = 100;
-    public static double B08_SHOOT3_X = B08_SHOOT2_X;
-    public static double B08_SHOOT3_H = B08_SHOOT2_H;
-    public static double B08_SHOOT3_DH = 340;
-    public static double B08_SHOOT3_END_VEL = 1000; // was 400 before GoalSideV3
-
-    public static double B08_SHOOT4_Y = B08_SHOOT3_Y;
-    public static double B08_SHOOT4_DRIFT = 100;
-    public static double B08_SHOOT4_X = B08_SHOOT3_X;
-    public static double B08_SHOOT4_H = B08_SHOOT3_H;
-    public static double B08_SHOOT4_DH = 350;
-    public static double B08_SHOOT4_END_VEL = 1000; // was 400 before GoalSideV3
-
-
-    public static double B08_SHOT5_VELOCITY = 760;
-    public static double B08_SHOT5_PITCH = .315f;
-
-    public static double B08_SHOOT5_X = 650;
-    public static double B08_SHOOT5_Y = 700 ;
-    public static double B08_SHOOT5_OFFSET = 600;
-    public static double B08_SHOOT5_SETUP_X = B08_SHOOT5_X - B08_SHOOT5_OFFSET;
-    public static double B08_SHOOT5_SETUP_Y = 550;
-    public static double B08_SHOOT5_DH = 340;
-    public static double B08_SHOOT5_RH = 35;
-    public static double B08_SHOOT5_END_VEL = 1000;
-
-    public static double B08_MORE_BALLS_THRESHOLD = 6000;
-    public static double B08_5TH_SHOT_THRESHOLD = 3000;
-    public static long B08_SHOT5_INTAKE_PAUSE = 300;
+    public static double B00_TILE_LENGTH = 610;
+    public static double B00_PICKUP1_Y = 1200;
+    public static double B00_PICKUP_H = 180;
+    public static long B00_INTAKE_REVERSE_PAUSE = 200;
 
     public static long B09_PARK_TIME_CUTOFF = 2000;
     public static double B09_PARK_END_VELOCITY = 1500;
@@ -977,54 +894,53 @@ public class Robot {
         shooter.stopShooter();
     }
 
-    public void goalSideV3(boolean useArms, boolean useIntakeDetector, long gateLeaveTime) {
-        double nextGoalDistance = 0;
-        long startTime = System.currentTimeMillis();
-        double savedDeclination;
-        teamUtil.log("##################################################################################");
-        teamUtil.log("#########################  Starting GoalSideV3 Auto ##############################");
-        shooter.flywheelStartup(); // set flywheel to fast start PIDF coefs
-        intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
-        intake.setIntakeArtifacts(PPG);
-        // Prep Shooter
-        nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
-        if (useArms) {
-            shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots. ALSO set pitch!
-            Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
-            shooter.aim(B05_SHOT1_PITCH);
-            shooter.sidePushersHold();
-            //autoShootSuperFastPreloadNoWait(); // Don't need this any more, load directly to shooter
-        }
-        if (useIntakeDetector) {
-            if (intake.startDetector()) {
-                intake.detectorMode = Intake.DETECTION_MODE.INTAKE; // start in intake mode
-                teamUtil.log("Started Intake Detector");
-            } else {
-                useIntakeDetector = false;
-                teamUtil.log("FAILED to Start Intake Detector, failing over to hardcoded mode instead");
-            }
-        } else {
-            teamUtil.log("NOT using Detector. Running in hardcoded mode for patterns.");
-        }
-
-
-        /////////////////////////////Shoot Preloads (Group 1)
+    ///  //////////////////////////////////////////////////////////////////////////////
+    /// Pre Loads (Group 1--"B01")
+    public static double B01_SHOT_X = 780;
+    public static double B01_SHOT_Y = 780;
+    public static double B01_SHOT_H = 45;
+    public static double B01_SHOT_END_VEL = 500;
+    public static double B01_FLYWHEEL_VEL = IDEAL_FLYWHEEL;
+    public static float B01_SHOT_PITCH = IDEAL_PITCH;
+    public boolean preloads(boolean useArms) {
         teamUtil.log("==================== Preloads (Group 1) ================");
         // Drive fast to shooting zone
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED,B05_SHOOT1_X, B05_SHOOT1_Y, B05_SHOOT1_H-180, B05_SHOOT1_H,B05_SHOOT1_END_VEL, null, 0, 2000)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B01_SHOT_X, B01_SHOT_Y, B01_SHOT_H -180, B01_SHOT_H, B01_SHOT_END_VEL, null, 0, 2000)) return false;
         // Shoot preloads
         intake.signalArtifacts(); // flippers were operating in another thread while we were moving to this point.
-        if (!autoShootSuperFast(useArms, false,5000)) return; // Don't bother with pattern on preloads since we are going to empty the ramp
+        return autoShootSuperFast(useArms, false,5000); // Don't bother with pattern on preloads since we are going to empty the ramp
+    }
 
-        /////////////////////////////Intake 2nd group and shoot
+    ///  //////////////////////////////////////////////////////////////////////////////
+    /// Group 2--"B02")
+    public static double B02_SETUP_Y_DRIFT = 170;
+    public static double B02_SETUP_Y = B00_PICKUP1_Y - B02_SETUP_Y_DRIFT;
+    public static double B02_SETUP_X = 670;
+    public static double B02_SETUP_DH = 90;
+    public static double B02_SETUP_H = 0;
+    public static double B02_SETUP_END_VEL = B00_CORNER_VELOCITY;
+    public static long B02_SETUP_PAUSE = 150;
+    public static double B02_PICKUP_X = 420;
+    public static double B02_PICKUP_ADJ = 0;
+    public static long B02_PICKUP_INTAKE_PAUSE = 0;
+
+    public static double B02_SHOT_MID_X = 320;
+    public static double B02_SHOT_MID_Y = 1100;
+    public static double B02_SHOT_X = 550;
+    public static double B02_SHOT_Y = 600;
+    public static double B02_SHOT_H = 45;
+    public static double B02_SHOT_DH = 305;
+    public static double B02_SHOT_END_VEL = 1000; // was 400 before GoalSideV3
+    public static double B02_SHOT_DRIFT = 300;
+    public boolean group2(boolean useArms, boolean useIntakeDetector) {
         // Setup to pickup group 2
         teamUtil.log("==================== Group 2 ================");
         if (useArms) { intake.getReadyToIntakeNoWait(); }
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B06_SETUP1_YV3,B06_SETUP1_X,B06_SETUP1_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B02_SETUP_Y, B02_SETUP_X, B02_SETUP_DH, B02_SETUP_H, B02_SETUP_END_VEL, null, 0, 1500)) return false;
         drive.stopMotors(); // help kill the sideways momentum
-        teamUtil.pause(B06_SETUP1_PAUSE);
+        teamUtil.pause(B02_SETUP_PAUSE);
         // Pickup group 2
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X+B07_PICKUP1_ADJ,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B02_PICKUP_X + B02_PICKUP_ADJ, B00_PICKUP1_Y, B00_PICKUP_H, B02_SETUP_H, B00_CORNER_VELOCITY, null, 0, 1500)) return false;
         // prepare to shoot
         if (useIntakeDetector) {
             intake.detectIntakeArtifactsV2();
@@ -1041,41 +957,68 @@ public class Robot {
         }
         // Drive back to shooting zone
         drive.stopMotors(); // kill forward momentum without tipping robot (odo pods) off of ground
-        teamUtil.pause(B07_REVERSE_PAUSE);
+        teamUtil.pause(B00_INTAKE_REVERSE_PAUSE);
         intake.signalArtifacts();
-        if (useArms) autoTransferAndLoadSuperFastNoWait(0, 3000);
+        if (useArms) autoTransferAndLoadSuperFastNoWait(B02_PICKUP_INTAKE_PAUSE, 3000);
         // back up without turning robot to ensure we clear group 3
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT2_MID_X, B08_SHOOT2_MID_Y,B08_SHOOT2_DH, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B02_SHOT_MID_X, B02_SHOT_MID_Y, B02_SHOT_DH, B02_SETUP_H, B00_CORNER_VELOCITY, null, 0, 1500)) return false;
         // rotate and strafe to shooting position
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFTV3,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B02_SHOT_Y + B02_SHOT_DRIFT, B02_SHOT_X, B02_SHOT_DH, B02_SHOT_H, B02_SHOT_END_VEL, null, 0, 2000)) return false;
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
             stopRobot();
-            return;
+            return false;
         }
         // shoot second set of balls
-        if (!autoShootSuperFast(useArms, false,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
+        return autoShootSuperFast(useArms, false,5000); // Don't bother with pattern on 2nd group since we are going to empty the ramp
+    }
 
-        /////////////////////////////Intake 3rd group, empty ramp and shoot
+    ///  //////////////////////////////////////////////////////////////////////////////
+    /// Group 3--"B03"  Also Ramp Release
+    public static double B03_SETUP_DH = 105;
+    public static double B03_SETUP_Y_DRIFT = 170;
+    public static double B03_SETUP_Y = B00_PICKUP1_Y - B03_SETUP_Y_DRIFT;
+    public static double B03_SETUP_X = B02_SETUP_X - B00_TILE_LENGTH +50;
+    public static long B03_PICKUP_INTAKE_PAUSE = 0;
+
+    public static double B03_PICKUP_RAMP_END_VEL = 750;
+    public static double B00_GATE_END_VEL = 500;
+    public static double B00_GATE_VELOCITY = 1000; // was 600 before GoalSideV3
+    public static double B00_GATE_Y = B00_PICKUP1_Y +190;
+    public static double B00_GATE_X = 200;
+    public static double B00_GATE_H = 90;
+    public static long B00_GATE_BACKUP_X = -200;
+
+    public static long B00_GATE_TIMEOUT = 750;
+
+    public static double B03_SHOT_X = 650;
+    public static double B03_SHOT_Y = 800;
+    public static double B03_SHOT_DH = 340;
+    public static double B03_SHOT_END_VEL = 800; // was 400 before GoalSideV3
+    public static double B03_SHOT_DRIFT = 100;
+    public static double B03_SHOT_H = B02_SHOT_H;
+    public static double B03_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
+    public static float B03_SHOT_PITCH = IDEAL_PITCH;
+    public boolean group3(boolean useArms, boolean useIntakeDetector, long startTime, long gateLeaveTime) {
         if (useArms) {
-            shooter.setShootSpeed(B06_SHOT34_VELOCITY);
-            Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
-            shooter.aim(B06_SHOT34_PITCH);
+            shooter.setShootSpeed(B03_FLYWHEEL_VELOCITY);
+            Shooter.VELOCITY_COMMANDED = B03_FLYWHEEL_VELOCITY;
+            shooter.aim(B03_SHOT_PITCH);
         }
         // Setup to pickup group 3
         teamUtil.log("==================== Group 3 (empty ramp) ================");
         if (useArms) { intake.getReadyToIntakeNoWait(); }
-        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B07_SETUP2_Y,B07_SETUP2_X,B07_SETUP2_DH, B06_SETUP1_H, B06_SETUP_END_VEL, null, 0, 1500)) return;
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B03_SETUP_Y, B03_SETUP_X, B03_SETUP_DH, B02_SETUP_H, B02_SETUP_END_VEL, null, 0, 1500)) return false;
         drive.stopMotors(); // help kill the sideways momentum
-        teamUtil.pause(B06_SETUP1_PAUSE);
+        teamUtil.pause(B02_SETUP_PAUSE);
         // Pickup group 3
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B02_PICKUP_X - B00_TILE_LENGTH, B00_PICKUP1_Y, B00_PICKUP_H, B02_SETUP_H, B00_CORNER_VELOCITY, null, 0, 3000)) return false;
         // back up a bit for gate
         drive.stopMotors(); // kill forward momentum without tipping robot (odo pods) off of ground
-        teamUtil.pause(B07_REVERSE_PAUSE);
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_BACKUP_X ,B06_PICKUP1_Y,180-B07_PICKUP1_H, B06_SETUP1_H, B07_PICKUP_RAMP_END_VEL, null, 0, 1500)) return;
+        teamUtil.pause(B00_INTAKE_REVERSE_PAUSE);
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B00_GATE_BACKUP_X, B00_PICKUP1_Y,180- B00_PICKUP_H, B02_SETUP_H, B03_PICKUP_RAMP_END_VEL, null, 0, 1500)) return false;
         // push the gate allowing for timeout
-        drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, B07_GATE_END_VEL, null, 0, B07_RAMP_TIMEOUT);
+        drive.mirroredMoveToYHoldingLine(B00_GATE_VELOCITY, B00_GATE_Y, B00_GATE_X, B00_GATE_H, B02_SETUP_H, B00_GATE_END_VEL, null, 0, B00_GATE_TIMEOUT);
         drive.stopMotors();
         // Determine what is loaded
         if (useIntakeDetector) {
@@ -1087,29 +1030,52 @@ public class Robot {
         }
         intake.signalArtifacts();
         // prepare shot
-        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, false, 3000);
+        if (useArms) autoTransferAndLoadNoWait(B03_PICKUP_INTAKE_PAUSE, false, 3000);
         // Allow balls to exit ramp
         teamUtil.pause(emptyRampPause);
         // Allow more time for alliance partner
         long pause = gateLeaveTime - (System.currentTimeMillis() - startTime);
         teamUtil.pause(pause);
         // Drive back to shooting zone
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B03_SHOT_X - B03_SHOT_DRIFT, B03_SHOT_Y, B03_SHOT_DH, B03_SHOT_H, B03_SHOT_END_VEL, null, 0, 3000)) return false;
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
             stopRobot();
-            return;
+            return false;
         }
         // shoot 3rd set of balls
-        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,5000)) return;
+        return driveWhileShootingPattern(useArms, 0,0,5000);
+        //return driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,5000);
 
+    }
 
-        /////////////////////////////Intake 4th group and shoot
+    ///  //////////////////////////////////////////////////////////////////////////////
+    /// Group 4--"B04"
+    public static double B04_SETUP_X = B02_SETUP_X - B00_TILE_LENGTH;
+    public static double B04_SETUP4_Y = B00_PICKUP1_Y -100;
+    public static double B04_PICKUP_X = -700;
+    public static long B04_PICKUP_PAUSE = 300;
+    public static long B04_PICKUP_INTAKE_PAUSE = 0;
+
+    public static double B04_SHOT_X = 650;
+    public static double B04_SHOT_Y = 700;
+    public static double B04_SHOT_RH = 35;
+    public static double B04_SHOT_END_VEL = 1000; // was 400 before GoalSideV3
+    public static double B04_SHOT_STRAIGHT_PERCENT = .4;
+    public static double B04_SHOT_DRIFT_PERCENT = .9;
+    public static double B04_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
+    public static float B04_SHOT_PITCH = IDEAL_PITCH;
+    public boolean group4(boolean useArms, boolean useIntakeDetector) {
+        if (useArms) {
+            shooter.setShootSpeed(B04_FLYWHEEL_VELOCITY);
+            Shooter.VELOCITY_COMMANDED = B04_FLYWHEEL_VELOCITY;
+            shooter.aim(B04_SHOT_PITCH);
+        }
         // pickup group 4
         teamUtil.log("==================== Group 4 ================");
         if (useArms) { intake.getReadyToIntakeNoWait(); }
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_SETUP4_X,B07_SETUP4_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_PICKUP_VELOCITY, null, 0, 3000)) return;
-        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X-B01_TILE_LENGTH*2,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 3000)) return;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B04_SETUP_X, B04_SETUP4_Y, B00_PICKUP_H, B02_SETUP_H, B00_PICKUP_VELOCITY, null, 0, 3000)) return false;
+        if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B04_PICKUP_X, B00_PICKUP1_Y, B00_PICKUP_H, B02_SETUP_H, B00_CORNER_VELOCITY, null, 0, 3000)) return false;
         // Manually set what is loaded in intake in case detector fails
         if (useIntakeDetector) {
             intake.detectIntakeArtifactsV2();
@@ -1127,59 +1093,126 @@ public class Robot {
         intake.signalArtifacts();
 
         drive.stopMotors(); // kill some forward momentum
-        teamUtil.pause(B08_PICKUP4_PAUSE);
-        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, false, 3000);
+        teamUtil.pause(B04_PICKUP_PAUSE);
+        if (useArms) autoTransferAndLoadNoWait(B04_PICKUP_INTAKE_PAUSE, false, 3000);
         // Drive back to shooting zone
-        if (!mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL)) return; // Try the new faster one
+        if (!mirroredDriveToShotPositionFast(B04_SHOT_X, B04_SHOT_Y, B04_SHOT_RH, B04_SHOT_END_VEL, B04_SHOT_STRAIGHT_PERCENT, B04_SHOT_DRIFT_PERCENT)) return false; // Try the new faster one
         //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
             stopRobot();
-            return;
+            return false;
         }
         // shoot 4th set of balls
-        if (!driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360-B08_SHOOT4_H,B00_SHOOT_VELOCITY,5000)) return;
+        return driveWhileShootingPattern(useArms,  0,0,5000);
+    }
 
-        ///////////////////////////// Intake 5th group and shoot
+    ///  //////////////////////////////////////////////////////////////////////////////
+    /// Group 5--"B05"
+    public static double B05_SHOT_THRESHOLD = 3000;
+    public static long B05_INTAKE_PAUSE = 300;
+    public static double B05_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
+    public static double B05_PITCH = IDEAL_PITCH;
+    public static double B05_SHOT_X = 650;
+    public static double B05_SHOT_Y = 750 ;
+    public static double B05_SHOT_RH = 35;
+    public static double B05_SHOT_END_VEL = 1000;
+    public static double B05_SHOT_STRAIGHT_PERCENT = .5;
+    public static double B05_SHOT_DRIFT_PERCENT = .95;
+    public boolean group5andPark(boolean useArms, boolean useIntakeDetecto, long startTime){
         teamUtil.log("==================== Group 5 ================");
         if (useArms) {
-            shooter.setShootSpeed(B08_SHOT5_VELOCITY);
-            Shooter.VELOCITY_COMMANDED = B08_SHOT5_VELOCITY;
-            shooter.aim(B08_SHOT5_PITCH);
+            shooter.setShootSpeed(B05_FLYWHEEL_VELOCITY);
+            Shooter.VELOCITY_COMMANDED = B05_FLYWHEEL_VELOCITY;
+            shooter.aim(B05_PITCH);
 
         }
-        if (!getMoreBallsV2()) return;
-        if (useArms) autoTransferAndLoadNoWait(B08_SHOT5_INTAKE_PAUSE, true,3000);
-        // Drive back to shooting zone
-        if (!mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL)) return; // Try the new faster one
-        //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;
-        //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_X,B08_SHOOT5_Y,B08_SHOOT5_DH, B08_SHOOT5_RH, B08_SHOOT5_END_VEL, null, 0, 4000)) return;
+        if (getMoreBallsV2()) {
+            if (useArms) autoTransferAndLoadNoWait(B05_INTAKE_PAUSE, true,3000);
+            // Drive back to shooting zone
+            if (!mirroredDriveToShotPositionFast(B05_SHOT_X, B05_SHOT_Y, B05_SHOT_RH, B05_SHOT_END_VEL, B05_SHOT_STRAIGHT_PERCENT, B05_SHOT_DRIFT_PERCENT)) return false; // Try the new faster one
+            //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;
+            //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_X,B08_SHOOT5_Y,B08_SHOOT5_DH, B08_SHOOT5_RH, B08_SHOOT5_END_VEL, null, 0, 4000)) return;
 
-        if(intake.failedOut.get()){
-            teamUtil.log("Auto has FAILED OUT because of a jammed intake");
-            stopRobot();
-            return;
-        }
-        // check for enough time to launch last 3 TODO: Make this incremental inside of driveWhileShootingPattern
-        boolean enoughTime = System.currentTimeMillis() - startTime < 30000 - B08_5TH_SHOT_THRESHOLD; // check that there is enough time and we want to get more
-        // shoot 5th set of balls
-        if (enoughTime) {
-            // TODO: This might be a good place for a failsafe in case the detector says nothing was loaded.  Maybe just shoot 3 fast?
-            if (!driveWhileShootingPattern(useArms, teamUtil.alliance == teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360 - B08_SHOOT4_H, B00_SHOOT_VELOCITY, 5000))
-                return;
-        } else {
-            teamUtil.log("Not enough time to launch 3. Stopping");
+            if(intake.failedOut.get()){
+                teamUtil.log("Auto has FAILED OUT because of a jammed intake");
+                stopRobot();
+                return false;
+            }
+            // check for enough time to launch last 3 TODO: Make this incremental inside of driveWhileShootingPattern
+            boolean enoughTime = System.currentTimeMillis() - startTime < 30000 - B05_SHOT_THRESHOLD; // check that there is enough time and we want to get more
+            // shoot 5th set of balls
+            if (enoughTime) {
+                // TODO: This might be a good place for a failsafe in case the detector says nothing was loaded.  Maybe just shoot 3 fast?
+                if (!driveWhileShootingPattern(useArms, 0, 0, 5000))
+                //if (!driveWhileShootingPattern(useArms, teamUtil.alliance == teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360 - B08_SHOOT4_H, B00_SHOOT_VELOCITY, 5000))
+                    return false;
+            } else {
+                teamUtil.log("Not enough time to launch 3. Stopping");
+            }
         }
 
         if(System.currentTimeMillis() - startTime < 30000 - B09_PARK_TIME_CUTOFF){ // 2 seconds left
-            if(!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B09_PARK_Y, B09_PARK_X, B09_PARK_DRIVE, 0, B09_PARK_END_VELOCITY, null, 0, 3000)) return;
+            if(!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B09_PARK_Y, B09_PARK_X, B09_PARK_DRIVE, 0, B09_PARK_END_VELOCITY, null, 0, 3000)) return false;
         }else{
             teamUtil.log("Not enough time to park. Stopping");
         }
+        return true;
+    }
+
+    public void goalSideV3(boolean useArms, boolean useIntakeDetector, long gateLeaveTime) {
+        double nextGoalDistance = 0;
+        long startTime = System.currentTimeMillis();
+        double savedDeclination;
+        teamUtil.log("##################################################################################");
+        teamUtil.log("#########################  Starting GoalSideV3 Auto ##############################");
+        shooter.flywheelStartup(); // set flywheel to fast start PIDF coefs
+        intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
+        intake.setIntakeArtifacts(PPG);
+        // Prep Shooter
+        nextGoalDistance = drive.getGoalDistance((int) B01_SHOT_X, (int) B01_SHOT_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
+        if (useArms) {
+            shooter.setShootSpeed(B01_FLYWHEEL_VEL); // TODO: Determine optimal speed for first 3 shots. ALSO set pitch!
+            Shooter.VELOCITY_COMMANDED = B01_FLYWHEEL_VEL;
+            shooter.aim(B01_SHOT_PITCH);
+            shooter.sidePushersHold();
+            //autoShootSuperFastPreloadNoWait(); // Don't need this any more, load directly to shooter
+        }
+        if (useIntakeDetector) {
+            if (intake.startDetector()) {
+                intake.detectorMode = Intake.DETECTION_MODE.INTAKE; // start in intake mode
+                teamUtil.log("Started Intake Detector");
+            } else {
+                useIntakeDetector = false;
+                teamUtil.log("FAILED to Start Intake Detector, failing over to hardcoded mode instead");
+            }
+        } else {
+            teamUtil.log("NOT using Detector. Running in hardcoded mode for patterns.");
+        }
+
+
+        /////////////////////////////Shoot Preloads (Group 1)
+        if (!preloads(useArms)) return;
+
+        /////////////////////////////Intake 2nd group and shoot
+        if (!group2(useArms, useIntakeDetector)) return;
+
+
+        /////////////////////////////Intake 3rd group, empty ramp and shoot
+        if (!group3(useArms, useIntakeDetector, startTime, gateLeaveTime)) return;
+
+
+        /////////////////////////////Intake 4th group and shoot
+        if (!group4(useArms, useIntakeDetector)) return;
+
+        ///////////////////////////// Intake 5th group and shoot
+        if (!group5andPark(useArms, useIntakeDetector, startTime)) return;
 
         /////////////////////////////Wrap up
         stopRobot();
     }
+
+
 
     public double calculateAngleFromSecondToFirst(double x1, double y1, double x2, double y2) {
         // 1. Calculate the difference from the second point (origin) to the first
@@ -1202,11 +1235,9 @@ public class Robot {
         // atan2 returns values between -180 and 180.
         return (degrees < 0) ? (degrees + 360) : degrees;
     }
-    public static double DRIVE_T0_SHOT_STRAIGHT_PERCENT = .4;
-    public static double DRIVE_T0_SHOT_DRIFT_PERCENT = .9;
-    public static double DRIVE_TO_SHOT_ROTATION_ADJUST_FACTOR = 20;
 
-    public boolean mirroredDriveToShotPositionFast(double xTarget, double yTarget, double shotHeading, double endVelocity) {
+    public static double DRIVE_TO_SHOT_ROTATION_ADJUST_FACTOR = 20;
+    public boolean mirroredDriveToShotPositionFast(double xTarget, double yTarget, double shotHeading, double endVelocity, double straightPercent, double driftPercent) {
         teamUtil.log("mirroredDriveToShotPositionFast");
         int currentX = drive.oQlocalizer.posX_mm;
         int currentY = drive.oQlocalizer.posY_mm;
@@ -1214,10 +1245,10 @@ public class Robot {
             currentY = currentY *-1;
         }
         double driveHeading = calculateAngleFromSecondToFirst(xTarget, yTarget, currentX, currentY);
-        double straightX = (xTarget - currentX) * DRIVE_T0_SHOT_STRAIGHT_PERCENT + currentX;
-        double straightY = (yTarget - currentY) * DRIVE_T0_SHOT_STRAIGHT_PERCENT + currentY;
-        double driftX = (xTarget - currentX) * DRIVE_T0_SHOT_DRIFT_PERCENT + currentX;
-        double driftY = (yTarget - currentY) * DRIVE_T0_SHOT_DRIFT_PERCENT + currentY;
+        double straightX = (xTarget - currentX) * straightPercent + currentX;
+        double straightY = (yTarget - currentY) * straightPercent + currentY;
+        double driftX = (xTarget - currentX) * driftPercent + currentX;
+        double driftY = (yTarget - currentY) * driftPercent + currentY;
         teamUtil.log(String.format("DH: %.1f Target: %.0f,%.0f Straight %.0f,%.0f Drift %.0f,%.0f", driveHeading, xTarget, yTarget, straightX, straightY, driftX, driftY));
         blinkin.setSignal(Blinkin.Signals.NORMAL_WHITE);
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, straightX, straightY, driveHeading, driveHeading,B00_CORNER_VELOCITY,null, 0, 3000 )) return false;
