@@ -647,7 +647,6 @@ public class Robot {
             double shotHeading = drive.robotGoalHeading();
             drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
             if (useArms) {
-                // TODO: Should we make sure a minimum amount of time has passed since last shot to make sure they hit ramp in the correct order?
                 if (System.currentTimeMillis() > nextShotMinTime && shootIfCanAuto(true)) {
                     nextShotMinTime = System.currentTimeMillis() + AUTO_PATTERN_SHOT_MIN_SHOT_TIME;
                     velocity = 0; // stop driving once we have a good shot (but keep rotating!)
