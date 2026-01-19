@@ -638,7 +638,7 @@ public class Robot {
         long nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT;
         long nextShotMinTime = System.currentTimeMillis();
 
-        long shot3Time =  System.currentTimeMillis() + 1500;
+        long shot3Time =  System.currentTimeMillis() + 1600;
         int numShots = 0;
 
         blinkin.setSignal(Blinkin.Signals.GOLD);
@@ -810,6 +810,7 @@ public class Robot {
             }
 
         } else {
+            drive.stopMotors();
             blinkin.setSignal(Blinkin.Signals.GOLD);
             teamUtil.pause(1000);
         }
@@ -948,13 +949,13 @@ public class Robot {
     public static double B08_SHOT5_VELOCITY = 760;
     public static double B08_SHOT5_PITCH = .315f;
 
-    public static double B08_SHOOT5_X = 1000;
-    public static double B08_SHOOT5_Y = 450 ;
+    public static double B08_SHOOT5_X = 650;
+    public static double B08_SHOOT5_Y = 700 ;
     public static double B08_SHOOT5_OFFSET = 600;
     public static double B08_SHOOT5_SETUP_X = B08_SHOOT5_X - B08_SHOOT5_OFFSET;
     public static double B08_SHOOT5_SETUP_Y = 550;
     public static double B08_SHOOT5_DH = 340;
-    public static double B08_SHOOT5_RH = 60;
+    public static double B08_SHOOT5_RH = 35;
     public static double B08_SHOOT5_END_VEL = 1000;
 
     public static double B08_MORE_BALLS_THRESHOLD = 6000;
@@ -1056,10 +1057,6 @@ public class Robot {
         // shoot second set of balls
         if (!autoShootSuperFast(useArms, false,5000)) return; // Don't bother with pattern on 2nd group since we are going to empty the ramp
 
-        if (true) {
-            stopRobot();
-            return;
-        }
         /////////////////////////////Intake 3rd group, empty ramp and shoot
         if (useArms) {
             shooter.setShootSpeed(B06_SHOT34_VELOCITY);
@@ -1134,7 +1131,8 @@ public class Robot {
         teamUtil.pause(B08_PICKUP4_PAUSE);
         if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, false, 3000);
         // Drive back to shooting zone
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
+        if (!mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL)) return; // Try the new faster one
+        //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
             stopRobot();
@@ -1153,8 +1151,10 @@ public class Robot {
         }
         if (!getMoreBallsV2()) return;
         if (useArms) autoTransferAndLoadNoWait(B08_SHOT5_INTAKE_PAUSE, true,3000);
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;
-        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_X,B08_SHOOT5_Y,B08_SHOOT5_DH, B08_SHOOT5_RH, B08_SHOOT5_END_VEL, null, 0, 4000)) return;
+        // Drive back to shooting zone
+        if (!mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL)) return; // Try the new faster one
+        //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;
+        //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_X,B08_SHOOT5_Y,B08_SHOOT5_DH, B08_SHOOT5_RH, B08_SHOOT5_END_VEL, null, 0, 4000)) return;
 
         if(intake.failedOut.get()){
             teamUtil.log("Auto has FAILED OUT because of a jammed intake");
@@ -1203,23 +1203,30 @@ public class Robot {
         // atan2 returns values between -180 and 180.
         return (degrees < 0) ? (degrees + 360) : degrees;
     }
-    public static double STRAIGHT_PERCENT = .6;
-    public static double DRIFT_PERCENT = .8;
+    public static double DRIVE_T0_SHOT_STRAIGHT_PERCENT = .4;
+    public static double DRIVE_T0_SHOT_DRIFT_PERCENT = .9;
+    public static double DRIVE_TO_SHOT_ROTATION_ADJUST_FACTOR = 20;
 
     public boolean mirroredDriveToShotPositionFast(double xTarget, double yTarget, double shotHeading, double endVelocity) {
+        teamUtil.log("mirroredDriveToShotPositionFast");
         int currentX = drive.oQlocalizer.posX_mm;
         int currentY = drive.oQlocalizer.posY_mm;
         if (teamUtil.alliance== teamUtil.Alliance.RED) {
             currentY = currentY *-1;
         }
         double driveHeading = calculateAngleFromSecondToFirst(xTarget, yTarget, currentX, currentY);
-        double straightX = (xTarget - currentX) * STRAIGHT_PERCENT + currentX;
-        double straightY = (yTarget - currentY) * STRAIGHT_PERCENT + currentY;
-        double driftX = (xTarget - currentX) * DRIFT_PERCENT + currentX;
-        double driftY = (yTarget - currentY) * DRIFT_PERCENT + currentY;
+        double straightX = (xTarget - currentX) * DRIVE_T0_SHOT_STRAIGHT_PERCENT + currentX;
+        double straightY = (yTarget - currentY) * DRIVE_T0_SHOT_STRAIGHT_PERCENT + currentY;
+        double driftX = (xTarget - currentX) * DRIVE_T0_SHOT_DRIFT_PERCENT + currentX;
+        double driftY = (yTarget - currentY) * DRIVE_T0_SHOT_DRIFT_PERCENT + currentY;
         teamUtil.log(String.format("DH: %.1f Target: %.0f,%.0f Straight %.0f,%.0f Drift %.0f,%.0f", driveHeading, xTarget, yTarget, straightX, straightY, driftX, driftY));
+        blinkin.setSignal(Blinkin.Signals.NORMAL_WHITE);
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, straightX, straightY, driveHeading, driveHeading,B00_CORNER_VELOCITY,null, 0, 3000 )) return false;
+        blinkin.setSignal(Blinkin.Signals.PURPLE);
+        double store = drive.ROTATION_ADJUST_FACTOR;
+        drive.ROTATION_ADJUST_FACTOR = DRIVE_TO_SHOT_ROTATION_ADJUST_FACTOR; // chill out rotation adjust for this large/quick spin/translation
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, driftX, driftY, driveHeading, shotHeading,endVelocity,null, 0, 3000 )) return false;
+        drive.ROTATION_ADJUST_FACTOR = store;
         return true;
     }
 

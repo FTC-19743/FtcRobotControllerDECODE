@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
+import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 @Config
@@ -136,10 +137,32 @@ public class TestAutoPaths extends LinearOpMode{
 
 
     public void testGoalSide() {
-        if(gamepad1.bWasPressed()){
+        if(gamepad1.bWasReleased()){
             //robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
+            long startTime = System.currentTimeMillis();
+
             robot.mirroredDriveToShotPositionFast(Robot.B08_SHOOT5_X, Robot.B08_SHOOT5_Y, Robot.B08_SHOOT5_RH, Robot.B08_SHOOT5_END_VEL);
+            teamUtil.log("mirroredDriveToShotPositionFast finished in " + (System.currentTimeMillis() - startTime));
+            robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            boolean targetHeadingWasOK = false;
+            while (!gamepad1.bWasReleased()) {
+                robot.autoHoldShotHeading();
+                if (robot.shooterHeadingReady()) {
+                    robot.blinkin.setSignal(Blinkin.Signals.GOLD);
+                    if (!targetHeadingWasOK) {
+                        teamUtil.log("Achieved Target Heading of " + robot.drive.getHeadingODO() + "in " + (System.currentTimeMillis() - startTime));
+                    }
+                    targetHeadingWasOK = true;
+                } else {
+                    robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                }
+                if (!targetHeadingWasOK) {
+                    teamUtil.log("Heading: " + robot.drive.getHeadingODO());
+                }
+            }
+            robot.blinkin.setSignal(Blinkin.Signals.OFF);
             robot.drive.stopMotors();
+            elapsedTime = System.currentTimeMillis()-startTime;
         }
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
