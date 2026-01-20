@@ -713,6 +713,12 @@ public class Intake {
     public static float rgbPURPLE = 0.7f;
     public static float rbgOFF = 0f;
 
+    public void setRGBsOff() {
+        rgbLeft.setPosition(rbgOFF);
+        rgbMiddle.setPosition(rbgOFF);
+        rgbRight.setPosition(rbgOFF);
+
+    }
     public void setRGBSignal(Servo rgb, ARTIFACT artifact) {
         switch (artifact) {
             case GREEN: rgb.setPosition(rgbGREEN); break;

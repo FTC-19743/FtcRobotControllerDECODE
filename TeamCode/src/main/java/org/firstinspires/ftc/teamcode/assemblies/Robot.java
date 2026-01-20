@@ -707,8 +707,7 @@ public class Robot {
             }
         }
         blinkin.setSignal(Blinkin.Signals.OFF);
-        intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
-        intake.signalArtifacts();
+        intake.setRGBsOff();
         if (System.currentTimeMillis() <= timeOutTime) {
             // Wait for last shot to finish before moving TODO: This could wrap up a bit earlier...as soon as pusher connects the ball with the flywheels
             while (shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
@@ -829,9 +828,8 @@ public class Robot {
         }
 
         blinkin.setSignal(Blinkin.Signals.OFF);
-        intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
-        intake.signalArtifacts();
-        if (System.currentTimeMillis() <= timeOutTime) {
+        intake.setRGBsOff();
+       if (System.currentTimeMillis() <= timeOutTime) {
             shooter.pusher.reset(false);
             drive.stopMotors();
             teamUtil.log("autoShootSuperFast Finished in " + (System.currentTimeMillis() - startTime));
