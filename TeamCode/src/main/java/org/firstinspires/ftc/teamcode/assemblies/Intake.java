@@ -764,7 +764,7 @@ public class Intake {
         }
     }
 
-    public static long LL_RESET_PAUSE = 10;
+    public static long LL_RESET_PAUSE = 50;
     public boolean resetIntakeDetector() {
         teamUtil.log("resetIntakeDetector");
         boolean stored = KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;

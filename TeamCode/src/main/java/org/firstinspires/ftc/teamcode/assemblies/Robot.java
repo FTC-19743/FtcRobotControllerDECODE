@@ -276,6 +276,10 @@ public class Robot {
         }
         return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < (headingCanShootThreshold/2);
     }
+    public static double AUTO_HEADING_ERROR_THRESHOLD = 2; // This is for a goal distance of ~1200
+    public boolean autoShooterHeadingReady() {
+        return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < AUTO_HEADING_ERROR_THRESHOLD;
+    }
 
     public boolean shooterFlyWheelsReady() {
         if (details) {
@@ -289,12 +293,13 @@ public class Robot {
         return shooterFlyWheelsReady() && shooterHeadingReady();
     }
 
+    public static float AUTO_ROT_VEL_THRESHOLD = 0.5f;
     public boolean canShootAuto(boolean requireLoaded) {
         // Don't attempt to shoot if we are currently shooting
         if (shooter.pusher.moving.get()) return false;
 
-        // Don't attempt to shoot if our heading is not accurate enough
-        if(!shooterHeadingReady()) return false;
+        // Don't attempt to shoot if our heading is not accurate enough or if we are rotating too quickly
+        if(!autoShooterHeadingReady() || Math.abs(drive.oQlocalizer.velHeading_radS) > AUTO_ROT_VEL_THRESHOLD) return false;
 
         // Don't attempt to shoot if there is no ball in the shooter
         if(requireLoaded && !shooter.isLoaded()){
@@ -629,10 +634,11 @@ public class Robot {
 
     public static long AUTO_PATTERN_SHOT_LOAD_LIMIT = 750; // Skip shot if it takes longer than this to load it into shooter
     public static long AUTO_PATTERN_SHOT_MIN_SHOT_TIME = 500; // Ensure at least this much time passes between shots
-    // Move while shooting adjusting robot heading and shooter as needed
+    // Attempt to shoot the current pattern as soon as conditions allow.
+    // Rotates robot as needed
     // TODO: Shooter should have something loaded before this starts. Bail out if not true?
-    public boolean driveWhileShootingPattern(boolean useArms, double driveHeading, double velocity, long timeOut) {
-        teamUtil.log("driveWhileShootingPattern driveH: " + driveHeading + " Vel: " + velocity);
+    public boolean autoShootPattern(boolean useArms, long timeOut) {
+        teamUtil.log("autoShootPattern ");
         long startTime = System.currentTimeMillis();
         long timeOutTime = startTime + timeOut;
         long nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT;
@@ -642,21 +648,20 @@ public class Robot {
         int numShots = 0;
 
         blinkin.setSignal(Blinkin.Signals.GOLD);
+
         while (teamUtil.keepGoing(timeOutTime) && numShots < 3) {
-            drive.loop();
-            double shotHeading = drive.robotGoalHeading();
-            drive.driveMotorsHeadingsFR(driveHeading, shotHeading, velocity);
+            autoHoldShotHeading();
+            //teamUtil.log("Rot Vel: " + drive.oQlocalizer.velHeading_radS);
             if (useArms) {
                 if (System.currentTimeMillis() > nextShotMinTime && shootIfCanAuto(true)) {
                     nextShotMinTime = System.currentTimeMillis() + AUTO_PATTERN_SHOT_MIN_SHOT_TIME;
-                    velocity = 0; // stop driving once we have a good shot (but keep rotating!)
                     nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++;
 
                     if (numShots < 3) {
                         while (numShots < 3) {
                             // check to see if the next shot will be the left or right and if so, allow a little time for the shot to clear
-                            // before activiting the side pushers
+                            // before activating the side pushers
                             if (shotOrder[numShots+1]== Intake.Location.LEFT || shotOrder[numShots+1] == Intake.Location.RIGHT) {
                                 teamUtil.pause(shooter.SF_SHOT_PAUSE);
                             }
@@ -683,7 +688,7 @@ public class Robot {
                 }
 
             } else {
-                if (numShots == 0) {
+                if (numShots == 0 && canShootAuto(false)) {
                     teamUtil.log("USE ARMS is false. Logging position for first shot");
                     logShot(0);
                     numShots++;
@@ -702,6 +707,8 @@ public class Robot {
             }
         }
         blinkin.setSignal(Blinkin.Signals.OFF);
+        intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
+        intake.signalArtifacts();
         if (System.currentTimeMillis() <= timeOutTime) {
             // Wait for last shot to finish before moving TODO: This could wrap up a bit earlier...as soon as pusher connects the ball with the flywheels
             while (shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
@@ -709,7 +716,7 @@ public class Robot {
             }
             shooter.pusher.reset(false);
             drive.stopMotors();
-            teamUtil.log("driveWhileShootingPattern Finished in " + (System.currentTimeMillis() - startTime));
+            teamUtil.log("autoShootPattern Finished in " + (System.currentTimeMillis() - startTime));
             return true;
         } else {
             shooter.pusher.reset(false);
@@ -785,9 +792,7 @@ public class Robot {
             }
             blinkin.setSignal(Blinkin.Signals.GOLD);
 
-            //if(!shooterHeadingReady()) return false; // Not sure why this was here, doesn't make much sense given next while loop?
-
-            while (!shooterHeadingReady() && !shooter.isLoaded() && teamUtil.keepGoing(timeOutTime)) {
+            while (!autoShooterHeadingReady() && !shooter.isLoaded() && teamUtil.keepGoing(timeOutTime)) {
                 autoHoldShotHeading();
             }
             if (System.currentTimeMillis() >=timeOutTime) {
@@ -824,6 +829,8 @@ public class Robot {
         }
 
         blinkin.setSignal(Blinkin.Signals.OFF);
+        intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
+        intake.signalArtifacts();
         if (System.currentTimeMillis() <= timeOutTime) {
             shooter.pusher.reset(false);
             drive.stopMotors();
@@ -894,8 +901,7 @@ public class Robot {
         shooter.stopShooter();
     }
 
-    ///  //////////////////////////////////////////////////////////////////////////////
-    /// Pre Loads (Group 1--"B01")
+    ///  //////////////////////////////////////////////////////////////// Pre Loads (Group 1--"B01")
     public static double B01_SHOT_X = 780;
     public static double B01_SHOT_Y = 780;
     public static double B01_SHOT_H = 45;
@@ -911,8 +917,7 @@ public class Robot {
         return autoShootSuperFast(useArms, false,5000); // Don't bother with pattern on preloads since we are going to empty the ramp
     }
 
-    ///  //////////////////////////////////////////////////////////////////////////////
-    /// Group 2--"B02")
+    ///  //////////////////////////////////////////////////////////////// Group 2--"B02")
     public static double B02_SETUP_Y_DRIFT = 170;
     public static double B02_SETUP_Y = B00_PICKUP1_Y - B02_SETUP_Y_DRIFT;
     public static double B02_SETUP_X = 670;
@@ -973,8 +978,7 @@ public class Robot {
         return autoShootSuperFast(useArms, false,5000); // Don't bother with pattern on 2nd group since we are going to empty the ramp
     }
 
-    ///  //////////////////////////////////////////////////////////////////////////////
-    /// Group 3--"B03"  Also Ramp Release
+    ///  //////////////////////////////////////////////////////////////// Group 3--"B03"  Also Ramp Release
     public static double B03_SETUP_DH = 105;
     public static double B03_SETUP_Y_DRIFT = 170;
     public static double B03_SETUP_Y = B00_PICKUP1_Y - B03_SETUP_Y_DRIFT;
@@ -1044,13 +1048,12 @@ public class Robot {
             return false;
         }
         // shoot 3rd set of balls
-        return driveWhileShootingPattern(useArms, 0,0,5000);
+        return autoShootPattern(useArms,5000);
         //return driveWhileShootingPattern(useArms, teamUtil.alliance== teamUtil.Alliance.BLUE ? (B08_SHOOT3_H) : 360-B08_SHOOT3_H,B00_SHOOT_VELOCITY,5000);
 
     }
 
-    ///  //////////////////////////////////////////////////////////////////////////////
-    /// Group 4--"B04"
+    ///  //////////////////////////////////////////////////////////////// Group 4--"B04"
     public static double B04_SETUP_X = B02_SETUP_X - B00_TILE_LENGTH;
     public static double B04_SETUP4_Y = B00_PICKUP1_Y -100;
     public static double B04_PICKUP_X = -700;
@@ -1104,11 +1107,10 @@ public class Robot {
             return false;
         }
         // shoot 4th set of balls
-        return driveWhileShootingPattern(useArms,  0,0,5000);
+        return autoShootPattern(useArms,5000);
     }
 
-    ///  //////////////////////////////////////////////////////////////////////////////
-    /// Group 5--"B05"
+    ///  //////////////////////////////////////////////////////////////// Group 5--"B05"
     public static double B05_SHOT_THRESHOLD = 3000;
     public static long B05_INTAKE_PAUSE = 300;
     public static double B05_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
@@ -1144,7 +1146,7 @@ public class Robot {
             // shoot 5th set of balls
             if (enoughTime) {
                 // TODO: This might be a good place for a failsafe in case the detector says nothing was loaded.  Maybe just shoot 3 fast?
-                if (!driveWhileShootingPattern(useArms, 0, 0, 5000))
+                if (!autoShootPattern(useArms, 5000))
                 //if (!driveWhileShootingPattern(useArms, teamUtil.alliance == teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360 - B08_SHOOT4_H, B00_SHOOT_VELOCITY, 5000))
                     return false;
             } else {
@@ -1160,6 +1162,7 @@ public class Robot {
         return true;
     }
 
+    ///  ////////////////////////////////////////////////////////////////  GOAL SIDE V3
     public void goalSideV3(boolean useArms, boolean useIntakeDetector, long gateLeaveTime) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
@@ -1169,6 +1172,7 @@ public class Robot {
         shooter.flywheelStartup(); // set flywheel to fast start PIDF coefs
         intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
         intake.setIntakeArtifacts(PPG);
+        intake.signalArtifacts();
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int) B01_SHOT_X, (int) B01_SHOT_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {

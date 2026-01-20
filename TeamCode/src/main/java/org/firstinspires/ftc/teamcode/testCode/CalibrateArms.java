@@ -394,7 +394,7 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine(String.format("IDEAL Velocity: %.0f IDEAL Pitch: %.3f" , velocity , pitch));
         telemetry.addLine("ACTUAL Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
         //telemetry.addData("FlywheelSpeed OK?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
-        telemetry.addData("Heading OK?: " , robot.shooterHeadingReady());
+        telemetry.addLine("Heading OK? Teleop: " + robot.shooterHeadingReady() + " Auto: " + robot.autoShooterHeadingReady());
         telemetry.addLine("-------------------------------------");
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
@@ -466,7 +466,7 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.right_trigger > .5) {
             while (gamepad1.right_trigger > .5) {}
-            robot.driveWhileShootingPattern(true, 45, 0, 5000);
+            robot.autoShootPattern(true, 5000);
             robot.intake.intakeStop();
             //robot.autoShootFastV2(true,3000);
         }

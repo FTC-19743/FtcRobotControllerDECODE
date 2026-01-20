@@ -47,6 +47,7 @@ public class TestAutoPaths extends LinearOpMode{
 
         robot = new Robot();
         robot.initialize(true);
+        robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         robot.drive.setHeading(0);
@@ -64,6 +65,7 @@ public class TestAutoPaths extends LinearOpMode{
         if (isStopRequested()) {
             return;
         }
+        robot.intake.startDetector();
 
         while (opModeIsActive()) {
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + " PATTERN: " + teamUtil.pattern);
@@ -73,9 +75,16 @@ public class TestAutoPaths extends LinearOpMode{
             telemetry.addLine("Last Op: "+ elapsedTime);
             robot.drive.loop();
             robot.drive.driveMotorTelemetry();
+            robot.intake.detectLoadedArtifactsV2();
+            robot.intake.signalArtifacts();
 
             if (gamepad1.left_stick_button) {
                 teamUtil.logSystemHealth();
+            }
+            if (gamepad1.right_stick_button) {
+                while (gamepad1.right_stick_button) {}
+                robot.intake.resetIntakeDetector();
+                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
             }
             if (gamepad1.leftBumperWasReleased()) {
                 robot.setStartLocalizedPosition();
@@ -147,7 +156,7 @@ public class TestAutoPaths extends LinearOpMode{
             boolean targetHeadingWasOK = false;
             while (!gamepad1.bWasReleased()) {
                 robot.autoHoldShotHeading();
-                if (robot.shooterHeadingReady()) {
+                if (robot.autoShooterHeadingReady()) {
                     robot.blinkin.setSignal(Blinkin.Signals.GOLD);
                     if (!targetHeadingWasOK) {
                         teamUtil.log("Achieved Target Heading of " + robot.drive.getHeadingODO() + "in " + (System.currentTimeMillis() - startTime));
