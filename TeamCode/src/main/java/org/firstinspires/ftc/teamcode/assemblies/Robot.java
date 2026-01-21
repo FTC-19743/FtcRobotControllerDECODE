@@ -654,6 +654,9 @@ public class Robot {
             //teamUtil.log("Rot Vel: " + drive.oQlocalizer.velHeading_radS);
             if (useArms) {
                 if (System.currentTimeMillis() > nextShotMinTime && shootIfCanAuto(true)) {
+                    if (numShots==0) {
+                        teamUtil.log("Time to first shot: " + (System.currentTimeMillis() - startTime));
+                    }
                     nextShotMinTime = System.currentTimeMillis() + AUTO_PATTERN_SHOT_MIN_SHOT_TIME;
                     nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++;
@@ -672,7 +675,7 @@ public class Robot {
                             teamUtil.log ("Nothing to load--Skipping Shot " + numShots);
                         }
                     }
-                } else if (System.currentTimeMillis() > nextShotTimeLimit) { // Taking too long to load for some unknown reason
+                } else if (System.currentTimeMillis() > nextShotTimeLimit && !shooter.isLoaded()) { // Taking too long to load for some unknown reason
                     nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++; // Move on to the next shot
                     teamUtil.log("------- Took Too long to load shot " + numShots + ". Moving on to next");
@@ -791,6 +794,9 @@ public class Robot {
             }
             blinkin.setSignal(Blinkin.Signals.GOLD);
 
+            if (!autoShooterHeadingReady()) {
+                teamUtil.log("autoShootSuperFast waiting on robot heading");
+            }
             while (!autoShooterHeadingReady() && !shooter.isLoaded() && teamUtil.keepGoing(timeOutTime)) {
                 autoHoldShotHeading();
             }
@@ -1058,8 +1064,8 @@ public class Robot {
     public static long B04_PICKUP_PAUSE = 300;
     public static long B04_PICKUP_INTAKE_PAUSE = 0;
 
-    public static double B04_SHOT_X = 650;
-    public static double B04_SHOT_Y = 700;
+    public static double B04_SHOT_X = 600; // was 650
+    public static double B04_SHOT_Y = 650; // was 700
     public static double B04_SHOT_RH = 35;
     public static double B04_SHOT_END_VEL = 1000; // was 400 before GoalSideV3
     public static double B04_SHOT_STRAIGHT_PERCENT = .4;
@@ -1113,8 +1119,8 @@ public class Robot {
     public static long B05_INTAKE_PAUSE = 300;
     public static double B05_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
     public static double B05_PITCH = IDEAL_PITCH;
-    public static double B05_SHOT_X = 650;
-    public static double B05_SHOT_Y = 750 ;
+    public static double B05_SHOT_X = 600; // was 650
+    public static double B05_SHOT_Y = 700 ; // was 750
     public static double B05_SHOT_RH = 35;
     public static double B05_SHOT_END_VEL = 1000;
     public static double B05_SHOT_STRAIGHT_PERCENT = .5;
