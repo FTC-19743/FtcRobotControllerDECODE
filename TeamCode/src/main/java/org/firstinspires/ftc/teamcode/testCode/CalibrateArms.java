@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.assemblies.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
@@ -27,6 +28,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.Locale;
 
 @Config
 @TeleOp(name = "Calibrate Arms", group = "Test Code")
@@ -43,6 +45,7 @@ public class CalibrateArms extends LinearOpMode {
     double aimerPosition = Shooter.AIMER_CALIBRATE;
     
     public enum Ops {
+        Test_CVLocalizer,
         Test_Intake,
         Test_DetectorV2,
         Test_Intake_Detector,
@@ -53,8 +56,9 @@ public class CalibrateArms extends LinearOpMode {
         Test_PIDF,
         Teleport
     };
-    public static Ops AA_Operation = Ops.Test_PIDF;
+    public static Ops AA_Operation = Ops.Test_Shooter;
     public static boolean useCV = false;
+    AprilTagLocalizer localizer;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -80,6 +84,8 @@ public class CalibrateArms extends LinearOpMode {
 
             visionPortal.resumeLiveView();
         }
+
+        localizer = new AprilTagLocalizer();
 
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
@@ -111,6 +117,7 @@ public class CalibrateArms extends LinearOpMode {
                 case Test_Foot : testFoot();break;
                 case Test_PIDF: shooterPIDF();break;
                 case Teleport : teleport();break;
+                case Test_CVLocalizer : testLocalizer(); break;
             }
 
             // Drawing stuff on the field
@@ -136,9 +143,23 @@ public class CalibrateArms extends LinearOpMode {
     private VisionPortal visionPortal;
     private WebcamName webcamL, webcamF, webcamR;
 
+    public void testLocalizer() {
+        robot.drive.loop();
+        robot.drive.localizerTelemetry();
+        if (gamepad1.dpadUpWasReleased()) {
+            localizer.localize(5000);
+            robot.drive.loop();
+            String data = String.format(Locale.US, "Localizer X: %.0f, Y: %.0f, H: %.1f", (float) robot.drive.oQlocalizer.posX_mm, (float) robot.drive.oQlocalizer.posY_mm, Math.toDegrees(robot.drive.oQlocalizer.heading_rad));
+            teamUtil.log(data);
+        }
+        if (gamepad1.dpadDownWasReleased()) {
+            robot.drive.setRobotPosition(TELEPORT_X, TELEPORT_Y, TELEPORT_H);
+        }
+    }
     public void initCV () {
-        teamUtil.log("Initializing multi cam vision port for Calibrate Arms");
+        teamUtil.log("Initializing multi cam vision portal for Calibrate Arms");
         aprilTag = new AprilTagProcessor.Builder().build();
+        robot.aprilTag = aprilTag;
         webcamL = hardwareMap.get(WebcamName.class, "webcamleft");
         webcamF = hardwareMap.get(WebcamName.class, "webcamfront");
         webcamR = hardwareMap.get(WebcamName.class, "webcamright");
@@ -149,6 +170,7 @@ public class CalibrateArms extends LinearOpMode {
                 .setCamera(switchableCamera)
                 .addProcessor(aprilTag)
                 .build();
+        teamUtil.log("Multi cam vision portal built");
     }
 
     public void testCV () {

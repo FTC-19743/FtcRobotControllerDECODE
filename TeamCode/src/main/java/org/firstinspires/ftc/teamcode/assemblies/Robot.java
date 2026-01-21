@@ -34,7 +34,7 @@ public class Robot {
     public Intake intake;
     public Shooter shooter;
     public Blinkin blinkin;
-    private AprilTagProcessor aprilTag;
+    public AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
     public Limelight3A limelight;
 
