@@ -16,6 +16,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.assemblies.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
@@ -143,17 +145,39 @@ public class CalibrateArms extends LinearOpMode {
     private VisionPortal visionPortal;
     private WebcamName webcamL, webcamF, webcamR;
 
+    boolean continousDetection = false;
+    public Pose3D lastPose;
     public void testLocalizer() {
         robot.drive.loop();
         robot.drive.localizerTelemetry();
         if (gamepad1.dpadUpWasReleased()) {
             localizer.localize(5000);
             robot.drive.loop();
-            String data = String.format(Locale.US, "Localizer X: %.0f, Y: %.0f, H: %.1f", (float) robot.drive.oQlocalizer.posX_mm, (float) robot.drive.oQlocalizer.posY_mm, Math.toDegrees(robot.drive.oQlocalizer.heading_rad));
+            String data = String.format(Locale.US, "OQ X: %.0f, Y: %.0f, H: %.1f", (float) robot.drive.oQlocalizer.posX_mm, (float) robot.drive.oQlocalizer.posY_mm, Math.toDegrees(robot.drive.oQlocalizer.heading_rad));
             teamUtil.log(data);
         }
         if (gamepad1.dpadDownWasReleased()) {
             robot.drive.setRobotPosition(TELEPORT_X, TELEPORT_Y, TELEPORT_H);
+        }
+
+        if (gamepad1.yWasReleased()) {
+            localizer.initCV();
+            continousDetection = true;
+        }
+        if (gamepad1.aWasReleased()) {
+            localizer.stopCV();
+            continousDetection = false;
+        }
+        if (continousDetection) {
+            Pose3D pose = localizer.getFreshRobotPose();
+            if (pose != null) {
+                lastPose = pose;
+            } else {
+                pose = lastPose;
+            }
+            if (pose!= null) {
+                telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", pose.getPosition().x*-1*25.4, pose.getPosition().y*-1*25.4, pose.getOrientation().getYaw(AngleUnit.DEGREES)-90));
+            }
         }
     }
     public void initCV () {

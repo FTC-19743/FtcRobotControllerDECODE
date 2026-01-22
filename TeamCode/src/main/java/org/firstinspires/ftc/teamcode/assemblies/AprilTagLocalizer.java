@@ -3,10 +3,10 @@ package org.firstinspires.ftc.teamcode.assemblies;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -47,7 +47,7 @@ public class AprilTagLocalizer {
     private Position cameraPosition = new Position(DistanceUnit.INCH,
             0, 7, 3, 0);
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-            0, -90, 0, 0);
+            0, -70, 0, 0);
 
     /**
      * The variable to store our instance of the AprilTag processor.
@@ -64,7 +64,13 @@ public class AprilTagLocalizer {
         hardwareMap = teamUtil.theOpMode.hardwareMap;
     }
 
-    private void initCV() {
+    public void stopCV() {
+        if (visionPortal != null) {
+            visionPortal.close();
+        }
+    }
+
+    public void initCV() {
 
         // Create the AprilTag processor.
         aprilTag = new AprilTagProcessor.Builder()
@@ -126,6 +132,23 @@ public class AprilTagLocalizer {
         //visionPortal.setProcessorEnabled(aprilTag, true);
     }
 
+    public Pose3D getFreshRobotPose() {
+        if (aprilTag != null) {
+            List<AprilTagDetection> currentDetections = aprilTag.getFreshDetections();
+            if (currentDetections != null) {
+                // Step through the list of detections
+                for (AprilTagDetection detection : currentDetections) {
+                    if (detection.metadata != null) {
+                        if (detection.id == 20 || detection.id == 24) {
+                            return detection.robotPose; // return the first one we find, very hard for the robot to see both at the same time.
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public static long SAMPLE_TIME = 500;
     public boolean localize(long timeOut) {
         teamUtil.log("Localize starting");
@@ -148,19 +171,12 @@ public class AprilTagLocalizer {
         int count = 0;
         long sampleStopTime = System.currentTimeMillis() + SAMPLE_TIME;
         while (System.currentTimeMillis() < sampleStopTime && teamUtil.keepGoing(timeOutTime)) {
-            List<AprilTagDetection> currentDetections = aprilTag.getFreshDetections();
-            if (currentDetections != null) {
-                // Step through the list of detections
-                for (AprilTagDetection detection : currentDetections) {
-                    if (detection.metadata != null) {
-                        if (detection.id == 20 || detection.id == 24) {
-                            sumX += detection.robotPose.getPosition().x;
-                            sumY += detection.robotPose.getPosition().y;
-                            sumH += detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
-                            count++;
-                        }
-                    }
-                }
+            Pose3D pose = getFreshRobotPose();
+            if (pose != null) {
+                sumX += pose.getPosition().x * -25.4;
+                sumY += pose.getPosition().y * -25.4;
+                sumH += pose.getOrientation().getYaw(AngleUnit.DEGREES)-90;
+                count++;
             }
             teamUtil.pause(35); // give time to AprilTagProcessor (based on 30fps)
         }
@@ -176,9 +192,9 @@ public class AprilTagLocalizer {
         }
         visionPortal.close();
         teamUtil.robot.drive.loop(); // make sure we have current robot position
-        double newX = sumX/count*25.4 *-1;
-        double newY = sumY/count*25.4 *-1;
-        double newH = sumH/count + 90;
+        double newX = sumX/count ;
+        double newY = sumY/count;
+        double newH = sumH/count;
 
         teamUtil.log("Localize finished in " +((System.currentTimeMillis() - startTime)));
         teamUtil.log(String.format("Camera: X: %.0f Y: %.0f H: %.1f Count: %d", newX, newY, newH, count));
@@ -186,6 +202,8 @@ public class AprilTagLocalizer {
         teamUtil.log(data);
         data = String.format(Locale.US, "Diff X: %.0f, Y: %.0f, H: %.1f", (float) teamUtil.robot.drive.oQlocalizer.posX_mm-newX, (float) teamUtil.robot.drive.oQlocalizer.posY_mm-newY, Math.toDegrees(teamUtil.robot.drive.oQlocalizer.heading_rad) - newH);
         teamUtil.log(data);
+        teamUtil.robot.drive.loop();
+        teamUtil.robot.drive.setRobotPosition((int)newX, (int)newY, Math.toDegrees(teamUtil.robot.drive.oQlocalizer.heading_rad));
         return true;
     }
 }
