@@ -446,7 +446,8 @@ public class CalibrateArms extends LinearOpMode {
         robot.drive.driveMotorTelemetry();
 
         if(gamepad1.startWasReleased()){
-            adjustShootMode= !adjustShootMode;
+            robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
+            //adjustShootMode= !adjustShootMode;
         }
         /*
         if (adjustShootMode && robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity())) {
@@ -495,7 +496,7 @@ public class CalibrateArms extends LinearOpMode {
             //robot.shootAllArtifacts();
             long startTime = System.currentTimeMillis();
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
+            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-60;
             long timeOutTime = System.currentTimeMillis() + 1000;
             while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity && teamUtil.keepGoing(timeOutTime)) {} // detect contact between flywheels and ball
             teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
@@ -529,15 +530,18 @@ public class CalibrateArms extends LinearOpMode {
         //rightFlywheel.setPower(-CurrentPower);
 
         if(gamepad1.dpadUpWasReleased()){
-            robot.shooter.setShootSpeed(SHOOTER_VELOCITY+SHOOTER_OVERSHOOT);
-            teamUtil.pause(SHOOTER_RAMP_PAUSE); // TODO: Or wait until reported velocity is near target?
+            //robot.shooter.setShootSpeed(SHOOTER_VELOCITY+SHOOTER_OVERSHOOT);
+            //teamUtil.pause(SHOOTER_RAMP_PAUSE); // TODO: Or wait until reported velocity is near target?
             robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
 
         }if(gamepad1.dpadDownWasReleased()){
             robot.shooter.stopShooter();
         }
         if(gamepad1.aWasReleased()){
-            robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
+            //robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
+            robot.shooter.sidePushersHold();
+            while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
+            robot.shooter.shootSuperFastNoWait(true, true, true);
         }
         if(gamepad1.xWasPressed()){
             robot.intake.elevatorToFlippersV2(true, true);

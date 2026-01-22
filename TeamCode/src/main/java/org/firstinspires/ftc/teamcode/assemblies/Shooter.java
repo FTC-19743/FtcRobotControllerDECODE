@@ -228,6 +228,7 @@ public class Shooter {
     public AtomicBoolean superFastShooting = new AtomicBoolean(false);
     // Assumes 1-3 artifacts are loaded into the shooter and at least one has settled in to the shooter itself.  all 3 flippers are retracted
     // Does not use sensors in any way, doesn't detect stalls, etc.
+    // From the time the push is commanded to the ball hitting the flywheels is about 200-250ms
     public void shoot3SuperFast(boolean pushLeftFirst, boolean reset, boolean logShots) {
         superFastShooting.set(true);
         long startTime = System.currentTimeMillis();
@@ -411,12 +412,12 @@ public class Shooter {
     }
 
     public void adjustShooterV4(double distance){
-        if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
+        if(details)teamUtil.log("adjustShooterV4 to distance: " + distance);
 
         VELOCITY_COMMANDED = calculateVelocityV2(distance);
         setShootSpeed(VELOCITY_COMMANDED);
         aim(calculatePitchV2(distance));
-        if(details)teamUtil.log("adjustShooterV3 Finished");
+        if(details)teamUtil.log("adjustShooterV4 Finished");
     }
 
     public static double minSpeedA = 0.0000490408;
