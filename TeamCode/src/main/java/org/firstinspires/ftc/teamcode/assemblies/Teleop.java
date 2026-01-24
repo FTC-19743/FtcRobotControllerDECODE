@@ -118,18 +118,19 @@ public class Teleop extends LinearOpMode {
                     if(shootingMode){
                         shootingMode = false;
                         robot.blinkin.setSignal(Blinkin.Signals.OFF);
-                        robot.shooter.setShootSpeed(robot.shooter.IDLE_FLYWHEEL_VELOCITY);
                     }else{
                         shootingMode = true;
                     }
                 }
 
                 if(shootingMode){
-                    if(robot.canShoot()){
+                    if(robot.canShoot()){ // TODO: is this the right version of this method? Seems like it using old flywheel speed check logic
                         robot.blinkin.setSignal(Blinkin.Signals.READY_TO_SHOOT);
                     }else{
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);
                     }
+                }else{
+                    robot.shooter.setShootSpeed(Math.min(robot.shooter.calculateVelocityV2(robot.drive.robotGoalDistance()),Shooter.MAX_IDLE_FLYWHEEL_VELOCITY));
                 }
                 if(shootingMode){
                     robot.drive.setHeldHeading(robot.drive.robotGoalHeading());
@@ -164,27 +165,31 @@ public class Teleop extends LinearOpMode {
                 ////////////// SHOOTER ///////////////////////////
 
                 if(shootingMode){
-                    robot.shooter.adjustShooterV3(robot.drive.robotGoalDistance());
+                    robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
                 }
 
                 if(gamepad2.rightBumperWasReleased()){
                     robot.resetFlippersAndPusherNoWait(500);
                 }
                 if(gamepad2.bWasReleased()){
-                    robot.shootArtifactLocationNoWait(Intake.Location.RIGHT);
+                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
                 }
                 if(gamepad2.xWasReleased()){
-                    robot.shootArtifactLocationNoWait(Intake.Location.LEFT);
+                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
                 }
+
                 if(gamepad2.yWasReleased()){
-                    robot.shootArtifactLocationNoWait(Intake.Location.CENTER);
-                }
-                if(gamepad2.aWasReleased()){
-                    robot.shooter.pusher.calibrateNoWait( );
                     robot.shooter.pushOneNoWait();
                 }
+
+                if(gamepad2.aWasReleased()){
+
+                    robot.shooter.pusher.reset(false);
+                }
                 if(gamepad2.right_trigger > .6f && shootingMode){
-                    robot.shootIfCanTeleop(); // blinkin based on the result?
+                    if(!robot.shooter.superFastShooting.get()){
+                        robot.shootIfCanTeleop(); // blinkin based on the result?
+                    }
                 }
 
                 ///////////// ENDGAME //////////////////////////////
@@ -231,26 +236,30 @@ public class Teleop extends LinearOpMode {
                 if(gamepad2.left_trigger > .8){ // Set up for a manual (Human Player) load
                     robot.intake.flippersToTransfer();
                     robot.intake.intakeOut();
-                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) robot.intake.stopIntakeDetector();
-                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // TODO: Update once we have a detector that works at the top
+                    robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED; // tell detector to focus on loaded position
+                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // failsafe in case LL not working
                 }
 
                 if(gamepad2.leftBumperWasReleased()){
                     if(robot.intake.servoPositionIs(robot.intake.left_flipper, Intake.FLIPPER_TRANSFER)){
-                        robot.intake.flipNextFastNoWait();
+                        robot.intake.superFastUnloadNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,Intake.middleLoad!= Intake.ARTIFACT.NONE,Intake.rightLoad!= Intake.ARTIFACT.NONE);
                     }else{
                         if(limelightOverride){
                             robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
                         }
-                        robot.intake.elevatorToShooterFastNoWait();
+                        robot.intake.elevatorToShooterFastNoWait(false); // use loaded detector
                     }
                 }
-                if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE && !limelightOverride) {
-                    robot.intake.detectIntakeArtifactsV2();
+                if (!limelightOverride) {
+                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
+                        robot.intake.detectIntakeArtifactsV2();
+                    } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED){
+                        robot.intake.detectLoadedArtifactsV2();
+                    }
                 }
 
                 if(gamepad2.backWasPressed()){
-                    robot.intake.elevatorToFlippersV2NoWait();
+                    robot.intake.elevatorToFlippersV2NoWait(true); // use loaded detector
                 }
 
                 robot.intake.signalArtifacts();
@@ -271,8 +280,11 @@ public class Teleop extends LinearOpMode {
                 //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
                 //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
                 //telemetry.addLine("Hang Manual: " + hangManualControl);
-                telemetry.addLine((endgameMode ? "ENDGAME ":"")+"ODO X: " + robot.drive.oQlocalizer.posX_mm + " ODO Y: " + robot.drive.oQlocalizer.posY_mm + " ODO Heading: " + robot.drive.getHeadingODO());
-                telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "Red" : "Blue"));
+                if (endgameMode) {
+                    telemetry.addLine("----- END GAME ----");
+                }
+                telemetry.addLine(String.format("X: %d Y: %d Heading: %.1f", robot.drive.oQlocalizer.posX_mm, robot.drive.oQlocalizer.posY_mm, robot.drive.getHeadingODO()));
+                telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "RED" : "BLUE"));
                 //telemetry.addLine("Detector Mode: " + robot.intake.detectorMode + " Left: " + Intake.leftIntake);
                 telemetry.update();
             }

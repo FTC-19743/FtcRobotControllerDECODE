@@ -17,7 +17,7 @@ public class Auto extends LinearOpMode {
     boolean shootingMode = false;
     boolean useIntakeDetector = false;
     long gateLeaveTime = Robot.gateElapsedTime;
-    boolean getMore = false;
+    boolean useV3 = false;
 
 
     public void runOpMode() {
@@ -90,31 +90,38 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
+        teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+        teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+        teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
+        teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+        teamUtil.telemetry.addLine("----------------------------------");
+        teamUtil.telemetry.addLine("Check Limelight functionality");
+        teamUtil.telemetry.update();
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
-            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("----------------------------------");
-            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
-            if(getMore){
-                if(!robot.limeLightActive()){
-                    robot.intake.startIntakeDetector();
-                }else{
-                    robot.intake.detectIntakeArtifactsV2();
-                    robot.intake.signalArtifacts();
-                }
+            if(!robot.limeLightActive()){
+                robot.intake.startDetector();
+            }else{
+                robot.intake.detectIntakeArtifactsV2();
+                robot.intake.signalArtifacts();
             }
-            if (gamepad1.dpadUpWasPressed()) {
-                getMore = true;
-            }
-            if(gamepad1.dpadDownWasPressed()){
-                getMore = false;
-            }
-            teamUtil.telemetry.update();
-            teamUtil.pause(20);
         }
         if (isStopRequested()) return;
+
+        teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+        teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+        teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
+        teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+        teamUtil.telemetry.addLine("----------------------------------");
+        teamUtil.telemetry.addLine("Use auto V3: "+useV3);
+        teamUtil.telemetry.update();
+        while (!gamepad1.aWasPressed() && !isStopRequested()) {
+            if(gamepad1.dpadUpWasPressed()){
+                useV3 = true;
+            }else if(gamepad1.dpadDownWasPressed()){
+                useV3 = false;
+            }
+        }
+        if(isStopRequested()) return;
 
         robot.intake.intakeNum = 0;
         Intake.leftIntake = Intake.ARTIFACT.NONE;
@@ -126,7 +133,7 @@ public class Auto extends LinearOpMode {
         teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
         teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
         teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-        teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
+        teamUtil.telemetry.addLine("Use auto V3: "+useV3);
         teamUtil.telemetry.addLine("----------------------------------");
         teamUtil.telemetry.addLine("Press A to Localize and start CV");
         teamUtil.telemetry.update();
@@ -141,7 +148,7 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
+            teamUtil.telemetry.addLine("Use auto V3: "+useV3);
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
@@ -151,13 +158,13 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
+
         while (!isStarted()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("Get 5th set of balls from loading zone: "+ getMore);
-            teamUtil.telemetry.addLine("Green goes on the power switch side");
+            teamUtil.telemetry.addLine("Use auto V3: "+useV3);
             robot.drive.localizerTelemetry();
             robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
@@ -183,7 +190,11 @@ public class Auto extends LinearOpMode {
             //teamUtil.pause(delay);
 
             if (teamUtil.SIDE == teamUtil.Side.GOAL) {
-                robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, getMore);
+                if(useV3) {
+                    robot.goalSideV3(true, useIntakeDetector, gateLeaveTime);
+                }else{
+                    //robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, true);
+                }
             } else {
                 robot.humanSide(true);
             }

@@ -10,21 +10,34 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @Config
 public class Shooter {
     HardwareMap hardwareMap;
     Telemetry telemetry;
     public DcMotorEx leftFlywheel;
     public DcMotorEx rightFlywheel;
-    public AxonPusher pusher;
+    //public AxonPusher pusher;
+    public FiveTurnPusher pusher;
     private Servo aimer;
     private DigitalChannel loadedSensor;
-    private Servo rgb1;
+    private Servo leftPusher;
+    private Servo rightPusher;
 
     public boolean details;
+
+    public static float LEFT_PUSHER_STOW = .38f;
+    public static float LEFT_PUSHER_HOLD = .5f;
+    public static float LEFT_PUSHER_PUSH = .73f;
+    public static float RIGHT_PUSHER_STOW = .644f;
+    public static float RIGHT_PUSHER_HOLD = .59f;
+    public static float RIGHT_PUSHER_PUSH = .34f;
+
     public static float AIMER_CALIBRATE = .4f;
+    public static float PUSHER_CALIBRATE_PITCH = .57f;
     public static float AIMER_MIN = .3f;
-    public static float AIMER_MAX = .55f;
+    public static float AIMER_MAX = .54f;
 
     public static double SHOOTER_FAR_VELOCITY = 1300;
     public static float PUSHER_VELOCITY = .5f;
@@ -62,8 +75,8 @@ public class Shooter {
     public static double MID_SHORT_DISTANCE_THRESHOLD = 1400;
 
     public static double VELOCITY_COMMANDED;
-    public static double VELOCITY_COMMANDED_THRESHOLD = 50;
-    public static double IDLE_FLYWHEEL_VELOCITY = 800;
+    public static double VELOCITY_COMMANDED_THRESHOLD = 30;
+    public static double MAX_IDLE_FLYWHEEL_VELOCITY = 800;
 
     /// /////////////OLD DATA////////////////////////
     // for aimer:
@@ -95,7 +108,9 @@ public class Shooter {
         teamUtil.log("Constructing Shooter");
         hardwareMap = teamUtil.theOpMode.hardwareMap;
         telemetry = teamUtil.theOpMode.telemetry;
-        pusher = new AxonPusher();
+        //pusher = new AxonPusher();
+        pusher = new FiveTurnPusher();
+
     }
     public void setFlywheelCoefficients(double P, double I, double D, double F){
         leftFlywheel.setVelocityPIDFCoefficients(P, I, D, F);
@@ -120,17 +135,26 @@ public class Shooter {
         flywheelStartup();
         pusher.initialize();
         aimer = hardwareMap.get(Servo.class,"aimer");
+        leftPusher = hardwareMap.get(Servo.class,"leftpusher");
+        rightPusher = hardwareMap.get(Servo.class,"rightpusher");
+
         loadedSensor = hardwareMap.get(DigitalChannel.class, "loaded");
         loadedSensor.setMode(DigitalChannel.Mode.INPUT);
 
         teamUtil.log("Shooter Initialized");
     }
+
+
+
+
     public void calibrate(){
         aimer.setPosition(AIMER_CALIBRATE);
         teamUtil.pause (500); // wait for right pitch before moving pusher
-        pusher.setPower(0);
-        pusher.calibrate();
-        pushOne();
+        //pusher.setPower(0);
+        //calibratePusherV2(); // New stall based calibration
+        pusher.calibrate(); // Old calibration for pusher using AxonMax potentiometer
+        sidePushersStow();
+        // pushOne(); // Not needed with FiveTurnPusher
     }
     public void outputTelemetry(){
         telemetry.addLine("Loaded: "+loadedSensor.getState());
@@ -161,9 +185,13 @@ public class Shooter {
     }
 
     public void pushOneBackwards(long pause){
+        pusher.reverse1(1000);
+        /*
         pusher.setPower(-1);
         teamUtil.pause(pause);
         pusher.setPower(0);
+
+         */
     }
 
     public void pushOne(){
@@ -185,6 +213,102 @@ public class Shooter {
                 });
                 thread.start();
             }
+    }
+
+    public static long SF_SHOT_PAUSE = 100;
+    public static long SF_LEFT_PUSH_PAUSE = 200;
+    public static long SF_RIGHT_PUSH_PAUSE = 200;
+    public static long SF_LEFT_PUSH_PAUSE_NEAR = 200;
+    public static long SF_RIGHT_PUSH_PAUSE_NEAR = 200;
+    public static long SF_LEFT_PUSH_PAUSE_FAR = 300;
+    public static long SF_RIGHT_PUSH_PAUSE_FAR = 300;
+    public static long SF_LAST_SHOT_PAUSE = 100;
+    public static long SF_LAST_PADDLE_PAUSE = 100;
+
+    public AtomicBoolean superFastShooting = new AtomicBoolean(false);
+    // Assumes 1-3 artifacts are loaded into the shooter and at least one has settled in to the shooter itself.  all 3 flippers are retracted
+    // Does not use sensors in any way, doesn't detect stalls, etc.
+    // From the time the push is commanded to the ball hitting the flywheels is about 200-250ms
+    public void shoot3SuperFast(boolean pushLeftFirst, boolean reset, boolean logShots) {
+        superFastShooting.set(true);
+        long startTime = System.currentTimeMillis();
+        teamUtil.log("shoot3SuperFast");
+        if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+        pusher.push1NoWait();
+        teamUtil.pause(SF_SHOT_PAUSE);
+        if (pushLeftFirst) {
+            leftPusher.setPosition(LEFT_PUSHER_PUSH);
+            teamUtil.pause(SF_LEFT_PUSH_PAUSE);
+            leftPusher.setPosition(LEFT_PUSHER_STOW);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_SHOT_PAUSE);
+            rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+            teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_LAST_SHOT_PAUSE);
+            rightPusher.setPosition(RIGHT_PUSHER_STOW); // start moving this back so it doesn't trigger the loaded detector
+            teamUtil.pause(SF_LAST_PADDLE_PAUSE);
+        } else {
+            rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+            teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
+            rightPusher.setPosition(RIGHT_PUSHER_STOW);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_SHOT_PAUSE);
+            leftPusher.setPosition(LEFT_PUSHER_PUSH);
+            teamUtil.pause(SF_LEFT_PUSH_PAUSE);
+            if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            pusher.push1NoWait();
+            teamUtil.pause(SF_LAST_SHOT_PAUSE);
+            leftPusher.setPosition(LEFT_PUSHER_STOW);
+            teamUtil.pause(SF_LAST_PADDLE_PAUSE); // start moving this back so it doesn't trigger the loaded detector
+        }
+        if (reset) pusher.reset(false);
+        teamUtil.log("shoot3SuperFast Finished in " + (System.currentTimeMillis() - startTime));
+        superFastShooting.set(false);
+    }
+
+
+    public void shootSuperFastNoWait (boolean pushLeftFirst, boolean reset, boolean logShots) {
+        teamUtil.log("Launching Thread to shootSuperFastNoWait");
+        if (superFastShooting.get()) {
+            teamUtil.log("WARNING: shootSuperFastNoWait called while superFastShooting--Ignored");
+            return;
+        }
+        superFastShooting.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shoot3SuperFast(pushLeftFirst, reset, logShots);
+            }
+        });
+        thread.start();
+
+    }
+
+    public void sidePushersStow() {
+        leftPusher.setPosition(LEFT_PUSHER_STOW);
+        rightPusher.setPosition(RIGHT_PUSHER_STOW);
+    }
+    public void sidePushersHold() {
+        leftPusher.setPosition(LEFT_PUSHER_HOLD);
+        rightPusher.setPosition(RIGHT_PUSHER_HOLD);
+    }
+
+    public static long LEFT_PUSH_PAUSE = 250;
+    public static long RIGHT_PUSH_PAUSE = 250;
+
+    public void pushLeft() {
+        leftPusher.setPosition(LEFT_PUSHER_PUSH);
+        teamUtil.pause(LEFT_PUSH_PAUSE);
+        leftPusher.setPosition(LEFT_PUSHER_STOW);
+    }
+    public void pushRight() {
+        rightPusher.setPosition(RIGHT_PUSHER_PUSH);
+        teamUtil.pause(RIGHT_PUSH_PAUSE);
+        rightPusher.setPosition(RIGHT_PUSHER_STOW);
     }
 
 
@@ -215,15 +339,30 @@ public class Shooter {
 
     }
 
+    public static double A09_VELOCITY_A = 0.0000303382;
+    public static double A09_VELOCITY_B = 0.13061;
+    public static double A09_VELOCITY_C = 655.50668;
+
+    /* OLD VALUES
     public static double A09_VELOCITY_A = 0.000239375;
     public static double A09_VELOCITY_B = -0.431755;
     public static double A09_VELOCITY_C = 984.33854;
+
+     */
+
+
     public static double A09_SHORT_AIM_M = .000025;
     public static double A09_SHORT_AIM_B = .2775;
     public static double A09_LONG_AIM_M = .000118464;
     public static double A09_LONG_AIM_B = .18204;
-    public static double A09_DEEP_VELOCITY_M = 0.297372;
-    public static double A09_DEEP_VELOCITY_B = 472.75242;
+//    public static double A09_DEEP_VELOCITY_M = 0.297372;
+//    public static double A09_DEEP_VELOCITY_B = 472.75242;
+    public static double A09_DEEP_VELOCITY_M = 0.15748;
+    public static double A09_DEEP_VELOCITY_B = 1127.55906;
+
+    public static double MANUAL_FLYWHEEL_ADJUST = 0;
+    public static double LONG_MANUAL_FLYWHEEL_ADJUST = 0;
+
 
     public double getVelocityNeeded(double distance){
         double velocityNeeded;
@@ -232,9 +371,9 @@ public class Shooter {
         }else if (distance<MID_DISTANCE_THRESHOLD){ // are the first two not the same?
             velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
         }else{
-            velocityNeeded = A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B; // was this tuned? it shouldn't be linear
+            velocityNeeded = Math.round((A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B+LONG_MANUAL_FLYWHEEL_ADJUST) / 20.0) * 20.0;
         }
-        return velocityNeeded;
+        return velocityNeeded + MANUAL_FLYWHEEL_ADJUST;
     }
 
     /*
@@ -272,6 +411,15 @@ public class Shooter {
         if(details)teamUtil.log("adjustShooterV3 Finished");
     }
 
+    public void adjustShooterV4(double distance){
+        if(details)teamUtil.log("adjustShooterV4 to distance: " + distance);
+
+        VELOCITY_COMMANDED = calculateVelocityV2(distance);
+        setShootSpeed(VELOCITY_COMMANDED);
+        aim(calculatePitchV2(distance));
+        if(details)teamUtil.log("adjustShooterV4 Finished");
+    }
+
     public static double minSpeedA = 0.0000490408;
     public static double minSpeedB = 0.0601474;
     public static double minSpeedC = 638.0056;
@@ -290,19 +438,62 @@ public class Shooter {
         return (calculateMinSpeed(distance) + calculateMaxSpeed(distance) ) / 2;
     }
 
+    public static double pitchA = 0;
+    public static double pitchB = 0.0004007;
+    public static double pitchC = 0;
+    public static double pitchD = 9.91034e-8;
+    public static double pitchE = 4.73733e-7;
+    public static double pitchF = -6.27271e-7;
+
+    /*
     public static double pitchA = 0.012;
     public static double pitchB = -0.0000044767;
     public static double pitchC = 0.000457262;
     public static double pitchD = -8.07697e-8;
     public static double pitchE = -3.01755e-7;
     public static double pitchF = 2.67729e-7;
-    public static double longPitch = .44;
+    public static double longPitch = .48; // .44 with the old function
+
+     */
+
+
+
+    public static double LONG_MANUAL_PITCH_ADJUST = 0;
 
     public double calculatePitch(double distance, double velocity) {
         if(distance<MID_DISTANCE_THRESHOLD){
             return pitchA + pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
         }else{
-            return longPitch; // was the velocity really tuned with this in mind?
+            return longPitch + LONG_MANUAL_PITCH_ADJUST; // was the velocity really tuned with this in mind?
+        }
+    }
+
+    public static double pitchANew = -2.8869e-8;
+    public static double pitchBNew = 0.000186393;
+    public static double pitchCNew = 0.153392;
+    public static double longPitch = .44; // .44 with the old function
+
+
+    public double calculatePitchV2(double distance){
+        if (distance<MID_DISTANCE_THRESHOLD){
+            return pitchANew*distance*distance+pitchBNew*distance+pitchCNew;
+        }else{
+            return longPitch;
+        }
+    }
+
+    public static double velocityANew = 0.000142857;
+    public static double shortVelocityBNew = -0.209524;
+    public static double velocityCNew = 895.83333;
+
+    public static double longVelocityM = 0.3;
+    public static double longVelocityB = 540;
+
+    public double calculateVelocityV2(double distance){
+        if (distance<MID_DISTANCE_THRESHOLD){
+            return velocityANew*distance*distance+shortVelocityBNew*distance+velocityCNew;
+        }else{
+            return longVelocityM*distance+longVelocityB;
         }
     }
 
@@ -310,7 +501,7 @@ public class Shooter {
         double angle = calculatePitch(distance, velocity);
         aim(angle);
     }
-
+    /*
     public boolean flywheelSpeedOK(double distance, double velocity){
         if(distance<MID_DISTANCE_THRESHOLD) {
             double minV = calculateMinSpeed(distance);
@@ -320,10 +511,45 @@ public class Shooter {
             }
             return true;
         }else{
-            if(Math.abs(velocity-getVelocityNeeded(distance))>VELOCITY_COMMANDED_THRESHOLD){
-                return false;
-            }
-            return true;
+//            if(Math.abs(velocity-getVelocityNeeded(distance))>VELOCITY_COMMANDED_THRESHOLD){
+//                return false;
+//            }
+//            return true;
+            return Math.abs(velocity-getVelocityNeeded(distance)) < .0001;
         }
     }
+
+     */
+
+    /// ////////////////////////////////////////////////////////
+    // NOT USED
+    // New calibration for pusher: Stall pusher at an extreme pitch
+/*
+    public static float  PUSHER_CALIBRATE_POWER = .1f;
+    public static int PUSHER_CALIBRATE_OFFSET = 500;
+    public void calibratePusherV2() {
+        pusher.CALIBRATED = false;
+        long timeOutTime = System.currentTimeMillis() + 2000;
+        teamUtil.log("Calibrating Pusher V2");
+        aimer.setPosition(PUSHER_CALIBRATE_PITCH);
+        teamUtil.pause(200); // wait for it to start moving
+
+        pusher.servo.setPower(PUSHER_CALIBRATE_POWER);
+        float lastPusherPosition = pusher.getPositionEncoder();
+        teamUtil.pause(250);
+        while (pusher.getPositionEncoder() != lastPusherPosition && teamUtil.keepGoing(timeOutTime)) {
+            lastPusherPosition = pusher.getPositionEncoder();
+            if (details) teamUtil.log("Calibrate Pusher: " + lastPusherPosition);
+            teamUtil.pause(50);
+        }
+        pusher.servo.setPower(0);
+        pusher.ENCODER_LOAD_POSITION_1 = pusher.getPositionEncoder() - PUSHER_CALIBRATE_OFFSET;
+
+        aimer.setPosition(AIMER_CALIBRATE);
+        teamUtil.pause(250);
+        teamUtil.log("Calibrate PusherV2: ENCODER_LOAD_POSITION_1: "+ pusher.ENCODER_LOAD_POSITION_1);
+        pusher.CALIBRATED = false;
+    }
+
+ */
 }

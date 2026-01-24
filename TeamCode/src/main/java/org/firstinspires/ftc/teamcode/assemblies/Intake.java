@@ -45,6 +45,7 @@ public class Intake {
 
     public AtomicBoolean elevatorMoving = new AtomicBoolean(false);
     public AtomicBoolean failedOut = new AtomicBoolean(false);
+    public AtomicBoolean flipping = new AtomicBoolean(false);
 
     public AtomicBoolean detecting = new AtomicBoolean(false);
     public AtomicBoolean stopDetector = new AtomicBoolean(false);
@@ -57,7 +58,7 @@ public class Intake {
 
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
     static public int ELEVATOR_GROUND = 5;
-    static public long ELEVATOR_PAUSE_1 = 500;
+    static public long ELEVATOR_PAUSE_1 = 300;
     static public long ELEVATOR_PAUSE_2 = 500;
     public static float ELEVATOR_UP_POWER = .5f;
     public static float ELEVATOR_DOWN_POWER = -.5f;
@@ -165,9 +166,9 @@ public class Intake {
     public void intakeStart(){
         teamUtil.log("intakeStart");
         intakeIn();
-        startIntakeDetector();
+        startDetector();
+        detectorMode = DETECTION_MODE.INTAKE;
         flippersToCeiling();
-
     }
 
     public void intakeOut(){
@@ -285,6 +286,79 @@ public class Intake {
     }
 
 
+    public static long FAST3_UNLOAD_PAUSE = 400;
+    public static long FAST3_LEFT_ROLL_PAUSE = 600; // use big number for timing based stuff.  Set to small number if relying on shooter detector
+    public static long FAST3_RIGHT_ROLL_PAUSE = 600;
+
+    public void superFastUnload(boolean leftLoaded, boolean middleLoaded, boolean rightLoaded) {
+        flipping.set(true);
+        middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
+        left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin left
+        right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin right
+        teamUtil.pause(FAST3_UNLOAD_PAUSE);
+        middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
+        if (!middleLoaded && rightLoaded) {
+            right_flipper.setPosition(FLIPPER_CEILING); // release right and give it a head start on the left
+            teamUtil.pause(FAST3_RIGHT_ROLL_PAUSE);
+        }
+        left_flipper.setPosition(FLIPPER_CEILING); // release left
+        right_flipper.setPosition(FLIPPER_CEILING); // release right
+
+        flipping.set(false);
+        teamUtil.log("superFastUnload Finished");
+    }
+    public void superFastUnloadNoWait(boolean leftLoaded, boolean middleLoaded, boolean rightLoaded) {
+        teamUtil.log("Launching Thread to superFastUnload");
+        if (flipping.get()) {
+            teamUtil.log("WARNING: superFastUnload called while flipping--Ignored");
+            return;
+        }
+        flipping.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                superFastUnload( leftLoaded,  middleLoaded,  rightLoaded);
+            }
+        });
+        thread.start();
+    }
+
+
+    public void fastUnloadStep1() {
+        flipping.set(true);
+        middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
+        left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin left
+        right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin right
+        teamUtil.pause(FAST3_UNLOAD_PAUSE);
+        middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
+        left_flipper.setPosition(FLIPPER_CEILING); // release left
+        middleLoad = ARTIFACT.NONE;
+        leftLoad = ARTIFACT.NONE;
+        flipping.set(false);
+        teamUtil.log("fastUnloadStep1 Finished");
+    }
+
+    public void fastUnloadStep1NoWait() {
+        teamUtil.log("Launching Thread to fastUnloadStep1");
+        if (flipping.get()) {
+            teamUtil.log("WARNING: fastUnloadStep1NoWait called while flipping--Ignored");
+            return;
+        }
+        flipping.set(true);
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                fastUnloadStep1();
+            }
+        });
+        thread.start();
+    }
+
+    public void fastUnloadStep2() {
+        right_flipper.setPosition(FLIPPER_CEILING); // release right
+        rightLoad = ARTIFACT.NONE;
+    }
+
     public static long middleFlipToSensor = 0;
     public static long outsideFlipToSensor = 800;
 
@@ -340,23 +414,37 @@ public class Intake {
     }
 
     public void flipNextFast(){
+        flipping.set(true);
         long timeOutTime = System.currentTimeMillis()+2500;
-        while(numBallsInFlippers()>0 && teamUtil.keepGoing(timeOutTime)){
+        while(ballsLeftToShoot() && teamUtil.keepGoing(timeOutTime)){
             teamUtil.log("Attempting to load shooter");
             long detectTime = System.currentTimeMillis() + flipNextFastInternal();
             while(!teamUtil.robot.shooter.isLoaded() && teamUtil.keepGoing(detectTime)){
-
                 teamUtil.pause(20);
             }
             if(teamUtil.robot.shooter.isLoaded()){
                 teamUtil.log("Shooter Successfully loaded");
+                flipping.set(false);
                 return;
+            } else {
+                teamUtil.log("WARNING: flipNextFast: Unable to load shooter, moving to next shot");
             }
         }
+        if(!teamUtil.keepGoing(timeOutTime)){
+            teamUtil.log("flipNextFast timed out");
+        }else {
+            teamUtil.log("WARNING: flipNextFast: Unable to load any shots, giving up");
+        }
+        flipping.set(false);
     }
 
     public void flipNextFastNoWait() {
         teamUtil.log("Launching Thread to flipNextFast.");
+        if (flipping.get()) {
+            teamUtil.log("WARNING: flipNextFastNoWait called while flipping--Ignored");
+            return;
+        }
+        flipping.set(true);
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -364,6 +452,14 @@ public class Intake {
             }
         });
         thread.start();
+    }
+
+    public boolean ballsLeftToShoot(){
+        teamUtil.log("left: "+left_flipper.getPosition()+", middle: "+middle_flipper.getPosition()+", right: "+right_flipper.getPosition()+", balls: "+numBallsInFlippers());
+        return servoPositionIs(left_flipper, EDGE_FLIPPER_SHOOTER_TRANSFER) ||
+                servoPositionIs(middle_flipper, MIDDLE_FLIPPER_SHOOTER_TRANSFER) ||
+                servoPositionIs(right_flipper, EDGE_FLIPPER_SHOOTER_TRANSFER) ||
+                numBallsInFlippers() > 0;
     }
 
     public boolean elevatorToGroundV2() {
@@ -448,7 +544,8 @@ public class Intake {
             flippersToCeiling();
 
             intakeIn();
-            startIntakeDetector();
+            startDetector();
+            detectorMode = DETECTION_MODE.INTAKE;
 
             teamUtil.log("getReadyToIntake Finished");
             return true;
@@ -478,22 +575,23 @@ public class Intake {
 
     // Transfer from ground to flippers and preload for fast shots
     // Does not worry about colors
-    public void elevatorToShooterFast(){
+    public void elevatorToShooterFast(boolean detectLoaded){
         teamUtil.log("elevatorToShooterFast");
         if(leftIntake == ARTIFACT.NONE && middleIntake == ARTIFACT.NONE && rightIntake == ARTIFACT.NONE){
-            teamUtil.log("elevatorToShooterFast called without loaded artifacts");
+            teamUtil.log("WARNING: elevatorToShooterFast called without loaded artifacts");
             elevatorMoving.set(false);
             failedOut.set(true);
             return;
         }
-        if(elevatorToFlippersV2(false)){
-            flipNextFast();
+        if(elevatorToFlippersV2(false, detectLoaded)){
+            superFastUnloadNoWait(leftLoad!= ARTIFACT.NONE,middleLoad!= ARTIFACT.NONE,rightLoad!= ARTIFACT.NONE);
+
         }
         teamUtil.log("elevatorToShooterFast finished");
         elevatorMoving.set(false);
     }
 
-    public void elevatorToShooterFastNoWait(){
+    public void elevatorToShooterFastNoWait(boolean detectLoaded){
         if (elevatorMoving.get()) {
             teamUtil.log("WARNING: elevatorToShooterNoWait called while elevatorMoving is true--Ignored");
             return;
@@ -504,7 +602,7 @@ public class Intake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                elevatorToShooterFast();
+                elevatorToShooterFast(detectLoaded);
             }
         });
         thread.start();
@@ -512,7 +610,7 @@ public class Intake {
 
     // Transfer from ground to flippers and optionally wait for elevator to get back to ground before returning
     // Returns false if the elevator stalls or times out
-    public boolean elevatorToFlippersV2(boolean waitForGround){
+    public boolean elevatorToFlippersV2(boolean waitForGround, boolean detectLoaded){
         teamUtil.log("elevatorToFlippersV2NoWait");
 
         failedOut.set(false);
@@ -525,7 +623,7 @@ public class Intake {
 
         // TODO: Consider turning the intake wheel off at this point, it might make it slightly more difficult for the elevator to go up but avoid pulling in extra balls
 
-        // "transfer" the sensor readings to the loaded level TODO: Once we have a detector that we trust at the top, we can use that instead
+        // "transfer" the sensor readings to the loaded level, this is a backup for the loaded detector
         setLoadedArtifacts(leftIntake, middleIntake, rightIntake);
 
         // Move flippers out of the way
@@ -554,12 +652,11 @@ public class Intake {
             setLoadedArtifacts(ARTIFACT.NONE, ARTIFACT.NONE, ARTIFACT.NONE);
 
             elevator.setPower(0);
-            stopIntakeDetector();
+            stopDetector();
             elevatorMoving.set(false);
             failedOut.set(true);
             return false;
         }
-        stopIntakeDetector();
 
         // Hold at unload position
         elevator.setTargetPosition(ELEVATOR_UNLOAD_ENCODER);
@@ -571,21 +668,27 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
-        //setDetectorModeLoaded(); // Tell Limelight to shift to loaded mode  NOT USING THIS CURRENTLY
+        if(detectLoaded) detectorMode = DETECTION_MODE.LOADED;
         teamUtil.pause(ELEVATOR_PAUSE_2);
 
         if (waitForGround) {
             boolean success =  elevatorToGroundV2();
+            if (detectLoaded) detectLoadedArtifactsV2();
+            signalArtifacts();
+            //stopDetector();
             teamUtil.log("elevatorToFlippersV2 Finished");
             return success;
         } else {
             elevatorToGroundV2NoWait();
+            if (detectLoaded) detectLoadedArtifactsV2();
+            signalArtifacts();
+            //stopDetector();
             teamUtil.log("elevatorToFlippersV2 Finished while elevator returning to ground");
             return true;
         }
     }
 
-    public void elevatorToFlippersV2NoWait(){
+    public void elevatorToFlippersV2NoWait(boolean detectLoaded){
         if (elevatorMoving.get()) {
             teamUtil.log("WARNING: elevatorToFlippersV2NoWait called while moving--Ignored");
             return;
@@ -596,7 +699,7 @@ public class Intake {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                elevatorToFlippersV2(true);
+                elevatorToFlippersV2(true, detectLoaded);
             }
         });
         thread.start();
@@ -610,6 +713,12 @@ public class Intake {
     public static float rgbPURPLE = 0.7f;
     public static float rbgOFF = 0f;
 
+    public void setRGBsOff() {
+        rgbLeft.setPosition(rbgOFF);
+        rgbMiddle.setPosition(rbgOFF);
+        rgbRight.setPosition(rbgOFF);
+
+    }
     public void setRGBSignal(Servo rgb, ARTIFACT artifact) {
         switch (artifact) {
             case GREEN: rgb.setPosition(rgbGREEN); break;
@@ -642,34 +751,34 @@ public class Intake {
     public static boolean KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = true;
 
     // Tell the limelight where to look for ARTIFACTS
-    public boolean startIntakeDetector() {
+    public boolean startDetector() {
         if (teamUtil.robot.limeLightActive()) {
-            teamUtil.log("WARNING: startIntakeDetector called while limelight active.  Ignored.");
+            teamUtil.log("WARNING: startDetector called while limelight active.  Ignored.");
         } else {
-            teamUtil.log("startIntakeDetector: Result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
+            teamUtil.log("startDetector: Result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
         }
-        detectorMode = DETECTION_MODE.INTAKE;
         return true;
     }
 
-    public void stopIntakeDetector() {
-        teamUtil.log("stopIntakeDetector");
+    public void stopDetector() {
+        teamUtil.log("stopDetector");
         detectorMode = DETECTION_MODE.NONE;
         if (KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) {
-            teamUtil.log("stopIntakeDetector: Leaving Limelight Intake Detector pipeline running");
+            teamUtil.log("stopDetector: Leaving Limelight Detector pipeline running");
         } else {
-            teamUtil.log("stopIntakeDetector: Result: " + teamUtil.robot.stopLimeLight());
+            teamUtil.log("stopDetector: Result: " + teamUtil.robot.stopLimeLight());
         }
     }
 
-    public static long LL_RESET_PAUSE = 10;
+    public static long LL_RESET_PAUSE = 50;
     public boolean resetIntakeDetector() {
         teamUtil.log("resetIntakeDetector");
         boolean stored = KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;
         KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = false; // force stop of limelight
-        stopIntakeDetector();
+        stopDetector();
         teamUtil.pause(LL_RESET_PAUSE);
-        startIntakeDetector();
+        startDetector();
+        detectorMode = DETECTION_MODE.INTAKE;
         KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = stored; // restore previous value
         return true;
     }
@@ -687,8 +796,8 @@ public class Intake {
             return null;
         }
         int mode = (int) Math.round( llOutput[0]);
-        if (mode != detectorMode.ordinal()) {
-            teamUtil.log("ERROR: Limelight reported mode: "+mode+ " But we are in "+detectorMode+" whose ordinal value is " + detectorMode.ordinal());
+        if (mode != 23) {
+            teamUtil.log("WARNING: Limelight Detector Pipeline returned data not valid");
             if (DETECTOR_FAILSAFE) {
                 teamUtil.log("Attempting to restart Limelight Intake Detector with result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
             }
@@ -702,6 +811,15 @@ public class Intake {
         if (codeInt == 1) return ARTIFACT.GREEN;
         else if (codeInt == 2) return ARTIFACT.PURPLE;
         else return ARTIFACT.NONE;
+    }
+
+    public void logDetectorOutput() {
+        double[] llOutput = getDetectorOutput();
+        if (llOutput == null) {
+            return;
+        }
+        teamUtil.log("Detector Intake " + getArtifactColor(llOutput[2]) + "/" + getArtifactColor(llOutput[3]) + "/" + getArtifactColor(llOutput[4]) +
+                "  Loaded: " + getArtifactColor(llOutput[5]) + "/" + getArtifactColor(llOutput[6]) + "/" + getArtifactColor(llOutput[7]));
     }
 
     public boolean detectIntakeArtifactsV2() {
@@ -722,10 +840,10 @@ public class Intake {
         if (llOutput == null){
             return false;
         }
-        //teamUtil.log("Detect Loaded worked...Codes: " + llOutput[2] +", "+ llOutput[3]+", "+ llOutput[4]);
-        leftLoad = getArtifactColor(llOutput[2]);
-        middleLoad = getArtifactColor(llOutput[3]);
-        rightLoad = getArtifactColor(llOutput[4]);
+        //teamUtil.log("Detect Loaded worked...Codes: " + llOutput[5] +", "+ llOutput[6]+", "+ llOutput[7]);
+        leftLoad = getArtifactColor(llOutput[5]);
+        middleLoad = getArtifactColor(llOutput[6]);
+        rightLoad = getArtifactColor(llOutput[7]);
         return true;
     }
 

@@ -17,7 +17,6 @@ public class findServoPositions extends LinearOpMode {
     public static final double MINOR_INCREMENT = 0.01;
     public static final double MINOR_MINOR_INCREMENT = 0.001;
     public static double INITIAL_POS = .5;
-    public double currentPosition = INITIAL_POS;
     private Servo servo;
     private int port = 0;
     private boolean ch = true; // Start on Control Hub
@@ -41,8 +40,7 @@ public class findServoPositions extends LinearOpMode {
             flickerControl.setServoPwmRange(flickerPort, flickerRange);
         }
          */
-        servo.setPosition(INITIAL_POS);
-        currentPosition = INITIAL_POS;
+        //servo.setPosition(INITIAL_POS);
         if (port < 4) {
             String potName = "Pot";
             if (ch) {
@@ -63,35 +61,23 @@ public class findServoPositions extends LinearOpMode {
         updateServo();
 
         while (opModeIsActive()) {
-            if (gamepad1.dpadUpWasReleased() && (currentPosition < 1)) {
-                currentPosition = currentPosition + MAJOR_INCREMENT;
-                servo.setPosition(currentPosition);
+            if (gamepad1.dpadUpWasReleased() && (servo.getPosition() < 1)) {
+                servo.setPosition(Math.min(servo.getPosition() + MAJOR_INCREMENT,1));
             }
-            if (gamepad1.dpadDownWasReleased() && (currentPosition > 0)) {
-                currentPosition = currentPosition - MAJOR_INCREMENT;
-                servo.setPosition(currentPosition);
+            if (gamepad1.dpadDownWasReleased() && (servo.getPosition() > 0)) {
+                servo.setPosition(Math.max(servo.getPosition() - MAJOR_INCREMENT,0));
             }
-            if (gamepad1.dpadLeftWasReleased() && (currentPosition < 1)) {
-                currentPosition = currentPosition + MINOR_INCREMENT;
-                servo.setPosition(currentPosition);
+            if (gamepad1.dpadLeftWasReleased() && (servo.getPosition() < 1)) {
+                servo.setPosition(Math.min(servo.getPosition() + MINOR_INCREMENT,1));
             }
-            if (gamepad1.dpadRightWasReleased() && (currentPosition > 0)) {
-                currentPosition = currentPosition - MINOR_INCREMENT;
-                servo.setPosition(currentPosition);
+            if (gamepad1.dpadRightWasReleased() && (servo.getPosition() > 0)) {
+                servo.setPosition(Math.max(servo.getPosition() - MINOR_INCREMENT,0));
             }
-            if (gamepad1.bWasReleased()){
-                servo.setPosition(0);
+            if (gamepad1.rightBumperWasReleased() && (servo.getPosition() < 1)) {
+                servo.setPosition(Math.min(servo.getPosition() + MINOR_MINOR_INCREMENT,1));
             }
-            if (gamepad1.right_trigger>.5){
-                servo.setPosition(1);
-            }
-            if (gamepad1.rightBumperWasReleased() && (currentPosition < 1)) {
-                currentPosition = currentPosition + MINOR_MINOR_INCREMENT;
-                servo.setPosition(currentPosition);
-            }
-            if (gamepad1.leftBumperWasReleased() && (currentPosition > 0)) {
-                currentPosition = currentPosition - MINOR_MINOR_INCREMENT;
-                servo.setPosition(currentPosition);
+            if (gamepad1.leftBumperWasReleased() && (servo.getPosition() > 0)) {
+                servo.setPosition(Math.max(servo.getPosition() - MINOR_MINOR_INCREMENT,0));
             }
             if (gamepad1.xWasReleased() ){
                 ch = !ch;

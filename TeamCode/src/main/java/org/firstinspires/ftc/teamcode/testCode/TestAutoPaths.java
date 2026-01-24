@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
-import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.BLUE;
 import static org.firstinspires.ftc.teamcode.libs.teamUtil.Alliance.RED;
 
 import com.acmerobotics.dashboard.FtcDashboard;
@@ -9,12 +8,10 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
-import org.firstinspires.ftc.teamcode.assemblies.Shooter;
+import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 @Config
@@ -50,6 +47,7 @@ public class TestAutoPaths extends LinearOpMode{
 
         robot = new Robot();
         robot.initialize(true);
+        robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         robot.drive.setHeading(0);
@@ -67,6 +65,7 @@ public class TestAutoPaths extends LinearOpMode{
         if (isStopRequested()) {
             return;
         }
+        robot.intake.startDetector();
 
         while (opModeIsActive()) {
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + " PATTERN: " + teamUtil.pattern);
@@ -76,9 +75,16 @@ public class TestAutoPaths extends LinearOpMode{
             telemetry.addLine("Last Op: "+ elapsedTime);
             robot.drive.loop();
             robot.drive.driveMotorTelemetry();
+            robot.intake.detectLoadedArtifactsV2();
+            robot.intake.signalArtifacts();
 
             if (gamepad1.left_stick_button) {
                 teamUtil.logSystemHealth();
+            }
+            if (gamepad1.right_stick_button) {
+                while (gamepad1.right_stick_button) {}
+                robot.intake.resetIntakeDetector();
+                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
             }
             if (gamepad1.leftBumperWasReleased()) {
                 robot.setStartLocalizedPosition();
@@ -131,22 +137,55 @@ public class TestAutoPaths extends LinearOpMode{
         else return "N";
     }
 
+    public static double PARK_VELOCITY = Robot.B00_MAX_SPEED;
+    public static double PARK_END_VELOCITY = 0;
+    public static double PARK_X = 0;
+    public static double PARK_Y = 1100;
+    public static double PARK_DRIVE = 90;
+    public static double PARK_ROBOT = 0;
+
+
     public void testGoalSide() {
+        if(gamepad1.bWasReleased()){
+            //robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
+            long startTime = System.currentTimeMillis();
+
+            robot.mirroredDriveToShotPositionFast(Robot.B05_SHOT_X, Robot.B05_SHOT_Y, Robot.B05_SHOT_RH, Robot.B05_SHOT_END_VEL, Robot.B05_SHOT_STRAIGHT_PERCENT, Robot.B05_SHOT_DRIFT_PERCENT);
+            teamUtil.log("mirroredDriveToShotPositionFast finished in " + (System.currentTimeMillis() - startTime));
+            robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            boolean targetHeadingWasOK = false;
+            while (!gamepad1.bWasReleased()) {
+                robot.autoHoldShotHeading();
+                if (robot.autoShooterHeadingReady()) {
+                    robot.blinkin.setSignal(Blinkin.Signals.GOLD);
+                    if (!targetHeadingWasOK) {
+                        teamUtil.log("Achieved Target Heading of " + robot.drive.getHeadingODO() + "in " + (System.currentTimeMillis() - startTime));
+                    }
+                    targetHeadingWasOK = true;
+                } else {
+                    robot.blinkin.setSignal(Blinkin.Signals.OFF);
+                }
+                if (!targetHeadingWasOK) {
+                    teamUtil.log("Heading: " + robot.drive.getHeadingODO());
+                }
+            }
+            robot.blinkin.setSignal(Blinkin.Signals.OFF);
+            robot.drive.stopMotors();
+            elapsedTime = System.currentTimeMillis()-startTime;
+        }
         if(gamepad1.dpadUpWasReleased()){
             long startTime = System.currentTimeMillis();
-            robot.goalSideV2(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime, GET_MORE_BALLS);
+            robot.goalSideV3(USE_ARMS, USE_INTAKE_DETECTOR, gateLeaveTime);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
         if (gamepad1.dpadDownWasPressed()){
             long startTime = System.currentTimeMillis();
-            robot.getMoreBalls();
+            robot.drive.stopMotors();
+            //robot.getMoreBallsV2();
             elapsedTime = System.currentTimeMillis()-startTime;
-//            robot.drive.driveMotorsHeadingsFR(0,0,1000);
-//            teamUtil.pause(500);
-//            robot.drive.stopMotors();
-            robot.intake.intakeStop();
+
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
         }
         if (gamepad1.dpadRightWasReleased()) {
@@ -161,7 +200,8 @@ public class TestAutoPaths extends LinearOpMode{
                 robot.intake.resetIntakeDetector();
                 teamUtil.pause(100);
             }
-            robot.intake.startIntakeDetector();
+            robot.intake.startDetector();
+            robot.intake.detectorMode = Intake.DETECTION_MODE.INTAKE;
             robot.intake.getReadyToIntake();
             teamUtil.pause(1000);
             long startTime = System.currentTimeMillis();
@@ -171,6 +211,8 @@ public class TestAutoPaths extends LinearOpMode{
             teamUtil.pause(250);
             robot.intake.intakeStop();
         }
+
+
 
         if (gamepad1.xWasReleased()) {
             // test shot order logic

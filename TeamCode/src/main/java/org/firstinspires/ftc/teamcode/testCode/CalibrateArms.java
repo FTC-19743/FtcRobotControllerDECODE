@@ -16,6 +16,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.assemblies.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
@@ -27,6 +30,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
+import java.util.Locale;
 
 @Config
 @TeleOp(name = "Calibrate Arms", group = "Test Code")
@@ -43,6 +47,7 @@ public class CalibrateArms extends LinearOpMode {
     double aimerPosition = Shooter.AIMER_CALIBRATE;
     
     public enum Ops {
+        Test_CVLocalizer,
         Test_Intake,
         Test_DetectorV2,
         Test_Intake_Detector,
@@ -53,8 +58,9 @@ public class CalibrateArms extends LinearOpMode {
         Test_PIDF,
         Teleport
     };
-    public static Ops AA_Operation = Ops.Test_PIDF;
+    public static Ops AA_Operation = Ops.Test_Shooter;
     public static boolean useCV = false;
+    AprilTagLocalizer localizer;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -68,6 +74,7 @@ public class CalibrateArms extends LinearOpMode {
         robot.drive.setHeading(0);
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
+        teamUtil.alliance = teamUtil.Alliance.RED;
 
         robot.calibrate();
         if (useCV) {
@@ -80,6 +87,8 @@ public class CalibrateArms extends LinearOpMode {
             visionPortal.resumeLiveView();
         }
 
+        localizer = new AprilTagLocalizer();
+
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.addLine("SIDE : " + teamUtil.SIDE);
@@ -91,7 +100,7 @@ public class CalibrateArms extends LinearOpMode {
             return;
         }
 
-        robot.intake.startIntakeDetector();
+        robot.intake.startDetector();
 
         while (opModeIsActive()) {
             telemetry.addLine("MODE : " + AA_Operation);
@@ -110,6 +119,7 @@ public class CalibrateArms extends LinearOpMode {
                 case Test_Foot : testFoot();break;
                 case Test_PIDF: shooterPIDF();break;
                 case Teleport : teleport();break;
+                case Test_CVLocalizer : testLocalizer(); break;
             }
 
             // Drawing stuff on the field
@@ -135,9 +145,45 @@ public class CalibrateArms extends LinearOpMode {
     private VisionPortal visionPortal;
     private WebcamName webcamL, webcamF, webcamR;
 
+    boolean continousDetection = false;
+    public Pose3D lastPose;
+    public void testLocalizer() {
+        robot.drive.loop();
+        robot.drive.localizerTelemetry();
+        if (gamepad1.dpadUpWasReleased()) {
+            localizer.localize(5000);
+            robot.drive.loop();
+            String data = String.format(Locale.US, "OQ X: %.0f, Y: %.0f, H: %.1f", (float) robot.drive.oQlocalizer.posX_mm, (float) robot.drive.oQlocalizer.posY_mm, Math.toDegrees(robot.drive.oQlocalizer.heading_rad));
+            teamUtil.log(data);
+        }
+        if (gamepad1.dpadDownWasReleased()) {
+            robot.drive.setRobotPosition(TELEPORT_X, TELEPORT_Y, TELEPORT_H);
+        }
+
+        if (gamepad1.yWasReleased()) {
+            localizer.initCV();
+            continousDetection = true;
+        }
+        if (gamepad1.aWasReleased()) {
+            localizer.stopCV();
+            continousDetection = false;
+        }
+        if (continousDetection) {
+            Pose3D pose = localizer.getFreshRobotPose();
+            if (pose != null) {
+                lastPose = pose;
+            } else {
+                pose = lastPose;
+            }
+            if (pose!= null) {
+                telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", pose.getPosition().x*-1*25.4, pose.getPosition().y*-1*25.4, pose.getOrientation().getYaw(AngleUnit.DEGREES)-90));
+            }
+        }
+    }
     public void initCV () {
-        teamUtil.log("Initializing multi cam vision port for Calibrate Arms");
+        teamUtil.log("Initializing multi cam vision portal for Calibrate Arms");
         aprilTag = new AprilTagProcessor.Builder().build();
+        robot.aprilTag = aprilTag;
         webcamL = hardwareMap.get(WebcamName.class, "webcamleft");
         webcamF = hardwareMap.get(WebcamName.class, "webcamfront");
         webcamR = hardwareMap.get(WebcamName.class, "webcamright");
@@ -148,6 +194,7 @@ public class CalibrateArms extends LinearOpMode {
                 .setCamera(switchableCamera)
                 .addProcessor(aprilTag)
                 .build();
+        teamUtil.log("Multi cam vision portal built");
     }
 
     public void testCV () {
@@ -221,10 +268,13 @@ public class CalibrateArms extends LinearOpMode {
 
         if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
             robot.intake.detectIntakeArtifactsV2();
+            robot.intake.signalArtifacts();
         } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
-            //robot.intake.detectLoadedArtifactsV2();
+            robot.intake.detectLoadedArtifactsV2();
+            robot.intake.signalArtifacts();
+        } else {
+            robot.intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
         }
-        robot.intake.signalArtifacts();
 
         telemetry.addLine("Loaded: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R:" + robot.intake.rightLoad);
         telemetry.addLine("Intake: Num: " + robot.intake.intakeNum + " L: " + robot.intake.leftIntake + " M: " + robot.intake.middleIntake + " R: " + robot.intake.rightIntake);
@@ -250,8 +300,8 @@ public class CalibrateArms extends LinearOpMode {
             Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = ! Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING;
         }
         if (gamepad1.dpadRightWasReleased()) { // break it
-            robot.intake.stopIntakeDetector();
-            robot.intake.startIntakeDetector();
+            robot.intake.stopDetector();
+            robot.intake.startDetector();
         }
         if (gamepad1.dpadLeftWasReleased()) {
             robot.startLimeLightPipeline(Robot.PIPELINE_VIEW);
@@ -260,8 +310,11 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.calibrateElevators();
         }
         if (gamepad1.yWasReleased()) {
-            robot.intake.elevatorToFlippersV2(false);
-            teamUtil.log("Detectors at Top: L: " + robot.intake.leftLoad + " M: " + robot.intake.rightLoad + " R: " + robot.intake.middleLoad);
+            robot.intake.elevatorToFlippersV2(false, true);
+            //if (robot.limeLightActive()) {
+            //    robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
+            //}
+            teamUtil.log("Detectors at Top: L: " + robot.intake.leftLoad + " M: " + robot.intake.middleLoad + " R: " + robot.intake.rightLoad);
         }
         if (gamepad1.aWasReleased()) {
             robot.intake.elevatorToGroundV2();
@@ -271,6 +324,9 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.leftBumperWasReleased()) {
             robot.intake.getReadyToIntake();
+            //if (robot.limeLightActive()) {
+            //    robot.intake.detectorMode = Intake.DETECTION_MODE.INTAKE;
+            //}
         }
         if (gamepad1.xWasReleased()) {
             teamUtil.log(teamUtil.robot.limelight.getStatus().toString());
@@ -318,7 +374,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.calibrateElevators();
         }
         if (gamepad1.yWasReleased()) {
-            robot.intake.elevatorToFlippersV2(true);
+            robot.intake.elevatorToFlippersV2(true, true);
         }
         if (gamepad1.aWasReleased()) {
             robot.intake.elevatorToGroundV2();
@@ -373,22 +429,45 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public static double SHOOTER_VELOCITY = 800;
+    public static teamUtil.Pattern TEST_PATTERN = teamUtil.Pattern.PPG;
     public void testShooter(){
         robot.drive.loop(); // get updated localizer data
         telemetry.addData("AdjustShootMode: " , adjustShootMode);
-        telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
-        telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
-        telemetry.addData("Can we shoot?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        double distance = robot.drive.robotGoalDistance() ;
+        double velocity = robot.shooter.calculateVelocityV2(distance);
+        double pitch = robot.shooter.calculatePitchV2(distance);
+        telemetry.addLine(String.format("Distance: %.0f " , distance ));
+        telemetry.addLine(String.format("IDEAL Velocity: %.0f IDEAL Pitch: %.3f" , velocity , pitch));
+        telemetry.addLine("ACTUAL Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
+        //telemetry.addData("FlywheelSpeed OK?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        telemetry.addLine("Heading OK? Teleop: " + robot.shooterHeadingReady() + " Auto: " + robot.autoShooterHeadingReady());
+        telemetry.addLine("-------------------------------------");
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
 
         if(gamepad1.startWasReleased()){
-            adjustShootMode= !adjustShootMode;
+            robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
+            //adjustShootMode= !adjustShootMode;
         }
+        /*
         if (adjustShootMode && robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity())) {
             //robot.shooter.adjustShooterV2(robot.drive.robotGoalDistance());
             robot.shooter.changeAim(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity());
         }
+
+         */
+        if (gamepad1.rightBumperWasReleased()){
+            //robot.shooter.pusher.calibrate();
+            //robot.shooter.pusher.setPower(robot.shooter.pusher.RTP_MAX_VELOCITY);
+            robot.shooter.pusher.servo.setPosition(robot.shooter.pusher.servo.getPosition()+.01);
+        }
+        if (gamepad1.leftBumperWasReleased()){
+            //robot.shooter.pusher.calibrate();
+            //robot.shooter.pusher.setPower(0);
+            robot.shooter.pusher.servo.setPosition(robot.shooter.pusher.servo.getPosition()-.01);
+
+        }
+
         if(gamepad1.dpadUpWasReleased()){
             robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
         }if(gamepad1.dpadDownWasReleased()){
@@ -401,23 +480,43 @@ public class CalibrateArms extends LinearOpMode {
             robot.shooter.aim(robot.shooter.currentAim()+.01);
         }
 
-        if(gamepad1.aWasPressed()){
+        if(gamepad1.aWasReleased()){
+            robot.shooter.sidePushersHold();
+            while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
+            robot.shooter.shoot3SuperFast(true, true, true);
 //            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            boolean result = robot.shootIfCan();
-            teamUtil.log("shootIfCan returned "+result);
+            //boolean result = robot.shootIfCan(true);
+            //teamUtil.log("shootIfCan returned "+result);
         }
         if(gamepad1.yWasPressed()){
             //robot.shootAllArtifacts();
+            robot.shooter.pusher.reset(true);
         }
         if(gamepad1.bWasPressed()){ // Time pusher
             //robot.shootAllArtifacts();
             long startTime = System.currentTimeMillis();
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-100;
-            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity) {} // detect contact between flywheels and ball
+            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-60;
+            long timeOutTime = System.currentTimeMillis() + 1000;
+            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity && teamUtil.keepGoing(timeOutTime)) {} // detect contact between flywheels and ball
             teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
         }
 
+        if (gamepad1.xWasReleased()) {
+            robot.intake.flippersToTransfer();
+        }
+        if (gamepad1.left_trigger > .5) {
+            while (gamepad1.left_trigger > .5) {}
+            robot.intake.setIntakeArtifacts(TEST_PATTERN);
+            robot.autoTransferAndLoadNoWait(0, false, 5000);
+            //robot.autoShootFastPreloadV2();
+        }
+        if (gamepad1.right_trigger > .5) {
+            while (gamepad1.right_trigger > .5) {}
+            robot.autoShootPattern(true, 5000);
+            robot.intake.intakeStop();
+            //robot.autoShootFastV2(true,3000);
+        }
     }
 
     public static double SHOOTER_OVERSHOOT = 200;
@@ -431,18 +530,21 @@ public class CalibrateArms extends LinearOpMode {
         //rightFlywheel.setPower(-CurrentPower);
 
         if(gamepad1.dpadUpWasReleased()){
-            robot.shooter.setShootSpeed(SHOOTER_VELOCITY+SHOOTER_OVERSHOOT);
-            teamUtil.pause(SHOOTER_RAMP_PAUSE); // TODO: Or wait until reported velocity is near target?
+            //robot.shooter.setShootSpeed(SHOOTER_VELOCITY+SHOOTER_OVERSHOOT);
+            //teamUtil.pause(SHOOTER_RAMP_PAUSE); // TODO: Or wait until reported velocity is near target?
             robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
 
         }if(gamepad1.dpadDownWasReleased()){
             robot.shooter.stopShooter();
         }
         if(gamepad1.aWasReleased()){
-            robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
+            //robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
+            robot.shooter.sidePushersHold();
+            while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
+            robot.shooter.shootSuperFastNoWait(true, true, true);
         }
         if(gamepad1.xWasPressed()){
-            robot.intake.elevatorToFlippersV2(true);
+            robot.intake.elevatorToFlippersV2(true, true);
         }
         if(gamepad1.bWasPressed()) {
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1000);

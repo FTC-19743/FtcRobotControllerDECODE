@@ -1746,7 +1746,7 @@ public class BasicDrive{
             endVelocity = HOLDING_LINE_MIN_END_VELOCITY;
         }
         double totalTics = Math.abs(startEncoder-xTarget);
-        teamUtil.log("moveToXHoldingLine xTarget: " + xTarget +  " yTarget: " + yTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Vel: " + velocity + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ oQlocalizer.posX_mm + " Starting Strafe Pos: "+ oQlocalizer.posY_mm + " Starting Heading:" + getHeadingODO());
+        teamUtil.log(String.format("moveToXHoldingLine xTarget: %.0f yTarget: %.0f robotH: %.1f driveH: %.1f Vel: %.0f TotalMMs: %.0f Start X/Y/H: %d/%d/%.1f", xTarget, yTarget, robotHeading, driveHeading, velocity, totalTics, oQlocalizer.posX_mm, oQlocalizer.posY_mm, getHeadingODO()));
         double distanceRemaining = Math.abs(xTarget - oQlocalizer.posX_mm);
         setMotorsWithEncoder();
         boolean actionDone = false;
@@ -1801,7 +1801,7 @@ public class BasicDrive{
             endVelocity = HOLDING_LINE_MIN_END_VELOCITY;
         }
         double totalTics = Math.abs(startEncoder-yTarget);
-        teamUtil.log("moveToYHoldingLine yTarget: " + yTarget +  " xTarget: " + xTarget + " robotH: " + robotHeading + " driveH: " + driveHeading + " Vel: " + velocity + " TotalMMss: " + totalTics + " Starting Forward Pos: "+ oQlocalizer.posX_mm + " Starting Strafe Pos: "+ oQlocalizer.posY_mm + " Starting Heading:" + getHeadingODO());
+        teamUtil.log(String.format("moveToYHoldingLine yTarget: %.0f xTarget: %.0f robotH: %.1f driveH: %.1f Vel: %.0f TotalMMs: %.0f Start X/Y/H: %d/%d/%.1f", yTarget, xTarget, robotHeading, driveHeading, velocity, totalTics, oQlocalizer.posX_mm, oQlocalizer.posY_mm, getHeadingODO()));
         double distanceRemaining = Math.abs(yTarget - oQlocalizer.posY_mm);
         setMotorsWithEncoder();
         boolean actionDone = false;

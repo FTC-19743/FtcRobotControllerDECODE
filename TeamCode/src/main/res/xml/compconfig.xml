@@ -19,8 +19,9 @@
             <goBILDA5202SeriesMotor name="leftflywheel" port="3" />
 
             <RevBlinkinLedDriver name="blinkin" port="0"/>
-            <ContinuousRotationServo name = "pusher" port = "3" />
-
+            <!-- <ContinuousRotationServo name = "pusher" port = "3" /> -->
+            <Servo name = "pusher" port = "3" />
+            <Servo name = "rightpusher" port = "1" />
             <Servo name = "rgbright" port = "2" />
             <Servo name = "rightflipper" port = "4" />
             <Servo name = "pushup" port = "5" />
@@ -43,8 +44,7 @@
             <Servo name = "aimer" port = "0" />
             <Servo name = "rgbleft" port = "1" />
             <Servo name = "rgbmiddle" port = "2" />
-
-
+            <Servo name = "leftpusher" port = "3" />
             <Servo name = "middleflipper" port = "4" />
             <Servo name = "leftflipper" port = "5" />
 
