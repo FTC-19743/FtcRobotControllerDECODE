@@ -42,11 +42,11 @@ BLUR_KERNEL_SIZE = 11
 MORPH_KERNEL = np.ones((5, 5), np.uint8)
 
 # Minimum Bounding Box Area (Adjust based on your target size/distance)
-MIN_AREA_CONSTRAINT = 5000.0
+MIN_AREA_CONSTRAINT = 500.0 # TODO Might need to be different for intake and loaded? need small number for loaded sides
 
 CROP_BOTTOM_PIXELS = 240
 CROP_TOP_PIXELS = 100
-CROP_RIGHT_PIXELS = 50
+CROP_RIGHT_PIXELS = 5
 
 DOUBLE_BALL_MAX = 410
 SINGLE_BALL_MAX = 210
@@ -95,7 +95,7 @@ def loadedDetect(boxes, color):
             right_result = color
         if (x < MIDDLE_LOADED_CENTER and x+w > MIDDLE_LOADED_CENTER ):
             middle_result = color
-        #print(f"Box: Area {area} | w: {w} | X,Y: {cx}, {cy}")
+        #print(f"Box: Area {area} | L: {x} | R: {x+w} | Center: {cx}, {cy}")
     #print(f" Left: {left_result} | Middle : {middle_result} | Right: {right_result}")
 
 
