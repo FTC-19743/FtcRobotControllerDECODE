@@ -25,7 +25,7 @@ public class Shooter {
     private Servo leftPusher;
     private Servo rightPusher;
 
-    public boolean details;
+    public static boolean details;
 
     public static float LEFT_PUSHER_STOW = .38f;
     public static float LEFT_PUSHER_HOLD = .5f;
@@ -165,6 +165,7 @@ public class Shooter {
     public void setShootSpeed(double velocity){
         leftFlywheel.setVelocity(velocity);
         rightFlywheel.setVelocity(velocity);
+        VELOCITY_COMMANDED = velocity;
     }
     public void stopShooter(){
         leftFlywheel.setVelocity(0);
@@ -229,23 +230,33 @@ public class Shooter {
     // Assumes 1-3 artifacts are loaded into the shooter and at least one has settled in to the shooter itself.  all 3 flippers are retracted
     // Does not use sensors in any way, doesn't detect stalls, etc.
     // From the time the push is commanded to the ball hitting the flywheels is about 200-250ms
-    public void shoot3SuperFast(boolean pushLeftFirst, boolean reset, boolean logShots) {
+    public void shoot3SuperFast(boolean pushLeftFirst, boolean reset, boolean logShots, boolean auto, double distance) {
         superFastShooting.set(true);
+        double maxAim = 1;
         long startTime = System.currentTimeMillis();
         teamUtil.log("shoot3SuperFast");
+        if(!auto && distance < MID_DISTANCE_THRESHOLD) {
+                lockShooter(distance);
+                //maxAim = maxPitch(distance);
+        }
+
         if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
         pusher.push1NoWait();
         teamUtil.pause(SF_SHOT_PAUSE);
+
         if (pushLeftFirst) {
             leftPusher.setPosition(LEFT_PUSHER_PUSH);
             teamUtil.pause(SF_LEFT_PUSH_PAUSE);
             leftPusher.setPosition(LEFT_PUSHER_STOW);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            if(!auto){aim(Math.min(aimer.getPosition()+0.01, maxAim));}
             pusher.push1NoWait();
             teamUtil.pause(SF_SHOT_PAUSE);
+
             rightPusher.setPosition(RIGHT_PUSHER_PUSH);
             teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            if(!auto)aim(Math.min(aimer.getPosition()+0.01, maxAim));
             pusher.push1NoWait();
             teamUtil.pause(SF_LAST_SHOT_PAUSE);
             rightPusher.setPosition(RIGHT_PUSHER_STOW); // start moving this back so it doesn't trigger the loaded detector
@@ -255,13 +266,17 @@ public class Shooter {
             teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
             rightPusher.setPosition(RIGHT_PUSHER_STOW);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            if(!auto)aim(aimer.getPosition()+0.01);
             pusher.push1NoWait();
             teamUtil.pause(SF_SHOT_PAUSE);
+
             leftPusher.setPosition(LEFT_PUSHER_PUSH);
             teamUtil.pause(SF_LEFT_PUSH_PAUSE);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
+            if(!auto)aim(aimer.getPosition()+0.01);
             pusher.push1NoWait();
             teamUtil.pause(SF_LAST_SHOT_PAUSE);
+
             leftPusher.setPosition(LEFT_PUSHER_STOW);
             teamUtil.pause(SF_LAST_PADDLE_PAUSE); // start moving this back so it doesn't trigger the loaded detector
         }
@@ -271,7 +286,7 @@ public class Shooter {
     }
 
 
-    public void shootSuperFastNoWait (boolean pushLeftFirst, boolean reset, boolean logShots) {
+    public void shootSuperFastNoWait (boolean pushLeftFirst, boolean reset, boolean logShots, boolean auto, double distance) {
         teamUtil.log("Launching Thread to shootSuperFastNoWait");
         if (superFastShooting.get()) {
             teamUtil.log("WARNING: shootSuperFastNoWait called while superFastShooting--Ignored");
@@ -281,7 +296,7 @@ public class Shooter {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                shoot3SuperFast(pushLeftFirst, reset, logShots);
+                shoot3SuperFast(pushLeftFirst, reset, logShots, auto, distance);
             }
         });
         thread.start();
@@ -363,18 +378,30 @@ public class Shooter {
     public static double MANUAL_FLYWHEEL_ADJUST = 0;
     public static double LONG_MANUAL_FLYWHEEL_ADJUST = 0;
 
+    public static double AMax = 0.0491219;
+    public static double BMax = 0.0000140803;
+    public static double CMax = -0.0124993;
+    public static double DMax = 0.684305;
 
-    public double getVelocityNeeded(double distance){
-        double velocityNeeded;
-        if (distance<MID_SHORT_DISTANCE_THRESHOLD){
-            velocityNeeded =A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
-        }else if (distance<MID_DISTANCE_THRESHOLD){ // are the first two not the same?
-            velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
-        }else{
-            velocityNeeded = Math.round((A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B+LONG_MANUAL_FLYWHEEL_ADJUST) / 20.0) * 20.0;
-        }
-        return velocityNeeded + MANUAL_FLYWHEEL_ADJUST;
+    public double maxPitch(double distance){
+        return AMax * Math.log(BMax*distance+CMax) + DMax;
     }
+
+    public double GetMaxFlywheelVelocity(double distance){
+        return 0;
+    }
+
+//    public double getVelocityNeeded(double distance){
+//        double velocityNeeded;
+//        if (distance<MID_SHORT_DISTANCE_THRESHOLD){
+//            velocityNeeded =A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
+//        }else if (distance<MID_DISTANCE_THRESHOLD){ // are the first two not the same?
+//            velocityNeeded = A09_VELOCITY_A*Math.pow(distance,2) +A09_VELOCITY_B*distance + A09_VELOCITY_C;
+//        }else{
+//            velocityNeeded = Math.round((A09_DEEP_VELOCITY_M*distance + A09_DEEP_VELOCITY_B+LONG_MANUAL_FLYWHEEL_ADJUST) / 20.0) * 20.0;
+//        }
+//        return velocityNeeded + MANUAL_FLYWHEEL_ADJUST;
+//    }
 
     /*
     public double getAimNeeded(double distance) {
@@ -402,20 +429,20 @@ public class Shooter {
 
  */
 
-    public void adjustShooterV3(double distance){
-        if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
-
-        VELOCITY_COMMANDED = getVelocityNeeded(distance);
-        setShootSpeed(VELOCITY_COMMANDED);
-        aim(calculatePitch(distance, leftFlywheel.getVelocity()));
-        if(details)teamUtil.log("adjustShooterV3 Finished");
-    }
+//    public void adjustShooterV3(double distance){
+//        if(details)teamUtil.log("adjustShooterV3 to distance: " + distance);
+//
+//        VELOCITY_COMMANDED = getVelocityNeeded(distance);
+//        setShootSpeed(VELOCITY_COMMANDED);
+//        aim(calculatePitch(distance, leftFlywheel.getVelocity()));
+//        if(details)teamUtil.log("adjustShooterV3 Finished");
+//    }
 
     public void adjustShooterV4(double distance){
         if(details)teamUtil.log("adjustShooterV4 to distance: " + distance);
 
-        VELOCITY_COMMANDED = calculateVelocityV2(distance);
-        setShootSpeed(VELOCITY_COMMANDED);
+
+        setShootSpeed(calculateVelocityV2(distance));
         aim(calculatePitchV2(distance));
         if(details)teamUtil.log("adjustShooterV4 Finished");
     }
@@ -428,15 +455,15 @@ public class Shooter {
     public static double maxSpeedB = 1.31176;
     public static double maxSpeedC = -274.98039;
 
-    public double calculateMinSpeed(double distance){
-        return minSpeedA * distance * distance + minSpeedB * distance + minSpeedC;
-    }
-    public double calculateMaxSpeed(double distance){
-        return maxSpeedA * distance * distance + maxSpeedB * distance + maxSpeedC;
-    }
-    public double calculateMidSpeed(double distance){
-        return (calculateMinSpeed(distance) + calculateMaxSpeed(distance) ) / 2;
-    }
+//    public double calculateMinSpeed(double distance){
+//        return minSpeedA * distance * distance + minSpeedB * distance + minSpeedC;
+//    }
+//    public double calculateMaxSpeed(double distance){
+//        return maxSpeedA * distance * distance + maxSpeedB * distance + maxSpeedC;
+//    }
+//    public double calculateMidSpeed(double distance){
+//        return (calculateMinSpeed(distance) + calculateMaxSpeed(distance) ) / 2;
+//    }
 
     public static double pitchA = 0;
     public static double pitchB = 0.0004007;
@@ -460,13 +487,13 @@ public class Shooter {
 
     public static double LONG_MANUAL_PITCH_ADJUST = 0;
 
-    public double calculatePitch(double distance, double velocity) {
-        if(distance<MID_DISTANCE_THRESHOLD){
-            return pitchA + pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
-        }else{
-            return longPitch + LONG_MANUAL_PITCH_ADJUST; // was the velocity really tuned with this in mind?
-        }
-    }
+//    public double calculatePitch(double distance, double velocity) {
+//        if(distance<MID_DISTANCE_THRESHOLD){
+//            return pitchA + pitchB * distance + pitchC * velocity + pitchD * distance * distance + pitchE * velocity * velocity + pitchF * distance * velocity;
+//        }else{
+//            return longPitch + LONG_MANUAL_PITCH_ADJUST; // was the velocity really tuned with this in mind?
+//        }
+//    }
 
     public static double pitchANew = -2.8869e-8;
     public static double pitchBNew = 0.000186393;
@@ -498,8 +525,22 @@ public class Shooter {
     }
 
     public void changeAim(double distance, double velocity){ // account for robot velocity?
-        double angle = calculatePitch(distance, velocity);
+        double angle = calculatePitchV2(distance);
         aim(angle);
+    }
+
+    public void lockShooter(double distance){
+        double currentVelo = leftFlywheel.getVelocity();
+        setShootSpeed(currentVelo);
+        double idealVelo = calculateVelocityV2(distance);
+        double idealPitch = calculatePitchV2(distance);
+        double targetPitch = idealPitch + ((currentVelo-idealVelo)/Robot.veloToPitchRatio);
+        if(details){
+            teamUtil.log("Ideal Pitch: " + idealPitch);
+            teamUtil.log("New Pitch: " + targetPitch);
+            teamUtil.log("Ideal Velo: " + idealVelo);
+        }
+        aim(targetPitch);
     }
     /*
     public boolean flywheelSpeedOK(double distance, double velocity){

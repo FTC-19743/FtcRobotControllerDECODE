@@ -483,7 +483,7 @@ public class CalibrateArms extends LinearOpMode {
         if(gamepad1.aWasReleased()){
             robot.shooter.sidePushersHold();
             while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
-            robot.shooter.shoot3SuperFast(true, true, true);
+            robot.shooter.shoot3SuperFast(true, true, true,false,robot.drive.robotGoalDistance());
 //            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
             //boolean result = robot.shootIfCan(true);
             //teamUtil.log("shootIfCan returned "+result);
@@ -518,7 +518,7 @@ public class CalibrateArms extends LinearOpMode {
             //robot.autoShootFastV2(true,3000);
         }
     }
-
+    public boolean locked = false;
     public static double SHOOTER_OVERSHOOT = 200;
     public static long SHOOTER_RAMP_PAUSE = 200;
     public void shooterPIDF(){
@@ -537,11 +537,25 @@ public class CalibrateArms extends LinearOpMode {
         }if(gamepad1.dpadDownWasReleased()){
             robot.shooter.stopShooter();
         }
+        if(gamepad1.yWasPressed()){
+            if(!locked){
+                robot.shooter.setShootSpeed(robot.shooter.leftFlywheel.getVelocity());
+                locked = true;
+            }
+            else{
+                locked = false;
+            }
+        }
+
+        if(!locked){
+            robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
+        }
+
         if(gamepad1.aWasReleased()){
             //robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
             robot.shooter.sidePushersHold();
             while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
-            robot.shooter.shootSuperFastNoWait(true, true, true);
+            robot.shooter.shootSuperFastNoWait(true, true, true,false,robot.drive.robotGoalDistance());
         }
         if(gamepad1.xWasPressed()){
             robot.intake.elevatorToFlippersV2(true, true);
@@ -560,5 +574,7 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addData("Target ", SHOOTER_VELOCITY);
         telemetry.addData("Over Shoot ", SHOOTER_OVERSHOOT);
         telemetry.addLine("Aimer Position: "+robot.shooter.currentAim());
+
+        robot.drive.loop();
     }
 }

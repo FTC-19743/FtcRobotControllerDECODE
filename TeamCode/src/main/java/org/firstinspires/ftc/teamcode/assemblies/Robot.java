@@ -239,12 +239,11 @@ public class Robot {
     public void logShot(double flyWheelVelocity) {
         drive.loop();
         double goalDistance = drive.robotGoalDistance();
-        double midSpeed = shooter.getVelocityNeeded(goalDistance);
         teamUtil.log("----------------------------------- SHOT " );
         teamUtil.log(String.format("------------ Robot X: %d Y: %d Goal Distance: %.0f", drive.oQlocalizer.posX_mm, drive.oQlocalizer.posY_mm, goalDistance));
         teamUtil.log(String.format("------------ Target Heading: %.1f Actual Heading: %.1f Diff: %.1f", drive.robotGoalHeading(), drive.getHeadingODO(), Math.abs(drive.robotGoalHeading()-drive.getHeadingODO())));
-        teamUtil.log(String.format("------------ Actual Flywheel: %.0f Actual Pitch: %.2f", flyWheelVelocity, shooter.currentAim()));
-        teamUtil.log(String.format("------------ Ideal Flywheel: %.0f Ideal Pitch: %.2f",midSpeed, shooter.calculatePitch(goalDistance, midSpeed)));
+        teamUtil.log(String.format("------------ Actual Flywheel: %.0f Actual Pitch: %.4f", flyWheelVelocity, shooter.currentAim()));
+        teamUtil.log(String.format("------------ Ideal Flywheel: %.0f Ideal Pitch: %.4f", shooter.calculateVelocityV2(goalDistance), shooter.calculatePitchV2(goalDistance)));
     }
 
     public void resetFlippersAndPusher(long pause){
@@ -265,32 +264,58 @@ public class Robot {
         thread.start();
     }
 
-    public static double GoalSizeThreshold = 254; //10 inches in millimeters
+    public static double GoalSizeThreshold = 125; //10 inches in millimeters
+    public static double MaxHeadingDeclination = 3;
     public boolean shooterHeadingReady() {
         double distToCornerY = teamUtil.alliance == teamUtil.Alliance.BLUE ? Math.abs(BasicDrive.RED_ALLIANCE_WALL-drive.oQlocalizer.posY_mm):Math.abs(BasicDrive.BLUE_ALLIANCE_WALL-drive.oQlocalizer.posY_mm);
         double distToCornerX = BasicDrive.SCORE_X - drive.oQlocalizer.posX_mm;
         double headingCanShootThreshold = 90-Math.toDegrees(Math.atan((distToCornerX-GoalSizeThreshold)/distToCornerY))-Math.toDegrees(Math.atan((distToCornerY-GoalSizeThreshold)/distToCornerX));
+        headingCanShootThreshold = Math.min(MaxHeadingDeclination, headingCanShootThreshold);
         //TODO: Take out details
         if(details){
             teamUtil.log("Heading can shoot threshold: " + headingCanShootThreshold + " Current Declination: " + Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) + " DistX : " + distToCornerX + " DistY: " + distToCornerY);
         }
-        return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < (headingCanShootThreshold/2);
+        double calculatedDeclination = Math.abs(drive.getHeadingODO() - drive.robotGoalHeading());
+
+        return calculatedDeclination < (headingCanShootThreshold/2);
+
     }
     public static double AUTO_HEADING_ERROR_THRESHOLD = 2; // This is for a goal distance of ~1200
     public boolean autoShooterHeadingReady() {
         return Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) < AUTO_HEADING_ERROR_THRESHOLD;
     }
 
-    public boolean shooterFlyWheelsReady() {
+    public double LONGSHOT_THRESHOLD = 2667;
+    public double SHORT_THRESHOLD = 950;
+
+    public static double veloToPitchRatio = (double) 100/0.03;
+
+    public boolean shooterFlyWheelsReady(double distance) {
         if (details) {
             teamUtil.log("shooterFlyWheelsReady Waiting: TVel: " + Shooter.VELOCITY_COMMANDED + " RVel: " + shooter.rightFlywheel.getVelocity() + " LVel: " + shooter.leftFlywheel.getVelocity());
         }
-        return Math.abs(shooter.rightFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD &&
-                Math.abs(shooter.leftFlywheel.getVelocity() - Shooter.VELOCITY_COMMANDED) < Shooter.VELOCITY_COMMANDED_THRESHOLD;
+
+        double velo = shooter.calculateVelocityV2(distance);
+        double minVelo = velo - Shooter.VELOCITY_COMMANDED_THRESHOLD;
+        double maxVelo;
+
+        if(distance > LONGSHOT_THRESHOLD || distance < SHORT_THRESHOLD) {
+            maxVelo = velo + Shooter.VELOCITY_COMMANDED_THRESHOLD;
+        }else{
+            double maxPitch = shooter.maxPitch(distance);
+
+            double pitch = shooter.calculatePitchV2(distance);
+            maxVelo = (maxPitch-pitch) * veloToPitchRatio + velo;
+        }
+        return (shooter.rightFlywheel.getVelocity() < maxVelo && shooter.leftFlywheel.getVelocity() < maxVelo &&
+                shooter.rightFlywheel.getVelocity() > minVelo && shooter.leftFlywheel.getVelocity() > minVelo);
+
     }
 
-    public boolean canShoot(){
-        return shooterFlyWheelsReady() && shooterHeadingReady();
+
+
+    public boolean canShoot(double distance){
+        return shooterFlyWheelsReady(distance) && shooterHeadingReady() && distance > minShotDistance;
     }
 
     public static float AUTO_ROT_VEL_THRESHOLD = 0.5f;
@@ -335,7 +360,7 @@ public class Robot {
     }
 
 
-
+    public static double minShotDistance = 1000;
     public static short SHOOT_VELOCITY_THRESHOLD = 1000; // mm/s
     public boolean shootIfCanTeleop(){
         boolean details = true;
@@ -346,6 +371,7 @@ public class Robot {
             }
             return false;
         }
+
         // Don't attempt to shoot if we are currently shooting
         if (shooter.pusher.moving.get()){
             if(details){
@@ -373,8 +399,15 @@ public class Robot {
         double goalDistance = drive.robotGoalDistance();
         double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
+        if(goalDistance < minShotDistance){
+            if(details){
+                teamUtil.log("Shootifcan fail: Too Close");
+            }
+            return false;
+        }
+
         // Don't attempt to shoot if flywheel speed is not in acceptable range
-        if (!shooterFlyWheelsReady()){
+        if (!shooterFlyWheelsReady(goalDistance)){
             if(details){
                 teamUtil.log("Shootifcan fail: Flywheel Speed not in acceptable range");
             }
@@ -388,10 +421,11 @@ public class Robot {
             Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_FAR;
             Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_FAR;
         }
-        // Launch it
-        shooter.shootSuperFastNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,true,false);
 
-        teamUtil.log("Old Optimal Shooter Velocity: " + shooter.getVelocityNeeded(goalDistance));
+
+        // Launch it
+        shooter.shootSuperFastNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,true,true, false, goalDistance); // TODO: change log shot back to false
+
         intake.intakeStart();
 
         return true;
@@ -808,7 +842,7 @@ public class Robot {
                 // Adjust the pitch of the shooter to match distance and flywheel velocity
                 shooter.changeAim(goalDistance, flyWheelVelocity); // TODO: Consider adding this to autoHoldShotHeading()
 
-                shooter.shootSuperFastNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, false, true); // launch the shot sequence in another thread
+                shooter.shootSuperFastNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, false, true, true, 0); // launch the shot sequence in another thread
                 // wait for it to finish while adjusting robot heading if needed
                 while (shooter.superFastShooting.get() && teamUtil.keepGoing(timeOutTime)) {
                     autoHoldShotHeading();

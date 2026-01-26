@@ -124,8 +124,8 @@ public class Teleop extends LinearOpMode {
                 }
 
                 if(shootingMode){
-                    if(robot.canShoot()){ // TODO: is this the right version of this method? Seems like it using old flywheel speed check logic
-                        robot.blinkin.setSignal(Blinkin.Signals.READY_TO_SHOOT);
+                    if(robot.canShoot(robot.drive.robotGoalDistance())){ // TODO: is this the right version of this method? Seems like it using old flywheel speed check logic
+                        robot.blinkin.setSignal(Blinkin.Signals.NORMAL_WHITE);
                     }else{
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);
                     }
@@ -165,7 +165,9 @@ public class Teleop extends LinearOpMode {
                 ////////////// SHOOTER ///////////////////////////
 
                 if(shootingMode){
-                    robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
+                    if(!robot.shooter.superFastShooting.get() && !robot.shootingArtifactColor.get()){
+                        robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
+                    }
                 }
 
                 if(gamepad2.rightBumperWasReleased()){
