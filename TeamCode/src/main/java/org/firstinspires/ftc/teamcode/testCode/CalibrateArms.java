@@ -43,6 +43,7 @@ public class CalibrateArms extends LinearOpMode {
     public double currentRVelocity = 0;
     public double currentLVelocity = 0;
     public static float FLIPPER_TEST_VAL = 0f;
+    public static boolean SHOOT_3_AUTO = false;
 
     double aimerPosition = Shooter.AIMER_CALIBRATE;
     
@@ -436,11 +437,14 @@ public class CalibrateArms extends LinearOpMode {
         double distance = robot.drive.robotGoalDistance() ;
         double velocity = robot.shooter.calculateVelocityV2(distance);
         double pitch = robot.shooter.calculatePitchV2(distance);
-        telemetry.addLine(String.format("Distance: %.0f " , distance ));
+        telemetry.addLine(String.format("CURRENT Distance: %.0f " , distance ));
         telemetry.addLine(String.format("IDEAL Velocity: %.0f IDEAL Pitch: %.3f" , velocity , pitch));
+        telemetry.addLine("-------------------------------------");
         telemetry.addLine("ACTUAL Velocity Left: " + robot.shooter.leftFlywheel.getVelocity() + " Right: "+ robot.shooter.rightFlywheel.getVelocity());
-        //telemetry.addData("FlywheelSpeed OK?: " , robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity()));
+        telemetry.addLine("ACTUAL Pitch: " + robot.shooter.currentAim());
+        telemetry.addData("FlywheelSpeed OK?: " , robot.shooterFlyWheelsReady(distance));
         telemetry.addLine("Heading OK? Teleop: " + robot.shooterHeadingReady() + " Auto: " + robot.autoShooterHeadingReady());
+        telemetry.addLine("Can Shoot? : " + robot.canShoot(distance));
         telemetry.addLine("-------------------------------------");
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
@@ -456,40 +460,39 @@ public class CalibrateArms extends LinearOpMode {
         }
 
          */
-        if (gamepad1.rightBumperWasReleased()){
-            //robot.shooter.pusher.calibrate();
-            //robot.shooter.pusher.setPower(robot.shooter.pusher.RTP_MAX_VELOCITY);
-            robot.shooter.pusher.servo.setPosition(robot.shooter.pusher.servo.getPosition()+.01);
-        }
-        if (gamepad1.leftBumperWasReleased()){
-            //robot.shooter.pusher.calibrate();
-            //robot.shooter.pusher.setPower(0);
-            robot.shooter.pusher.servo.setPosition(robot.shooter.pusher.servo.getPosition()-.01);
-
-        }
-
-        if(gamepad1.dpadUpWasReleased()){
-            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
-        }if(gamepad1.dpadDownWasReleased()){
-            robot.shooter.stopShooter();
-        }
         if(gamepad1.dpadLeftWasPressed()){
             robot.shooter.aim(robot.shooter.currentAim()-.01);
         }
         if(gamepad1.dpadRightWasPressed()){
             robot.shooter.aim(robot.shooter.currentAim()+.01);
         }
+        if (gamepad1.rightBumperWasReleased()){
+            SHOOTER_VELOCITY = SHOOTER_VELOCITY - 20;
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
+        }
+        if (gamepad1.leftBumperWasReleased()){
+            SHOOTER_VELOCITY = SHOOTER_VELOCITY + 20;
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
+        }
+        if(gamepad1.dpadUpWasReleased()){
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
+        }if(gamepad1.dpadDownWasReleased()){
+            robot.shooter.stopShooter();
+        }
+
 
         if(gamepad1.aWasReleased()){
             robot.shooter.sidePushersHold();
-            while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
-            robot.shooter.shoot3SuperFast(true, true, true,false,robot.drive.robotGoalDistance());
-//            robot.shooter.pusher.pushN(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            //boolean result = robot.shootIfCan(true);
-            //teamUtil.log("shootIfCan returned "+result);
+            teamUtil.pause(500);
+            robot.shooter.shoot3SuperFast(true, true, true,SHOOT_3_AUTO,robot.drive.robotGoalDistance());
+            if(!SHOOT_3_AUTO) {
+                robot.shooter.aim(robot.shooter.currentAim() - 2 * Shooter.SHOOT_3_AIM_CHANGE); // reverse the aim from shoot3
+            }
         }
         if(gamepad1.yWasPressed()){
             //robot.shootAllArtifacts();
+            robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+            teamUtil.pause(300);
             robot.shooter.pusher.reset(true);
         }
         if(gamepad1.bWasPressed()){ // Time pusher

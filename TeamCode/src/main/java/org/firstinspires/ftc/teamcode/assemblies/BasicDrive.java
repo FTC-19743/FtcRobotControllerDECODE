@@ -423,6 +423,9 @@ public class BasicDrive{
         return angle;
     }
 
+    public static double BLUE_GOAL_ADJUST = 0;
+    public static double RED_GOAL_ADJUST = 0;
+
     public double getGoalHeading(int x, int y) {
         double local_goal_y = GOAL_Y;
         if (teamUtil.alliance == RED){
@@ -441,6 +444,7 @@ public class BasicDrive{
         if(offset_x < 0){
             raw_Angle += 180;
         }
+        raw_Angle += teamUtil.alliance == teamUtil.Alliance.RED ? RED_GOAL_ADJUST : BLUE_GOAL_ADJUST;
         raw_Angle = adjustAngle(raw_Angle);
         return raw_Angle;
     }

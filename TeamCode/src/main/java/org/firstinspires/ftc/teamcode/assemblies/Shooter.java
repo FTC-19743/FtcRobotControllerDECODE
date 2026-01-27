@@ -30,7 +30,7 @@ public class Shooter {
     public static float LEFT_PUSHER_STOW = .38f;
     public static float LEFT_PUSHER_HOLD = .5f;
     public static float LEFT_PUSHER_PUSH = .73f;
-    public static float RIGHT_PUSHER_STOW = .644f;
+    public static float RIGHT_PUSHER_STOW = .66f;
     public static float RIGHT_PUSHER_HOLD = .59f;
     public static float RIGHT_PUSHER_PUSH = .34f;
 
@@ -70,6 +70,7 @@ public class Shooter {
     public static double CLOSE_LONG_VELOCITY = 1800; // 1600?
     public static double FAR_CLOSE_VELOCITY = 1200;
     public static double CLOSE_CLOSE_VELOCITY = 800;
+    public static double SHOOT_3_AIM_CHANGE = .01;
 
     public static double MID_DISTANCE_THRESHOLD = 2667;
     public static double MID_SHORT_DISTANCE_THRESHOLD = 1400;
@@ -249,14 +250,14 @@ public class Shooter {
             teamUtil.pause(SF_LEFT_PUSH_PAUSE);
             leftPusher.setPosition(LEFT_PUSHER_STOW);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
-            if(!auto){aim(Math.min(aimer.getPosition()+0.01, maxAim));}
+            if(!auto){aim(Math.min(aimer.getPosition()+SHOOT_3_AIM_CHANGE, maxAim));}
             pusher.push1NoWait();
             teamUtil.pause(SF_SHOT_PAUSE);
 
             rightPusher.setPosition(RIGHT_PUSHER_PUSH);
             teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
-            if(!auto)aim(Math.min(aimer.getPosition()+0.01, maxAim));
+            if(!auto)aim(Math.min(aimer.getPosition()+SHOOT_3_AIM_CHANGE, maxAim));
             pusher.push1NoWait();
             teamUtil.pause(SF_LAST_SHOT_PAUSE);
             rightPusher.setPosition(RIGHT_PUSHER_STOW); // start moving this back so it doesn't trigger the loaded detector
@@ -266,14 +267,14 @@ public class Shooter {
             teamUtil.pause(SF_RIGHT_PUSH_PAUSE);
             rightPusher.setPosition(RIGHT_PUSHER_STOW);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
-            if(!auto)aim(aimer.getPosition()+0.01);
+            if(!auto)aim(aimer.getPosition()+SHOOT_3_AIM_CHANGE);
             pusher.push1NoWait();
             teamUtil.pause(SF_SHOT_PAUSE);
 
             leftPusher.setPosition(LEFT_PUSHER_PUSH);
             teamUtil.pause(SF_LEFT_PUSH_PAUSE);
             if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());
-            if(!auto)aim(aimer.getPosition()+0.01);
+            if(!auto)aim(aimer.getPosition()+SHOOT_3_AIM_CHANGE);
             pusher.push1NoWait();
             teamUtil.pause(SF_LAST_SHOT_PAUSE);
 
@@ -498,7 +499,7 @@ public class Shooter {
     public static double pitchANew = -2.8869e-8;
     public static double pitchBNew = 0.000186393;
     public static double pitchCNew = 0.153392;
-    public static double longPitch = .44; // .44 with the old function
+    public static double longPitch = .40; // .44 with the old function
 
 
     public double calculatePitchV2(double distance){
@@ -509,18 +510,22 @@ public class Shooter {
         }
     }
 
+
+
     public static double velocityANew = 0.000142857;
     public static double shortVelocityBNew = -0.209524;
     public static double velocityCNew = 895.83333;
 
     public static double longVelocityM = 0.3;
     public static double longVelocityB = 540;
+    public static double newLongVelocityM = 0.24698;
+    public static double newLongVelocityB = 554.71749;
 
     public double calculateVelocityV2(double distance){
         if (distance<MID_DISTANCE_THRESHOLD){
             return velocityANew*distance*distance+shortVelocityBNew*distance+velocityCNew;
         }else{
-            return longVelocityM*distance+longVelocityB;
+            return newLongVelocityM*distance+newLongVelocityB;
         }
     }
 

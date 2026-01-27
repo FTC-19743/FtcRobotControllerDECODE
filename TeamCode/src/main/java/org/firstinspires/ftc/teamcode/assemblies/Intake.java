@@ -291,6 +291,7 @@ public class Intake {
     public static long FAST3_RIGHT_ROLL_PAUSE = 600;
 
     public void superFastUnload(boolean leftLoaded, boolean middleLoaded, boolean rightLoaded) {
+        teamUtil.robot.shooter.sidePushersStow();
         flipping.set(true);
         middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
         left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin left
@@ -303,6 +304,7 @@ public class Intake {
         }
         left_flipper.setPosition(FLIPPER_CEILING); // release left
         right_flipper.setPosition(FLIPPER_CEILING); // release right
+        teamUtil.robot.shooter.sidePushersHold();
 
         flipping.set(false);
         teamUtil.log("superFastUnload Finished");
