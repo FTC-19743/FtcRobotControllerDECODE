@@ -166,6 +166,7 @@ public class Teleop extends LinearOpMode {
 
                 if(shootingMode){
                     if(!robot.shooter.superFastShooting.get() && !robot.shootingArtifactColor.get()){
+                        // adjust shooter flywheel and pitch if we are not actively shooting at the moment
                         robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
                     }
                 }
@@ -181,11 +182,14 @@ public class Teleop extends LinearOpMode {
                 }
 
                 if(gamepad2.yWasReleased()){
+                    double distance = robot.drive.robotGoalDistance();
+                    if(distance < Shooter.MID_DISTANCE_THRESHOLD) { // lock in shooter to current conditions TODO: This may get undone by the teleop loop!
+                        robot.shooter.lockShooter(distance);
+                    }
                     robot.shooter.pushOneNoWait();
                 }
 
                 if(gamepad2.aWasReleased()){
-
                     robot.shooter.pusher.reset(false);
                 }
                 if(gamepad2.right_trigger > .6f && shootingMode){

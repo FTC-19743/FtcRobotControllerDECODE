@@ -363,7 +363,6 @@ public class Robot {
     public static double minShotDistance = 1000;
     public static short SHOOT_VELOCITY_THRESHOLD = 1000; // mm/s
     public boolean shootIfCanTeleop(){
-        boolean details = true;
         // Don't shoot if the robot is moving too fast
         if(Math.sqrt(Math.pow(drive.oQlocalizer.velX_mmS, 2) + Math.pow(drive.oQlocalizer.velY_mmS, 2)) > SHOOT_VELOCITY_THRESHOLD){
             if(details){
@@ -510,6 +509,10 @@ public class Robot {
         shootingArtifactColor.set(true);
         teamUtil.log("shootArtifactColor called");
         shooter.sidePushersStow(); // just in case a previous operation left them in the way.
+        double distance = drive.robotGoalDistance();
+        if(distance < Shooter.MID_DISTANCE_THRESHOLD) { // lock in shooter to current conditions
+            shooter.lockShooter(distance);
+        }
         Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
         if(color == Intake.ARTIFACT.NONE){
             teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");

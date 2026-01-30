@@ -536,7 +536,7 @@ public class Shooter {
 
     public void lockShooter(double distance){
         double currentVelo = leftFlywheel.getVelocity();
-        setShootSpeed(currentVelo);
+        setShootSpeed(currentVelo); // Lock in the velocity to the current one (presumed to be in the OK range to shoot)
         double idealVelo = calculateVelocityV2(distance);
         double idealPitch = calculatePitchV2(distance);
         double targetPitch = idealPitch + ((currentVelo-idealVelo)/Robot.veloToPitchRatio);
@@ -545,7 +545,7 @@ public class Shooter {
             teamUtil.log("New Pitch: " + targetPitch);
             teamUtil.log("Ideal Velo: " + idealVelo);
         }
-        aim(targetPitch);
+        aim(targetPitch); // adjust the shooter pitch as needed to match the velocity
     }
     /*
     public boolean flywheelSpeedOK(double distance, double velocity){
