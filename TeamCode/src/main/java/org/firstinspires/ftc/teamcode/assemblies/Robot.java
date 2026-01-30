@@ -413,13 +413,6 @@ public class Robot {
             return false;
         }
 
-        if(goalDistance < Shooter.MID_DISTANCE_THRESHOLD){
-            Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_NEAR;
-            Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_NEAR;
-        }else{
-            Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_FAR;
-            Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_FAR;
-        }
 
 
         // Launch it

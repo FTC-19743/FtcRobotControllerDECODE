@@ -222,8 +222,8 @@ public class Shooter {
     public static long SF_RIGHT_PUSH_PAUSE = 200;
     public static long SF_LEFT_PUSH_PAUSE_NEAR = 200;
     public static long SF_RIGHT_PUSH_PAUSE_NEAR = 200;
-    public static long SF_LEFT_PUSH_PAUSE_FAR = 300;
-    public static long SF_RIGHT_PUSH_PAUSE_FAR = 300;
+    public static long SF_LEFT_PUSH_PAUSE_FAR = 600;
+    public static long SF_RIGHT_PUSH_PAUSE_FAR = 600;
     public static long SF_LAST_SHOT_PAUSE = 100;
     public static long SF_LAST_PADDLE_PAUSE = 100;
 
@@ -239,6 +239,13 @@ public class Shooter {
         if(!auto && distance < MID_DISTANCE_THRESHOLD) {
                 lockShooter(distance);
                 //maxAim = maxPitch(distance);
+        }
+        if(distance < Shooter.MID_DISTANCE_THRESHOLD){
+            Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_NEAR;
+            Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_NEAR;
+        }else{
+            Shooter.SF_LEFT_PUSH_PAUSE = Shooter.SF_LEFT_PUSH_PAUSE_FAR;
+            Shooter.SF_RIGHT_PUSH_PAUSE = Shooter.SF_RIGHT_PUSH_PAUSE_FAR;
         }
 
         if (logShots) teamUtil.robot.logShot(leftFlywheel.getVelocity());

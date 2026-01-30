@@ -448,10 +448,14 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine("-------------------------------------");
         robot.shooter.outputTelemetry();
         robot.drive.driveMotorTelemetry();
+        telemetry.addData("Reported Left Velocity: " , robot.shooter.leftFlywheel.getVelocity());
+        telemetry.addData("Reported Right Velocity: " , robot.shooter.rightFlywheel.getVelocity());
+        telemetry.addData("Target ", SHOOTER_VELOCITY);
+        telemetry.addLine("Aimer Position: "+robot.shooter.currentAim());
 
         if(gamepad1.startWasReleased()){
             robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
-            //adjustShootMode= !adjustShootMode;
+            SHOOTER_VELOCITY = Shooter.VELOCITY_COMMANDED;
         }
         /*
         if (adjustShootMode && robot.shooter.flywheelSpeedOK(robot.drive.robotGoalDistance(),robot.shooter.rightFlywheel.getVelocity())) {
@@ -476,7 +480,8 @@ public class CalibrateArms extends LinearOpMode {
         }
         if(gamepad1.dpadUpWasReleased()){
             robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
-        }if(gamepad1.dpadDownWasReleased()){
+        }
+        if(gamepad1.dpadDownWasReleased()){
             robot.shooter.stopShooter();
         }
 
@@ -484,11 +489,13 @@ public class CalibrateArms extends LinearOpMode {
         if(gamepad1.aWasReleased()){
             robot.shooter.sidePushersHold();
             teamUtil.pause(500);
+            double storePitch = robot.shooter.currentAim();
             robot.shooter.shoot3SuperFast(true, true, true,SHOOT_3_AUTO,robot.drive.robotGoalDistance());
-            if(!SHOOT_3_AUTO) {
-                robot.shooter.aim(robot.shooter.currentAim() - 2 * Shooter.SHOOT_3_AIM_CHANGE); // reverse the aim from shoot3
-            }
+            teamUtil.pause(500);
+            robot.shooter.aim(storePitch); // undo any changes to the pitch made by shoot3
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY); // undo any changes to the velocity made by shoot3
         }
+
         if(gamepad1.yWasPressed()){
             //robot.shootAllArtifacts();
             robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
@@ -496,13 +503,15 @@ public class CalibrateArms extends LinearOpMode {
             robot.shooter.pusher.reset(true);
         }
         if(gamepad1.bWasPressed()){ // Time pusher
-            //robot.shootAllArtifacts();
-            long startTime = System.currentTimeMillis();
-            robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
-            double detectVelocity = robot.shooter.leftFlywheel.getVelocity()-60;
-            long timeOutTime = System.currentTimeMillis() + 1000;
-            while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity && teamUtil.keepGoing(timeOutTime)) {} // detect contact between flywheels and ball
-            teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
+            if (robot.shooter.leftFlywheel.getVelocity() > 400) { // make sure flywheels are running
+                long startTime = System.currentTimeMillis();
+                robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+                double detectVelocity = robot.shooter.leftFlywheel.getVelocity() - 60;
+                long timeOutTime = System.currentTimeMillis() + 1000;
+                while (robot.shooter.leftFlywheel.getVelocity() > detectVelocity && teamUtil.keepGoing(timeOutTime)) {
+                } // detect contact between flywheels and ball
+                teamUtil.log("Push Time: " + (System.currentTimeMillis() - startTime));
+            }
         }
 
         if (gamepad1.xWasReleased()) {
