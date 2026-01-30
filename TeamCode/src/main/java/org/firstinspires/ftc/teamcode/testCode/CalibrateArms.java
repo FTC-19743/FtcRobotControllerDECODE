@@ -178,6 +178,11 @@ public class CalibrateArms extends LinearOpMode {
             }
             if (pose!= null) {
                 telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", pose.getPosition().x*-1*25.4, pose.getPosition().y*-1*25.4, pose.getOrientation().getYaw(AngleUnit.DEGREES)-90));
+                telemetry.addLine(String.format("Diff: X: %.0f Y: %.0f H: %.1f ",
+                        robot.drive.oQlocalizer.posX_mm - (pose.getPosition().x*-1*25.4),
+                        robot.drive.oQlocalizer.posY_mm - (pose.getPosition().y*-1*25.4),
+                        Math.toDegrees(robot.drive.oQlocalizer.heading_rad) - (pose.getOrientation().getYaw(AngleUnit.DEGREES)-90)));
+
             }
         }
     }

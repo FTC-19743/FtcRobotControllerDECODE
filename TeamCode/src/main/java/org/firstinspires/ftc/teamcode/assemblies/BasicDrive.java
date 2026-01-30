@@ -185,7 +185,12 @@ public class BasicDrive{
         // Resetting the localizer will apply the parameters configured above.
         // This function will NOT block until calibration of the IMU is complete -
         // for that you need to look at the status returned by getLocalizerStatus()
+        teamUtil.log("Calibrating OctoQuad IMU");
         teamUtil.robot.oq.resetLocalizerAndCalibrateIMU();
+        while (teamUtil.robot.oq.getLocalizerStatus() != OctoQuadFWv3.LocalizerStatus.RUNNING) {
+            teamUtil.pause(100);
+        }
+        teamUtil.log("Finished Calibrating OctoQuad IMU");
     }
 
     public OctoQuadFWv3.LocalizerDataBlock stashedLocalizer = new OctoQuadFWv3.LocalizerDataBlock();

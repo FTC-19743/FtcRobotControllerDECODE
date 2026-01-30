@@ -150,6 +150,13 @@ public class AprilTagLocalizer {
     }
 
     public static long SAMPLE_TIME = 500;
+    public static double ADJUST_RED_X = 10;
+    public static double ADJUST_RED_Y = 0;
+    public static double ADJUST_RED_H = 2;
+    public static double ADJUST_BLUE_X = -30;
+    public static double ADJUST_BLUE_Y = 20;
+    public static double ADJUST_BLUE_H = -1;
+
     public boolean localize(long timeOut) {
         teamUtil.log("Localize starting");
         long startTime = System.currentTimeMillis();
@@ -195,6 +202,16 @@ public class AprilTagLocalizer {
         double newX = sumX/count ;
         double newY = sumY/count;
         double newH = sumH/count;
+
+        if (teamUtil.alliance== teamUtil.Alliance.RED) {
+            newX = newX + ADJUST_RED_X;
+            newY = newY + ADJUST_RED_Y;
+            newH = newH + ADJUST_RED_H;
+        } else if (teamUtil.alliance== teamUtil.Alliance.BLUE) {
+            newX = newX + ADJUST_BLUE_X;
+            newY = newY + ADJUST_BLUE_Y;
+            newH = newH + ADJUST_BLUE_H;
+        }
 
         teamUtil.log("Localize finished in " +((System.currentTimeMillis() - startTime)));
         teamUtil.log(String.format("Camera: X: %.0f Y: %.0f H: %.1f Count: %d", newX, newY, newH, count));
