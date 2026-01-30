@@ -446,8 +446,10 @@ public class Robot {
         }
     }
     //////////////////////// Flipper Location based shooting
+    // Not currently used
 
     public static long FIRST_UNLOAD_PAUSE = 400;
+/*
     public static long SECOND_UNLOAD_PAUSE = 600;
     public static double TWO_BALL_EDGE_PORTION = 1f/4;
     public static long EDGE_PUSHER_PAUSE = 700;
@@ -498,14 +500,16 @@ public class Robot {
         thread.start();
     }
 
+
+     */
     //////////////////////// Artifact Color Based Single Shots
     public AtomicBoolean shootingArtifactColor = new AtomicBoolean(false);
 
 
     public void shootArtifactColor(Intake.ARTIFACT color){
-
         shootingArtifactColor.set(true);
         teamUtil.log("shootArtifactColor called");
+        shooter.sidePushersStow(); // just in case a previous operation left them in the way.
         Intake.ARTIFACT[] loadedArtifacts = {intake.leftLoad, intake.middleLoad, intake.rightLoad};
         if(color == Intake.ARTIFACT.NONE){
             teamUtil.log("shootArtifactColor called with ARTIFACT.NONE");

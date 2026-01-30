@@ -249,7 +249,7 @@ public class Teleop extends LinearOpMode {
                         if(limelightOverride){
                             robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
                         }
-                        robot.intake.elevatorToShooterFastNoWait(false); // use loaded detector
+                        robot.intake.elevatorToShooterFastNoWait(false);
                     }
                 }
                 if (!limelightOverride) {

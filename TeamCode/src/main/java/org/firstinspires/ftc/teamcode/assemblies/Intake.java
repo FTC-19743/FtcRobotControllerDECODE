@@ -291,8 +291,8 @@ public class Intake {
     public static long FAST3_RIGHT_ROLL_PAUSE = 600;
 
     public void superFastUnload(boolean leftLoaded, boolean middleLoaded, boolean rightLoaded) {
-        teamUtil.robot.shooter.sidePushersStow();
         flipping.set(true);
+        teamUtil.robot.shooter.sidePushersStow(); // in case previous operation left them in the way
         middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
         left_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin left
         right_flipper.setPosition(EDGE_FLIPPER_SHOOTER_TRANSFER); // flip and pin right
@@ -325,7 +325,7 @@ public class Intake {
         thread.start();
     }
 
-
+/* Older
     public void fastUnloadStep1() {
         flipping.set(true);
         middle_flipper.setPosition(MIDDLE_FLIPPER_SHOOTER_TRANSFER); // Flip middle
@@ -455,6 +455,7 @@ public class Intake {
         });
         thread.start();
     }
+*/
 
     public boolean ballsLeftToShoot(){
         teamUtil.log("left: "+left_flipper.getPosition()+", middle: "+middle_flipper.getPosition()+", right: "+right_flipper.getPosition()+", balls: "+numBallsInFlippers());
@@ -587,7 +588,6 @@ public class Intake {
         }
         if(elevatorToFlippersV2(false, detectLoaded)){
             superFastUnloadNoWait(leftLoad!= ARTIFACT.NONE,middleLoad!= ARTIFACT.NONE,rightLoad!= ARTIFACT.NONE);
-
         }
         teamUtil.log("elevatorToShooterFast finished");
         elevatorMoving.set(false);
