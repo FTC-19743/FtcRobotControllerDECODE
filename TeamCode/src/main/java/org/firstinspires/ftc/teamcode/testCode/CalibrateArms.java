@@ -177,11 +177,23 @@ public class CalibrateArms extends LinearOpMode {
                 pose = lastPose;
             }
             if (pose!= null) {
-                telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", pose.getPosition().x*-1*25.4, pose.getPosition().y*-1*25.4, pose.getOrientation().getYaw(AngleUnit.DEGREES)-90));
+                double newX=0,newY=0,newH=0 ;
+
+                if (teamUtil.alliance== teamUtil.Alliance.RED) {
+                    newX = pose.getPosition().x*-1*25.4 + AprilTagLocalizer.ADJUST_RED_X;
+                    newY = pose.getPosition().y*-1*25.4 + AprilTagLocalizer.ADJUST_RED_Y;
+                    newH = pose.getOrientation().getYaw(AngleUnit.DEGREES)-90 + AprilTagLocalizer.ADJUST_RED_H;
+                } else if (teamUtil.alliance== teamUtil.Alliance.BLUE) {
+                    newX = pose.getPosition().x*-1*25.4 + AprilTagLocalizer.ADJUST_BLUE_X;
+                    newY = pose.getPosition().y*-1*25.4 + AprilTagLocalizer.ADJUST_BLUE_Y;
+                    newH = pose.getOrientation().getYaw(AngleUnit.DEGREES)-90 + AprilTagLocalizer.ADJUST_BLUE_H;
+                }
+
+                telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", newX, newY, newH));
                 telemetry.addLine(String.format("Diff: X: %.0f Y: %.0f H: %.1f ",
-                        robot.drive.oQlocalizer.posX_mm - (pose.getPosition().x*-1*25.4),
-                        robot.drive.oQlocalizer.posY_mm - (pose.getPosition().y*-1*25.4),
-                        Math.toDegrees(robot.drive.oQlocalizer.heading_rad) - (pose.getOrientation().getYaw(AngleUnit.DEGREES)-90)));
+                        robot.drive.oQlocalizer.posX_mm - newX,
+                        robot.drive.oQlocalizer.posY_mm - newY,
+                        Math.toDegrees(robot.drive.oQlocalizer.heading_rad) -newH));
 
             }
         }

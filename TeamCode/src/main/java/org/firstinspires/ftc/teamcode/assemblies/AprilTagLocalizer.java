@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -17,6 +18,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import java.util.Locale;
 
+@Config
 public class AprilTagLocalizer {
     HardwareMap hardwareMap;
     Telemetry telemetry;
@@ -152,10 +154,10 @@ public class AprilTagLocalizer {
     public static long SAMPLE_TIME = 500;
     public static double ADJUST_RED_X = 10;
     public static double ADJUST_RED_Y = 0;
-    public static double ADJUST_RED_H = 2;
+    public static double ADJUST_RED_H = 3;
     public static double ADJUST_BLUE_X = -30;
     public static double ADJUST_BLUE_Y = 20;
-    public static double ADJUST_BLUE_H = -1;
+    public static double ADJUST_BLUE_H = 1;
 
     public boolean localize(long timeOut) {
         teamUtil.log("Localize starting");
