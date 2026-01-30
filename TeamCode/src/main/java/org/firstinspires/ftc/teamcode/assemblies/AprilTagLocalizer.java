@@ -203,7 +203,8 @@ public class AprilTagLocalizer {
         data = String.format(Locale.US, "Diff X: %.0f, Y: %.0f, H: %.1f", (float) teamUtil.robot.drive.oQlocalizer.posX_mm-newX, (float) teamUtil.robot.drive.oQlocalizer.posY_mm-newY, Math.toDegrees(teamUtil.robot.drive.oQlocalizer.heading_rad) - newH);
         teamUtil.log(data);
         teamUtil.robot.drive.loop();
-        teamUtil.robot.drive.setRobotPosition((int)newX, (int)newY, Math.toDegrees(teamUtil.robot.drive.oQlocalizer.heading_rad));
+        // Set the x,y but keep the heading
+        teamUtil.robot.drive.setRobotPosition((int)newX, (int)newY, teamUtil.robot.drive.getHeadingODO());
         return true;
     }
 }
