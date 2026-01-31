@@ -71,14 +71,15 @@ public class Teleop extends LinearOpMode {
         boolean endgameMode = false;
         boolean limelightOverride = false;
 
+        if (Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) { // If we are going to keep this running the whole time
+            robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // start it right away
+        }
+        // TODO: Consider a pause here to avoid spamming log
 
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
 
-        if (Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) { // If we are going to keep this running the whole time
-            robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // start it right away
-        }
 
         while (!opModeIsActive()) {
         /*   

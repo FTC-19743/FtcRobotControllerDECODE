@@ -56,6 +56,10 @@ public class TestAutoPaths extends LinearOpMode{
         teamUtil.alliance = RED;
 
         robot.calibrate();
+
+        robot.intake.startDetector();
+        teamUtil.pause(Robot.DETECTOR_START_TIME);
+
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
@@ -65,7 +69,7 @@ public class TestAutoPaths extends LinearOpMode{
         if (isStopRequested()) {
             return;
         }
-        robot.intake.startDetector();
+
 
         while (opModeIsActive()) {
             telemetry.addLine("ALLIANCE : " + teamUtil.alliance + " SIDE : " + teamUtil.SIDE + " PATTERN: " + teamUtil.pattern);

@@ -44,7 +44,7 @@ public class Robot {
     public static double FOOT_EXTENDED_POS = .1; // <1 second
 
     public static boolean details = false;
-
+    public static long DETECTOR_START_TIME = 1200; // time to start up Limelight the first time
 
     // Set teamUtil.theOpMode before calling
     public Robot() {
@@ -331,11 +331,11 @@ public class Robot {
             return false;
         }
 
-        double goalDistance = drive.robotGoalDistance();
-        double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
+        //double goalDistance = drive.robotGoalDistance();
+        //double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
         // Don't attempt to shoot if flywheel speed is not in acceptable range
-        //if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false;
+        //if (!shooter.flywheelSpeedOK(goalDistance, flyWheelVelocity)) return false; // FIXED for Auto
 
         return true;
     }
@@ -348,7 +348,7 @@ public class Robot {
             double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
 
             // Adjust the pitch of the shooter to match distance and flywheel velocity
-            shooter.changeAim(goalDistance, flyWheelVelocity);
+            // shooter.changeAim(goalDistance, flyWheelVelocity); // FIXED for auto, trust the pathing to put the robot in the right place.
 
             // Launch it
             shooter.pushOneNoWait();
@@ -840,7 +840,7 @@ public class Robot {
                 double goalDistance = drive.robotGoalDistance();
                 double flyWheelVelocity = shooter.leftFlywheel.getVelocity();
                 // Adjust the pitch of the shooter to match distance and flywheel velocity
-                shooter.changeAim(goalDistance, flyWheelVelocity); // TODO: Consider adding this to autoHoldShotHeading()
+                //shooter.changeAim(goalDistance, flyWheelVelocity); // FIXED for now, trust the pathing to work. Could consider adding this to autoHoldShotHeading()
 
                 shooter.shootSuperFastNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, false, true, true, 0); // launch the shot sequence in another thread
                 // wait for it to finish while adjusting robot heading if needed
@@ -888,9 +888,9 @@ public class Robot {
     // Main Auto Code
 
     // This is what we are aiming for throughout auto for max consistency while minimizing travel distances
-    public static int IDEAL_GOAL_DISTANCE = 1200;
-    public static int IDEAL_FLYWHEEL = 840;
-    public static float IDEAL_PITCH = 0.33f;
+    public static int IDEAL_GOAL_DISTANCE = 1220;
+    public static int IDEAL_FLYWHEEL = 800;
+    public static float IDEAL_PITCH = 0.32f;
 
     public static int LOCALIZE_GOAL_X = 1617;
     public static int LOCALIZE_GOAL_Y = 824;
@@ -944,7 +944,7 @@ public class Robot {
     public static double B01_SHOT_Y = 780;
     public static double B01_SHOT_H = 45;
     public static double B01_SHOT_END_VEL = 500;
-    public static double B01_FLYWHEEL_VEL = IDEAL_FLYWHEEL;
+    public static double B01_FLYWHEEL_VEL = IDEAL_FLYWHEEL-20; // a little less for the super fast shots up front
     public static float B01_SHOT_PITCH = IDEAL_PITCH;
     public boolean preloads(boolean useArms) {
         teamUtil.log("==================== Preloads (Group 1) ================");
@@ -1152,7 +1152,7 @@ public class Robot {
     public static double B05_SHOT_THRESHOLD = 3000;
     public static long B05_INTAKE_PAUSE = 300;
     public static double B05_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
-    public static double B05_PITCH = IDEAL_PITCH;
+    public static double B05_SHOT_PITCH = IDEAL_PITCH;
     public static double B05_SHOT_X = 600; // was 650
     public static double B05_SHOT_Y = 700 ; // was 750
     public static double B05_SHOT_RH = 35;
@@ -1164,7 +1164,7 @@ public class Robot {
         if (useArms) {
             shooter.setShootSpeed(B05_FLYWHEEL_VELOCITY);
             Shooter.VELOCITY_COMMANDED = B05_FLYWHEEL_VELOCITY;
-            shooter.aim(B05_PITCH);
+            shooter.aim(B05_SHOT_PITCH);
 
         }
         if (getMoreBallsV2()) {
