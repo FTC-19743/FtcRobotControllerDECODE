@@ -438,10 +438,9 @@ public class Robot {
         }
     }
     //////////////////////// Flipper Location based shooting
-    // Not currently used
+    //
 
     public static long FIRST_UNLOAD_PAUSE = 400;
-/*
     public static long SECOND_UNLOAD_PAUSE = 600;
     public static double TWO_BALL_EDGE_PORTION = 1f/4;
     public static long EDGE_PUSHER_PAUSE = 700;
@@ -453,26 +452,26 @@ public class Robot {
             intake.middle_flipper.setPosition(Intake.MIDDLE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.middle_flipper.setPosition(Intake.FLIPPER_CEILING_MIDDLE);
-            intake.middleLoad = Intake.ARTIFACT.NONE;
+            Intake.middleLoad = Intake.ARTIFACT.NONE;
             intake.signalArtifacts();
             shooter.pushOne();
-            teamUtil.log("shootArtifactLocation: Moved middle flipper");
+            teamUtil.log("shootArtifactLocation: Middle");
         }else if(location == Intake.Location.LEFT){
             intake.left_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.left_flipper.setPosition(Intake.FLIPPER_CEILING);
-            intake.leftLoad = Intake.ARTIFACT.NONE;
+            shooter.pushLeft();
+            Intake.leftLoad = Intake.ARTIFACT.NONE;
             intake.signalArtifacts();
-            teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
             teamUtil.log("shootArtifactLocation: Moved left flipper");
         }else{ // right
             intake.right_flipper.setPosition(Intake.EDGE_FLIPPER_SHOOTER_TRANSFER);
             teamUtil.pause(FIRST_UNLOAD_PAUSE);
             intake.right_flipper.setPosition(Intake.FLIPPER_CEILING);
-            intake.rightLoad = Intake.ARTIFACT.NONE;
+            shooter.pushRight();
+            Intake.rightLoad = Intake.ARTIFACT.NONE;
             intake.signalArtifacts();
-            teamUtil.pause(EDGE_PUSHER_PAUSE);
             shooter.pushOne();
             teamUtil.log("shootArtifactLocation: Moved right flipper");
         }
@@ -493,7 +492,7 @@ public class Robot {
     }
 
 
-     */
+
     //////////////////////// Artifact Color Based Single Shots
     public AtomicBoolean shootingArtifactColor = new AtomicBoolean(false);
 
@@ -680,6 +679,7 @@ public class Robot {
 
         long shot3Time =  System.currentTimeMillis() + 1600;
         int numShots = 0;
+        int actualShots = 0;
 
         blinkin.setSignal(Blinkin.Signals.GOLD);
 
@@ -694,6 +694,7 @@ public class Robot {
                     nextShotMinTime = System.currentTimeMillis() + AUTO_PATTERN_SHOT_MIN_SHOT_TIME;
                     nextShotTimeLimit = System.currentTimeMillis() + AUTO_PATTERN_SHOT_LOAD_LIMIT; // reset load timer
                     numShots++;
+                    actualShots++;
 
                     if (numShots < 3) {
                         while (numShots < 3) {
@@ -735,6 +736,7 @@ public class Robot {
                 }
             }
         }
+        drive.stopMotors();
         // Empty out shooter in case something got left behind. Not worried about aiming at this point.
         if (useArms){
             while (shooter.isLoaded() && !shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
@@ -742,6 +744,13 @@ public class Robot {
                 shooter.pushOneNoWait();
                 logShot(shooter.leftFlywheel.getVelocity());
             }
+        }
+        // If we took less than 3 shots, shoot missing ones in case we got a false negative from the detector
+        if (actualShots < 3) {
+            teamUtil.log("Taking Extra Shots In Case Loaded Detector had false negative(s)");
+            checkForMissingShot(Intake.Location.CENTER);
+            checkForMissingShot(Intake.Location.LEFT);
+            checkForMissingShot(Intake.Location.RIGHT);
         }
         blinkin.setSignal(Blinkin.Signals.OFF);
         intake.setRGBsOff();
@@ -762,6 +771,17 @@ public class Robot {
         }
     }
 
+    public void checkForMissingShot(Intake.Location location) {
+        boolean foundIt = false;
+        for (int i = 1;i<4;i++) {
+            if (shotOrder[i]==location) {
+                foundIt = true;
+            }
+        }
+        if (!foundIt) { // There was no shot for this location in the shotOrder, this means the detector returned NONE for this location.
+            shootArtifactLocation(location); // Shoot anyway, just in case detector had a false negative
+        }
+    }
 
     //////////////////////// Auto Super Fast 3 Shooting
 
@@ -1168,7 +1188,7 @@ public class Robot {
 
         }
         if (getMoreBallsV2()) {
-            if (useArms) autoTransferAndLoadNoWait(B05_INTAKE_PAUSE, true,3000);
+            if (useArms) autoTransferAndLoadNoWait(B05_INTAKE_PAUSE, true,3000); // Rely on Loaded Detector for these
             // Drive back to shooting zone
             if (!mirroredDriveToShotPositionFast(B05_SHOT_X, B05_SHOT_Y, B05_SHOT_RH, B05_SHOT_END_VEL, B05_SHOT_STRAIGHT_PERCENT, B05_SHOT_DRIFT_PERCENT)) return false; // Try the new faster one
             //if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT5_SETUP_X,B08_SHOOT5_SETUP_Y,B08_SHOOT5_DH, B08_SHOOT5_DH, B00_CORNER_VELOCITY, null, 0, 4000)) return;

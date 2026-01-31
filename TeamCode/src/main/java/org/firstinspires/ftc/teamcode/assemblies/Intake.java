@@ -208,6 +208,13 @@ public class Intake {
         rightIntake = (pattern == teamUtil.Pattern.PGP || pattern == teamUtil.Pattern.GPP) ? ARTIFACT.PURPLE : ARTIFACT.GREEN;
     }
 
+    public void setIntakeArtifacts(ARTIFACT left, ARTIFACT middle, ARTIFACT right) {
+        leftIntake = left;
+        middleIntake = middle;
+        rightIntake = right;
+    }
+
+
     public int numBallsInFlippers(){
         int loadedBalls = 0;
         if(leftLoad != ARTIFACT.NONE){
@@ -458,7 +465,7 @@ public class Intake {
 */
 
     public boolean ballsLeftToShoot(){
-        teamUtil.log("left: "+left_flipper.getPosition()+", middle: "+middle_flipper.getPosition()+", right: "+right_flipper.getPosition()+", balls: "+numBallsInFlippers());
+        //teamUtil.log("left: "+left_flipper.getPosition()+", middle: "+middle_flipper.getPosition()+", right: "+right_flipper.getPosition()+", balls: "+numBallsInFlippers());
         return servoPositionIs(left_flipper, EDGE_FLIPPER_SHOOTER_TRANSFER) ||
                 servoPositionIs(middle_flipper, MIDDLE_FLIPPER_SHOOTER_TRANSFER) ||
                 servoPositionIs(right_flipper, EDGE_FLIPPER_SHOOTER_TRANSFER) ||
@@ -784,22 +791,34 @@ public class Intake {
         KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING = stored; // restore previous value
         return true;
     }
+    private long lastDetectorWarningTime = 0;
+    private long lastDetectorWarningInterval = 100;
+
     private double[]  getDetectorOutput() {
         LLResult result = teamUtil.robot.limelight.getLatestResult();
         //teamUtil.log("result: " + result);
 
         if (result == null /*|| !result.isValid() */) { // isValid() returns *false* on data returned from SnapScript, so don't use it
-            teamUtil.log("ERROR: getDetectorOutput Failed to get latest results from Limelight");
+            if (System.currentTimeMillis() > lastDetectorWarningTime+lastDetectorWarningInterval) {
+                teamUtil.log("ERROR: getDetectorOutput Failed to get latest results from Limelight");
+                lastDetectorWarningTime = System.currentTimeMillis();
+            }
             return null;
         }
         double[] llOutput = result.getPythonOutput();
         if (llOutput == null || llOutput.length < 5) {
-            teamUtil.log("ERROR: getDetectorOutput got Bad data back from SnapScript on Limelight");
+            if (System.currentTimeMillis() > lastDetectorWarningTime+lastDetectorWarningInterval) {
+                teamUtil.log("ERROR: getDetectorOutput got Bad data back from SnapScript on Limelight");
+                lastDetectorWarningTime = System.currentTimeMillis();
+            }
             return null;
         }
         int mode = (int) Math.round( llOutput[0]);
         if (mode != 23) {
-            teamUtil.log("WARNING: Limelight Detector Pipeline returned data not valid");
+            if (System.currentTimeMillis() > lastDetectorWarningTime+lastDetectorWarningInterval) {
+                teamUtil.log("WARNING: Limelight Detector Pipeline returned data not valid");
+                lastDetectorWarningTime = System.currentTimeMillis();
+            }
             if (DETECTOR_FAILSAFE) {
                 teamUtil.log("Attempting to restart Limelight Intake Detector with result: " + teamUtil.robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE));
             }

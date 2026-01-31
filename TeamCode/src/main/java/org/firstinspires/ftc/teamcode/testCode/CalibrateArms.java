@@ -448,6 +448,10 @@ public class CalibrateArms extends LinearOpMode {
 
     public static double SHOOTER_VELOCITY = 800;
     public static teamUtil.Pattern TEST_PATTERN = teamUtil.Pattern.PPG;
+    public static Intake.ARTIFACT LEFT_LOAD = Intake.ARTIFACT.NONE;
+    public static Intake.ARTIFACT MIDDLE_LOAD = Intake.ARTIFACT.NONE;
+    public static Intake.ARTIFACT RIGHT_LOAD = Intake.ARTIFACT.NONE;
+
     public void testShooter(){
         robot.drive.loop(); // get updated localizer data
         telemetry.addData("AdjustShootMode: " , adjustShootMode);
@@ -536,7 +540,8 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.left_trigger > .5) {
             while (gamepad1.left_trigger > .5) {}
-            robot.intake.setIntakeArtifacts(TEST_PATTERN);
+            //robot.intake.setIntakeArtifacts(TEST_PATTERN);
+            robot.intake.setIntakeArtifacts(LEFT_LOAD, MIDDLE_LOAD, RIGHT_LOAD);
             robot.autoTransferAndLoadNoWait(0, false, 5000);
             //robot.autoShootFastPreloadV2();
         }
