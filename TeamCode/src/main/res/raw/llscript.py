@@ -42,7 +42,7 @@ BLUR_KERNEL_SIZE = 11
 MORPH_KERNEL = np.ones((5, 5), np.uint8)
 
 # Minimum Bounding Box Area (Adjust based on your target size/distance)
-MIN_AREA_CONSTRAINT = 500.0 # TODO Might need to be different for intake and loaded? need small number for loaded sides
+MIN_AREA_CONSTRAINT = 500.0
 
 CROP_BOTTOM_PIXELS = 240
 CROP_TOP_PIXELS = 100
@@ -54,9 +54,10 @@ LEFT_DOUBLE_THRESHOLD = 320
 LEFT_THRESHOLD = 200
 RIGHT_THRESHOLD = 400
 LEFT_LOADED_THRESHOLD = 25
-RIGHT_LOADED_THRESHOLD = 640-CROP_RIGHT_PIXELS - 30
+RIGHT_LOADED_THRESHOLD = 640-CROP_RIGHT_PIXELS - 20
 MIDDLE_LOADED_CENTER = 300
-
+MIDDLE_LOADED_LEFT = 150
+MIDDLE_LOADED_RIGHT = 450
 
 
 def intakeDetect(boxes, color):
@@ -94,6 +95,10 @@ def loadedDetect(boxes, color):
         if (x+w > RIGHT_LOADED_THRESHOLD): # something on far right
             right_result = color
         if (x < MIDDLE_LOADED_CENTER and x+w > MIDDLE_LOADED_CENTER ):
+            middle_result = color
+        if (x < MIDDLE_LOADED_CENTER and x+w > MIDDLE_LOADED_LEFT):
+            middle_result = color
+        if (x+w > MIDDLE_LOADED_CENTER and x < MIDDLE_LOADED_RIGHT):
             middle_result = color
         #print(f"Box: Area {area} | L: {x} | R: {x+w} | Center: {cx}, {cy}")
     #print(f" Left: {left_result} | Middle : {middle_result} | Right: {right_result}")
