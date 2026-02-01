@@ -503,6 +503,12 @@ public class Shooter {
 //        }
 //    }
 
+    public static double SHORT_DISTANCE_THRESHOLD = 1400;
+
+    public static double pitchAShort = 2.27273e-7;
+    public static double pitchBShort = -0.000393636;
+    public static double pitchCShort = 0.466183;
+
     public static double pitchANew = -2.8869e-8;
     public static double pitchBNew = 0.000186393;
     public static double pitchCNew = 0.153392;
@@ -510,18 +516,22 @@ public class Shooter {
 
 
     public double calculatePitchV2(double distance){
-        if (distance<MID_DISTANCE_THRESHOLD){
+        if (distance<SHORT_DISTANCE_THRESHOLD) {
+            return pitchAShort * distance * distance + pitchBShort * distance + pitchCShort;
+        }if (distance<MID_DISTANCE_THRESHOLD){
             return pitchANew*distance*distance+pitchBNew*distance+pitchCNew;
         }else{
             return longPitch;
         }
     }
 
-
-
     public static double velocityANew = 0.000142857;
-    public static double shortVelocityBNew = -0.209524;
+    public static double velocityBNew = -0.209524;
     public static double velocityCNew = 895.83333;
+
+    public static double velocityAShort = 0.000454545;
+    public static double velocityBShort = -0.787273;
+    public static double velocityCShort = 1092.36364;
 
     public static double longVelocityM = 0.3;
     public static double longVelocityB = 540;
@@ -529,8 +539,10 @@ public class Shooter {
     public static double newLongVelocityB = 554.71749;
 
     public double calculateVelocityV2(double distance){
-        if (distance<MID_DISTANCE_THRESHOLD){
-            return velocityANew*distance*distance+shortVelocityBNew*distance+velocityCNew;
+        if (distance<SHORT_DISTANCE_THRESHOLD){
+            return velocityAShort*distance*distance+velocityBShort*distance+velocityCShort;
+        }if (distance<MID_DISTANCE_THRESHOLD){
+            return velocityANew*distance*distance+velocityBNew*distance+velocityCNew;
         }else{
             return newLongVelocityM*distance+newLongVelocityB;
         }

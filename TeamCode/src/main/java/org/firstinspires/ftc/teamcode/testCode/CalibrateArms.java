@@ -589,7 +589,7 @@ public class CalibrateArms extends LinearOpMode {
             //robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
             robot.shooter.sidePushersHold();
             while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
-            robot.shooter.shootSuperFastNoWait(true, true, true,false,robot.drive.robotGoalDistance());
+            robot.shooter.shootSuperFastNoWait(true, true, true,true,robot.drive.robotGoalDistance());
         }
         if(gamepad1.xWasPressed()){
             robot.intake.elevatorToFlippersV2(true, true);
