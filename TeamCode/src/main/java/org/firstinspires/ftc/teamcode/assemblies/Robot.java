@@ -37,6 +37,7 @@ public class Robot {
     public AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
     public Limelight3A limelight;
+    public AprilTagLocalizer localizer;
 
     public Servo foot;
     private ColorSensor footColorSensor;
@@ -65,7 +66,7 @@ public class Robot {
         shooter.initialize();
         blinkin.init();
         footColorSensor = hardwareMap.get(RevColorSensorV3.class, "floorcolorsensor");
-
+        localizer = new AprilTagLocalizer();
         if (useLimeLight) {
             limelight = hardwareMap.get(Limelight3A.class, "limelight");
             limelight.pipelineSwitch(PIPELINE_IDLE); // minimize CPU on the LL

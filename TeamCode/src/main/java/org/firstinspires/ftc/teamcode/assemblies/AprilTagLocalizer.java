@@ -10,6 +10,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -17,6 +18,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Config
 public class AprilTagLocalizer {
@@ -151,6 +153,7 @@ public class AprilTagLocalizer {
         return null;
     }
 
+    AtomicBoolean localizing = new AtomicBoolean();
     public static long SAMPLE_TIME = 500;
     public static double ADJUST_RED_X = 10;
     public static double ADJUST_RED_Y = 0;
@@ -159,10 +162,27 @@ public class AprilTagLocalizer {
     public static double ADJUST_BLUE_Y = 20;
     public static double ADJUST_BLUE_H = 1;
 
+    public void localizeNoWait(long timeout){
+        if (localizing.get()) {
+            teamUtil.log("WARNING: Attempt to shootArtifactColorNoWait while shootingArtifactColor. Ignored.");
+            return;
+        }
+        localizing.set(true);
+        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                localize(timeout);
+            }
+        });
+        thread.start();
+    }
+
     public boolean localize(long timeOut) {
         teamUtil.log("Localize starting");
         long startTime = System.currentTimeMillis();
         long timeOutTime = startTime + timeOut;
+        teamUtil.robot.blinkin.setSignal(Blinkin.Signals.COLORWAVESFORESTPALETTE);
         initCV(); // set up vision portal just in time
         while (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING && teamUtil.keepGoing(timeOutTime)) {
             teamUtil.pause(50);
@@ -171,6 +191,9 @@ public class AprilTagLocalizer {
         if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
             teamUtil.log("localize TIMED OUT waiting for streaming to start");
             visionPortal.close();
+            localizing.set(false);
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+
             return false;
         }
         teamUtil.log("Streaming Started in " + (System.currentTimeMillis() - startTime));
@@ -192,11 +215,17 @@ public class AprilTagLocalizer {
         if (count == 0) {
             teamUtil.log("localize failed to get any samples");
             visionPortal.close();
+            localizing.set(false);
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+
             return false;
         }
         if (System.currentTimeMillis() >= timeOutTime) {
             teamUtil.log("localize TIMED OUT collecting samples");
             visionPortal.close();
+            localizing.set(false);
+            teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+
             return false;
         }
         visionPortal.close();
@@ -224,6 +253,9 @@ public class AprilTagLocalizer {
         teamUtil.robot.drive.loop();
         // Set the x,y but keep the heading
         teamUtil.robot.drive.setRobotPosition((int)newX, (int)newY, teamUtil.robot.drive.getHeadingODO());
+        localizing.set(false);
+        teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
+
         return true;
     }
 }
