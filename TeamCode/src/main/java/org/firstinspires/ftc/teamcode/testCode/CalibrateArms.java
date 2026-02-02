@@ -555,10 +555,20 @@ public class CalibrateArms extends LinearOpMode {
     public boolean locked = false;
     public static double SHOOTER_OVERSHOOT = 200;
     public static long SHOOTER_RAMP_PAUSE = 200;
+    public static double PIDF_P_Left = Shooter.shooterP;
+    public static double PIDF_I_Left = Shooter.shooterI;
+    public static double PIDF_D_Left = Shooter.shooterD;
+    public static double PIDF_F_Left = Shooter.shooterF;
+    public static double PIDF_P_Right = Shooter.shooterP;
+    public static double PIDF_I_Right = Shooter.shooterI;
+    public static double PIDF_D_Right = Shooter.shooterD;
+    public static double PIDF_F_Right = Shooter.shooterF;
     public void shooterPIDF(){
         if (gamepad1.startWasReleased()) {
-            robot.shooter.leftFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
-            robot.shooter.rightFlywheel.setVelocityPIDFCoefficients(Shooter.shooterP, Shooter.shooterI, Shooter.shooterD, Shooter.shooterF);
+            robot.shooter.leftFlywheel.setVelocityPIDFCoefficients(PIDF_P_Left, PIDF_I_Left, PIDF_D_Left, PIDF_F_Left);
+            robot.shooter.rightFlywheel.setVelocityPIDFCoefficients(PIDF_P_Right, PIDF_I_Right, PIDF_D_Right, PIDF_F_Right);
+            teamUtil.log("Left: " + robot.shooter.leftFlywheel.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER));
+            teamUtil.log("Right: " + robot.shooter.rightFlywheel.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER));
         }
         //robot.shooter.leftFlywheel.setPower(CurrentPower);
         //rightFlywheel.setPower(-CurrentPower);
@@ -571,6 +581,12 @@ public class CalibrateArms extends LinearOpMode {
         }if(gamepad1.dpadDownWasReleased()){
             robot.shooter.stopShooter();
         }
+        if(gamepad1.yWasPressed()) {
+            robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1500);
+            //teamUtil.pause(300);
+            //robot.shooter.pusher.reset(true);
+        }
+        /*
         if(gamepad1.yWasPressed()){
             if(!locked){
                 robot.shooter.setShootSpeed(robot.shooter.leftFlywheel.getVelocity());
@@ -584,21 +600,21 @@ public class CalibrateArms extends LinearOpMode {
         if(!locked){
             robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
         }
-
+*/
         if(gamepad1.aWasReleased()){
             //robot.shooter.pusher.pushNNoWait(3,AxonPusher.RTP_MAX_VELOCITY, 1500);
             robot.shooter.sidePushersHold();
             while (!gamepad1.aWasReleased()) {teamUtil.pause(50);}
-            robot.shooter.shootSuperFastNoWait(true, true, true,true,robot.drive.robotGoalDistance());
+            robot.shooter.shootSuperFastNoWait(true, true, true,SHOOT_3_AUTO,robot.drive.robotGoalDistance());
         }
         if(gamepad1.xWasPressed()){
             robot.intake.elevatorToFlippersV2(true, true);
         }
-        if(gamepad1.bWasPressed()) {
-            robot.shooter.pusher.pushNNoWait(1, AxonPusher.RTP_MAX_VELOCITY, 1000);
-        }if(gamepad1.leftBumperWasPressed()){
+
+        if(gamepad1.leftBumperWasPressed()){
             robot.shooter.aim(robot.shooter.currentAim()+.005);
-        }if(gamepad1.rightBumperWasPressed()){
+        }
+        if(gamepad1.rightBumperWasPressed()){
             robot.shooter.aim(robot.shooter.currentAim()-.005);
         }
         telemetry.addLine("currentVelocity: " + currentRVelocity + ", " + currentLVelocity);

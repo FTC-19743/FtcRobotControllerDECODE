@@ -49,7 +49,14 @@ public class Shooter {
     public static double shooterD = 0.8;
     public static double shooterF = 0;
 
-
+    public static double shooterLeftP = 50;
+    public static double shooterLeftI = 1;
+    public static double shooterLeftD = 0.8;
+    public static double shooterLeftF = 0;
+    public static double shooterRightP = 50;
+    public static double shooterRightI = 1;
+    public static double shooterRightD = 0.8;
+    public static double shooterRightF = 0;
 
     //THESE are the PIDF numbers to get the flywheels from 0 to 900 fast
 
