@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
 //import org.firstinspires.ftc.teamcode.libs.Blinkin;
 
@@ -80,21 +81,27 @@ public class Teleop extends LinearOpMode {
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
         telemetry.update();
+        if (teamUtil.alliance== teamUtil.Alliance.RED) {
+            gamepad1.setLedColor(1,0,0, Gamepad.LED_DURATION_CONTINUOUS);
+        } else {
+            gamepad1.setLedColor(0,0,1,Gamepad.LED_DURATION_CONTINUOUS);
+        }
 
 
         while (!opModeIsActive()) {
-        /*   
-            if(driverGamepad.wasRightBumperPressed()||driverGamepad.wasLeftBumperPressed()){
-                if(teamUtil.alliance == teamUtil.Alliance.BLUE){
+            if(gamepad1.rightBumperWasReleased()){
+                if (teamUtil.alliance == teamUtil.Alliance.BLUE) {
                     teamUtil.alliance = teamUtil.Alliance.RED;
-                }else{
-                    teamUtil.alliance= teamUtil.Alliance.BLUE;
+                    gamepad1.setLedColor(1,0,0, Gamepad.LED_DURATION_CONTINUOUS);
+                } else {
+                    teamUtil.alliance = teamUtil.Alliance.BLUE;
+                    gamepad1.setLedColor(0,0,1,Gamepad.LED_DURATION_CONTINUOUS);
                 }
+                telemetry.addLine("Ready to start");
+                telemetry.addLine("ALLIANCE : " + teamUtil.alliance);
+                telemetry.update();
             }
-            telemetry.addLine("Ready to start");
-            telemetry.addLine("ALLIANCE : "+ teamUtil.alliance);
-            telemetry.update();
-            */
+
         }
 
 
@@ -159,8 +166,10 @@ public class Teleop extends LinearOpMode {
             if(gamepad1.rightBumperWasReleased()){
                 if (teamUtil.alliance == teamUtil.Alliance.BLUE) {
                     teamUtil.alliance = teamUtil.Alliance.RED;
+                    gamepad1.setLedColor(1,0,0, Gamepad.LED_DURATION_CONTINUOUS);
                 } else {
                     teamUtil.alliance = teamUtil.Alliance.BLUE;
+                    gamepad1.setLedColor(0,0,1,Gamepad.LED_DURATION_CONTINUOUS);
                 }
             }
 
