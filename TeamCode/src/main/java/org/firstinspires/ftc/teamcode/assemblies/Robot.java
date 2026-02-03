@@ -160,12 +160,13 @@ public class Robot {
         visionPortal.close();
     }
 
-    public void detectPattern () {
+    public boolean detectPattern () {
         int detectionNum;
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         if(currentDetections.isEmpty()){
             blinkin.setSignal(Blinkin.Signals.GOLD);
             telemetry.addLine("Not Detecting Anything");
+            return false;
         } else{
             if(teamUtil.alliance == teamUtil.Alliance.BLUE){
                 int lowestYIndex=0;
@@ -208,6 +209,7 @@ public class Robot {
                 blinkin.setSignal(teamUtil.alliance == teamUtil.Alliance.BLUE ? Blinkin.Signals.GPP_BLUE : Blinkin.Signals.GPP_RED);
             }
             telemetry.addLine("Detection ID: " + detectionNum);
+            return true;
         }
 
     }

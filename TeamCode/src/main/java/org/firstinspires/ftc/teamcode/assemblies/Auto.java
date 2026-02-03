@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
@@ -37,10 +38,13 @@ public class Auto extends LinearOpMode {
             if (gamepad1.rightBumperWasReleased() || gamepad1.leftBumperWasReleased()) {
                 if (teamUtil.alliance == teamUtil.Alliance.BLUE) {
                     teamUtil.alliance = teamUtil.Alliance.RED;
+                    gamepad1.setLedColor(1,0,0, Gamepad.LED_DURATION_CONTINUOUS);
                 } else {
                     teamUtil.alliance = teamUtil.Alliance.BLUE;
+                    gamepad1.setLedColor(0,0,1,Gamepad.LED_DURATION_CONTINUOUS);
                 }
             }
+
             teamUtil.telemetry.update();
         }
         if (isStopRequested()) return;
@@ -61,6 +65,8 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
+        useIntakeDetector = false;
+        /*
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
@@ -73,6 +79,7 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.update();
         }
         if (isStopRequested()) return;
+         */
 
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
@@ -90,23 +97,34 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
-        teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-        teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-        teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-        teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-        teamUtil.telemetry.addLine("----------------------------------");
-        teamUtil.telemetry.addLine("Check Limelight functionality");
-        teamUtil.telemetry.update();
+
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
+            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Check Limelight functionality");
+            teamUtil.telemetry.addLine("Press Bumpers To Reset Lime Light Detector");
+
             if(!robot.limeLightActive()){
                 robot.intake.startDetector();
             }else{
-                robot.intake.detectIntakeArtifactsV2();
+                robot.intake.detectLoadedArtifactsV2();
+                //robot.intake.detectIntakeArtifactsV2();
                 robot.intake.signalArtifacts();
             }
+            if (gamepad1.rightBumperWasReleased() || gamepad1.leftBumperWasReleased()) {
+                robot.intake.resetIntakeDetector();
+                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
+            }
+            teamUtil.telemetry.update();
+            teamUtil.pause(100); // avoid too much spam in log
         }
         if (isStopRequested()) return;
 
+        useV3 = true;
+        /*
         teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
         teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
         teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
@@ -122,6 +140,7 @@ public class Auto extends LinearOpMode {
             }
         }
         if(isStopRequested()) return;
+        */
 
         robot.intake.intakeNum = 0;
         Intake.leftIntake = Intake.ARTIFACT.NONE;
@@ -150,9 +169,12 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
             teamUtil.telemetry.addLine("Use auto V3: "+useV3);
             robot.drive.localizerTelemetry();
-            robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
-            teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
+            if (robot.detectPattern()) {
+                teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
+            } else {
+                teamUtil.telemetry.addLine("NO APRIL TAG PATTERN DETECTED. Defaulting to: " + teamUtil.pattern);
+            }
             teamUtil.telemetry.addLine("Press A to Finish Setup");
             teamUtil.telemetry.update();
         }
@@ -166,13 +188,21 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
             teamUtil.telemetry.addLine("Use auto V3: "+useV3);
             robot.drive.localizerTelemetry();
-            robot.detectPattern();
             teamUtil.telemetry.addLine("----------------------------------");
-            teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
+            if (robot.detectPattern()) {
+                teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
+                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
+                robot.intake.setLoadedArtifacts(teamUtil.pattern);
+                robot.intake.signalArtifacts();
+            } else {
+                teamUtil.telemetry.addLine("NO APRIL TAG PATTERN DETECTED. Defaulting to: " + teamUtil.pattern);
+                robot.intake.setRGBsOff();
+            }
             teamUtil.telemetry.addLine("READY TO GO");
             teamUtil.telemetry.update();
         }
-
+        robot.intake.setLoadedArtifacts(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
+        robot.intake.signalArtifacts();
         robot.stopCV();
         if (isStopRequested()) return;
 
