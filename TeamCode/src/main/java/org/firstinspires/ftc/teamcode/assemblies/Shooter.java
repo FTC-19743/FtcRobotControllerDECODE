@@ -49,14 +49,15 @@ public class Shooter {
     public static double shooterD = 0.8;
     public static double shooterF = 0;
 
-    public static double shooterLeftP = 50;
-    public static double shooterLeftI = 1;
-    public static double shooterLeftD = 0.8;
-    public static double shooterLeftF = 0;
-    public static double shooterRightP = 50;
-    public static double shooterRightI = 1;
-    public static double shooterRightD = 0.8;
-    public static double shooterRightF = 0;
+    // New PIDF coeffecients using Feed Forward to get faster recovery
+    public static double shooterLeftP = 35;
+    public static double shooterLeftI = 0;
+    public static double shooterLeftD = 0.05;
+    public static double shooterLeftF = 13.5;
+    public static double shooterRightP = 35;
+    public static double shooterRightI = 0;
+    public static double shooterRightD = 0.1;
+    public static double shooterRightF = 13.5;
 
     //THESE are the PIDF numbers to get the flywheels from 0 to 900 fast
 
@@ -133,6 +134,12 @@ public class Shooter {
     public void flywheelNormal(){
         setFlywheelCoefficients(shooterP, shooterI, shooterD, shooterF);
         teamUtil.log("set shooter PIDF to normal to maintain speed");
+    }
+
+    public void flywheelEnhanced() {
+        leftFlywheel.setVelocityPIDFCoefficients(shooterLeftP, shooterLeftI, shooterLeftD, shooterLeftF);
+        rightFlywheel.setVelocityPIDFCoefficients(shooterRightP, shooterRightI, shooterRightD, shooterRightF);
+        teamUtil.log("set shooter PIDF to enhanced for faster recovery");
     }
 
     public void initialize() {
@@ -229,8 +236,8 @@ public class Shooter {
     public static long SF_RIGHT_PUSH_PAUSE = 200;
     public static long SF_LEFT_PUSH_PAUSE_NEAR = 200;
     public static long SF_RIGHT_PUSH_PAUSE_NEAR = 200;
-    public static long SF_LEFT_PUSH_PAUSE_FAR = 600;
-    public static long SF_RIGHT_PUSH_PAUSE_FAR = 600;
+    public static long SF_LEFT_PUSH_PAUSE_FAR = 300;
+    public static long SF_RIGHT_PUSH_PAUSE_FAR = 300;
     public static long SF_LAST_SHOT_PAUSE = 100;
     public static long SF_LAST_PADDLE_PAUSE = 100;
 

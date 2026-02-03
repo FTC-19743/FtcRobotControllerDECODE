@@ -55,7 +55,8 @@ public class Teleop extends LinearOpMode {
 
         robot = new Robot();
         robot.initialize(true);
-        robot.shooter.flywheelNormal();
+        //robot.shooter.flywheelNormal();
+        robot.shooter.flywheelEnhanced();
         //robot.initCV(enableLiveView);// TODO: false for competition
 
         if (teamUtil.justRanAuto) {
