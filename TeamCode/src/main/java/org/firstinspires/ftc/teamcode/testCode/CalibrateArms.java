@@ -555,14 +555,14 @@ public class CalibrateArms extends LinearOpMode {
     public boolean locked = false;
     public static double SHOOTER_OVERSHOOT = 200;
     public static long SHOOTER_RAMP_PAUSE = 200;
-    public static double PIDF_P_Left = Shooter.shooterP;
-    public static double PIDF_I_Left = Shooter.shooterI;
-    public static double PIDF_D_Left = Shooter.shooterD;
-    public static double PIDF_F_Left = Shooter.shooterF;
-    public static double PIDF_P_Right = Shooter.shooterP;
-    public static double PIDF_I_Right = Shooter.shooterI;
-    public static double PIDF_D_Right = Shooter.shooterD;
-    public static double PIDF_F_Right = Shooter.shooterF;
+    public static double PIDF_P_Left = Shooter.shooterLeftP;
+    public static double PIDF_I_Left = Shooter.shooterLeftI;
+    public static double PIDF_D_Left = Shooter.shooterLeftD;
+    public static double PIDF_F_Left = Shooter.shooterLeftF;
+    public static double PIDF_P_Right = Shooter.shooterRightP;
+    public static double PIDF_I_Right = Shooter.shooterRightI;
+    public static double PIDF_D_Right = Shooter.shooterRightD;
+    public static double PIDF_F_Right = Shooter.shooterRightF;
     public void shooterPIDF(){
         if (gamepad1.startWasReleased()) {
             robot.shooter.leftFlywheel.setVelocityPIDFCoefficients(PIDF_P_Left, PIDF_I_Left, PIDF_D_Left, PIDF_F_Left);

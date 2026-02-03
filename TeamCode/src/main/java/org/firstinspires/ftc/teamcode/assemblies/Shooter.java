@@ -51,11 +51,11 @@ public class Shooter {
 
     // New PIDF coeffecients using Feed Forward to get faster recovery
     public static double shooterLeftP = 35;
-    public static double shooterLeftI = 0;
+    public static double shooterLeftI = .35;
     public static double shooterLeftD = 0.05;
     public static double shooterLeftF = 13.5;
     public static double shooterRightP = 35;
-    public static double shooterRightI = 0;
+    public static double shooterRightI = .35;
     public static double shooterRightD = 0.1;
     public static double shooterRightF = 13.5;
 
