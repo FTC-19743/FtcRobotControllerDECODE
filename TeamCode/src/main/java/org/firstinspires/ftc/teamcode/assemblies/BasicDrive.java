@@ -107,8 +107,8 @@ public class BasicDrive{
     public static float SLOWSPEED = .1f;
     public static float STRAFESLOWSPEED = 0.25f;
     public static float MAXROTATIONFACTOR = 0.8f;
-    public static float ROTATION_ADJUST_HELD_HEADING = 0.1f;
-    public static float STATIONARY_ROTATION_ADJUST_HELD_HEADING = 0.005f;
+    public static float ROTATION_ADJUST_HELD_HEADING = 0.1f; // when robot is translating
+    public static float STATIONARY_ROTATION_ADJUST_HELD_HEADING = 0.005f; // when robot is still (but rotating to held heading)
     public static float SLOWSLOPE =0.22f;
     public static float SLOWSLOPESTRAFE =0.35f;
 
