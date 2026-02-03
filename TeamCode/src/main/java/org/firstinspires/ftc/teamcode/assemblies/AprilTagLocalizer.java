@@ -164,11 +164,11 @@ public class AprilTagLocalizer {
 
     public void localizeNoWait(long timeout){
         if (localizing.get()) {
-            teamUtil.log("WARNING: Attempt to shootArtifactColorNoWait while shootingArtifactColor. Ignored.");
+            teamUtil.log("WARNING: Attempt to localizeNoWait while localizing. Ignored.");
             return;
         }
         localizing.set(true);
-        teamUtil.log("Launching Thread to shootArtifactColorNoWait");
+        teamUtil.log("Launching Thread to localize");
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -191,9 +191,8 @@ public class AprilTagLocalizer {
         if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
             teamUtil.log("localize TIMED OUT waiting for streaming to start");
             visionPortal.close();
-            localizing.set(false);
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-
+            localizing.set(false);
             return false;
         }
         teamUtil.log("Streaming Started in " + (System.currentTimeMillis() - startTime));
@@ -215,17 +214,15 @@ public class AprilTagLocalizer {
         if (count == 0) {
             teamUtil.log("localize failed to get any samples");
             visionPortal.close();
-            localizing.set(false);
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-
+            localizing.set(false);
             return false;
         }
         if (System.currentTimeMillis() >= timeOutTime) {
             teamUtil.log("localize TIMED OUT collecting samples");
             visionPortal.close();
-            localizing.set(false);
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-
+            localizing.set(false);
             return false;
         }
         visionPortal.close();
@@ -253,9 +250,8 @@ public class AprilTagLocalizer {
         teamUtil.robot.drive.loop();
         // Set the x,y but keep the heading
         teamUtil.robot.drive.setRobotPosition((int)newX, (int)newY, teamUtil.robot.drive.getHeadingODO());
-        localizing.set(false);
         teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
-
+        localizing.set(false);
         return true;
     }
 }

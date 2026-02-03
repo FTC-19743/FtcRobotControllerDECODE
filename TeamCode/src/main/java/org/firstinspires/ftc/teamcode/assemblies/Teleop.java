@@ -201,56 +201,56 @@ public class Teleop extends LinearOpMode {
             }
 
             if(gamepad1.shareWasPressed()){
-                robot.localizer.localize(2500);
+                robot.localizer.localizeNoWait(2500); // Don't drive the robot until this is done!
             }
 
-                ////////////// SHOOTER ///////////////////////////
+            ////////////// SHOOTER ///////////////////////////
 
-                if (shootingMode) {
-                    if (!robot.shooter.superFastShooting.get() && !robot.shootingArtifactColor.get()) {
-                        // adjust shooter flywheel and pitch if we are not actively shooting at the moment
-                        robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
-                    }
+            if (shootingMode) {
+                if (!robot.shooter.superFastShooting.get() && !robot.shootingArtifactColor.get()) {
+                    // adjust shooter flywheel and pitch if we are not actively shooting at the moment
+                    robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
                 }
+            }
 
-                if (gamepad2.rightBumperWasReleased()) {
-                    robot.resetFlippersAndPusherNoWait(500);
-                }
-                if (gamepad2.bWasReleased()) {
-                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
-                }
-                if (gamepad2.xWasReleased()) {
-                    robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
-                }
+            if (gamepad2.rightBumperWasReleased()) {
+                robot.resetFlippersAndPusherNoWait(500);
+            }
+            if (gamepad2.bWasReleased()) {
+                robot.shootArtifactColorNoWait(Intake.ARTIFACT.GREEN);
+            }
+            if (gamepad2.xWasReleased()) {
+                robot.shootArtifactColorNoWait(Intake.ARTIFACT.PURPLE);
+            }
 
-                if (gamepad2.yWasReleased()) {
-                    double distance = robot.drive.robotGoalDistance();
-                    if (distance < Shooter.MID_DISTANCE_THRESHOLD) { // lock in shooter to current conditions TODO: This may get undone by the teleop loop!
-                        robot.shooter.lockShooter(distance);
-                    }
-                    robot.shooter.pushOneNoWait();
+            if (gamepad2.yWasReleased()) {
+                double distance = robot.drive.robotGoalDistance();
+                if (distance < Shooter.MID_DISTANCE_THRESHOLD) { // lock in shooter to current conditions TODO: This may get undone by the teleop loop!
+                    robot.shooter.lockShooter(distance);
                 }
+                robot.shooter.pushOneNoWait();
+            }
 
-                if (gamepad2.aWasReleased()) {
-                    robot.shooter.pusher.reset(false);
+            if (gamepad2.aWasReleased()) {
+                robot.shooter.pusher.reset(false);
+            }
+            if (gamepad2.right_trigger > .6f && shootingMode) {
+                if (!robot.shooter.superFastShooting.get()) {
+                    robot.shootIfCanTeleop(); // blinkin based on the result?
                 }
-                if (gamepad2.right_trigger > .6f && shootingMode) {
-                    if (!robot.shooter.superFastShooting.get()) {
-                        robot.shootIfCanTeleop(); // blinkin based on the result?
-                    }
-                }
+            }
 
-                ///////////// ENDGAME //////////////////////////////
-                if (gamepad1.touchpadWasPressed()) {
-                    robot.drive.setHeldHeading(teamUtil.alliance == teamUtil.Alliance.BLUE ? 315 : 45);
-                    if (endgameMode) {  // press again to attempt auto align
-                        endgameMode = false;
-                    } else { // Press once to enter end game mode
-                        endgameMode=true;
-                        robot.intake.intakeStop();
-                        robot.shooter.setShootSpeed(0);
-                    }
+            ///////////// ENDGAME //////////////////////////////
+            if (gamepad1.touchpadWasPressed()) {
+                robot.drive.setHeldHeading(teamUtil.alliance == teamUtil.Alliance.BLUE ? 315 : 45);
+                if (endgameMode) {  // press again to attempt auto align
+                    endgameMode = false;
+                } else { // Press once to enter end game mode
+                    endgameMode=true;
+                    robot.intake.intakeStop();
+                    robot.shooter.setShootSpeed(0);
                 }
+            }
 
 //                if(gamepad1.psWasReleased()){
 //                    if (endgameMode) {  // press again to attempt auto align
@@ -261,105 +261,105 @@ public class Teleop extends LinearOpMode {
 //                        robot.shooter.setShootSpeed(0);
 //                    }
 //                }
-                if (endgameMode) {
-                    if (robot.seeLine()) {
-                        robot.blinkin.setSignal(Blinkin.Signals.SEE_LINE);
-                    } else {
-                        robot.blinkin.setSignal(Blinkin.Signals.OFF);
-                    }
+            if (endgameMode) {
+                if (robot.seeLine()) {
+                    robot.blinkin.setSignal(Blinkin.Signals.SEE_LINE);
+                } else {
+                    robot.blinkin.setSignal(Blinkin.Signals.OFF);
                 }
-                if (gamepad1.optionsWasReleased() && endgameMode) {
-                    if(footUp) {
-                        robot.setFootPos(Robot.FOOT_EXTENDED_POS);
-                        robot.intake.intakeStop();
-                        robot.shooter.setShootSpeed(0);
-                        footUp=false;
-                    }else{
-                        robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
-                        footUp=true;
-                    }
-                }
-
-
-
-                ////////////// INTAKE ////////////////////////////
-
-                if (gamepad2.dpadUpWasReleased()) {
-                    robot.intake.getReadyToIntakeNoWait();
-                }
-                if (gamepad2.dpadDownWasReleased()) {
-                    robot.intake.intakeOut();
-                }
-                if (gamepad2.dpadLeftWasPressed()) {
+            }
+            if (gamepad1.optionsWasReleased() && endgameMode) {
+                if(footUp) {
+                    robot.setFootPos(Robot.FOOT_EXTENDED_POS);
                     robot.intake.intakeStop();
+                    robot.shooter.setShootSpeed(0);
+                    footUp=false;
+                }else{
+                    robot.setFootPos(Robot.FOOT_CALIBRATE_POS);
+                    footUp=true;
                 }
-                if (gamepad2.dpadRightWasPressed()) {
-                    robot.intake.intakeStart();
-                }
-                if (gamepad2.left_trigger > .8) { // Set up for a manual (Human Player) load
-                    robot.intake.flippersToTransfer();
-                    robot.intake.intakeOut();
-                    robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED; // tell detector to focus on loaded position
-                    robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // failsafe in case LL not working
-                }
-
-                if (gamepad2.leftBumperWasReleased()) {
-                    if (robot.intake.servoPositionIs(robot.intake.left_flipper, Intake.FLIPPER_TRANSFER)) {
-                        robot.intake.superFastUnloadNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, Intake.middleLoad != Intake.ARTIFACT.NONE, Intake.rightLoad != Intake.ARTIFACT.NONE);
-                    } else {
-                        if (limelightOverride) {
-                            robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
-                        }
-                        robot.intake.elevatorToShooterFastNoWait(false);
-                    }
-                }
-                if (!limelightOverride) {
-                    if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
-                        robot.intake.detectIntakeArtifactsV2();
-                    } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
-                        robot.intake.detectLoadedArtifactsV2();
-                    }
-                }
-
-                if (gamepad2.backWasPressed()) {
-                    robot.intake.elevatorToFlippersV2NoWait(true); // use loaded detector
-                }
-
-                robot.intake.signalArtifacts();
-
-                robot.outputTelemetry();
-
-                if (gamepad2.optionsWasReleased()) {
-                    if (!limelightOverride) {
-                        limelightOverride = true;
-                    } else {
-                        limelightOverride = false;
-                        robot.intake.resetIntakeDetector();
-                    }
-                }
-
-
-                //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
-                //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
-                //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
-                //telemetry.addLine("Hang Manual: " + hangManualControl);
-                if (endgameMode) {
-                    telemetry.addLine("----- END GAME ----");
-                }
-                telemetry.addLine(String.format("X: %d Y: %d Heading: %.1f", robot.drive.oQlocalizer.posX_mm, robot.drive.oQlocalizer.posY_mm, robot.drive.getHeadingODO()));
-                telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "RED" : "BLUE"));
-                //telemetry.addLine("Detector Mode: " + robot.intake.detectorMode + " Left: " + Intake.leftIntake);
-                telemetry.update();
             }
 
-            teamUtil.log("shutting down");
-            robot.stopLimeLight();
-
-            teamUtil.cacheHeading = robot.drive.getHeadingODO();
-            teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;
-            teamUtil.cacheX = robot.drive.oQlocalizer.posX_mm;
 
 
+            ////////////// INTAKE ////////////////////////////
+
+            if (gamepad2.dpadUpWasReleased()) {
+                robot.intake.getReadyToIntakeNoWait();
+            }
+            if (gamepad2.dpadDownWasReleased()) {
+                robot.intake.intakeOut();
+            }
+            if (gamepad2.dpadLeftWasPressed()) {
+                robot.intake.intakeStop();
+            }
+            if (gamepad2.dpadRightWasPressed()) {
+                robot.intake.intakeStart();
+            }
+            if (gamepad2.left_trigger > .8) { // Set up for a manual (Human Player) load
+                robot.intake.flippersToTransfer();
+                robot.intake.intakeOut();
+                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED; // tell detector to focus on loaded position
+                robot.intake.setLoadedArtifacts(Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE, Intake.ARTIFACT.PURPLE); // failsafe in case LL not working
+            }
+
+            if (gamepad2.leftBumperWasReleased()) {
+                if (robot.intake.servoPositionIs(robot.intake.left_flipper, Intake.FLIPPER_TRANSFER)) {
+                    robot.intake.superFastUnloadNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, Intake.middleLoad != Intake.ARTIFACT.NONE, Intake.rightLoad != Intake.ARTIFACT.NONE);
+                } else {
+                    if (limelightOverride) {
+                        robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
+                    }
+                    robot.intake.elevatorToShooterFastNoWait(false);
+                }
+            }
+            if (!limelightOverride) {
+                if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
+                    robot.intake.detectIntakeArtifactsV2();
+                } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
+                    robot.intake.detectLoadedArtifactsV2();
+                }
+            }
+
+            if (gamepad2.backWasPressed()) {
+                robot.intake.elevatorToFlippersV2NoWait(true); // use loaded detector
+            }
+
+            robot.intake.signalArtifacts();
+
+            robot.outputTelemetry();
+
+            if (gamepad2.optionsWasReleased()) {
+                if (!limelightOverride) {
+                    limelightOverride = true;
+                } else {
+                    limelightOverride = false;
+                    robot.intake.resetIntakeDetector();
+                }
+            }
+
+
+            //telemetry.addData("Left Hang Velocity", robot.hang.hang_Left.getVelocity());
+            //telemetry.addData("Right Hang Velocity", robot.hang.hang_Right.getVelocity());
+            //telemetry.addLine("Low Bucket Toggled: " + lowBucketToggle);
+            //telemetry.addLine("Hang Manual: " + hangManualControl);
+            if (endgameMode) {
+                telemetry.addLine("----- END GAME ----");
+            }
+            telemetry.addLine(String.format("X: %d Y: %d Heading: %.1f", robot.drive.oQlocalizer.posX_mm, robot.drive.oQlocalizer.posY_mm, robot.drive.getHeadingODO()));
+            telemetry.addLine("Alliance: " + (teamUtil.alliance == teamUtil.Alliance.RED ? "RED" : "BLUE"));
+            //telemetry.addLine("Detector Mode: " + robot.intake.detectorMode + " Left: " + Intake.leftIntake);
+            telemetry.update();
         }
 
+        teamUtil.log("shutting down");
+        robot.stopLimeLight();
+
+        teamUtil.cacheHeading = robot.drive.getHeadingODO();
+        teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;
+        teamUtil.cacheX = robot.drive.oQlocalizer.posX_mm;
+
+
     }
+
+}
