@@ -1041,7 +1041,7 @@ public class Robot {
 
     ///  //////////////////////////////////////////////////////////////// Group 3--"B03"  Also Ramp Release
     public static double B03_SETUP_DH = 105;
-    public static double B03_SETUP_Y_DRIFT = 170;
+    public static double B03_SETUP_Y_DRIFT = 120;  //was 170
     public static double B03_SETUP_Y = B00_PICKUP1_Y - B03_SETUP_Y_DRIFT;
     public static double B03_SETUP_X = B02_SETUP_X - B00_TILE_LENGTH +50;
     public static long B03_PICKUP_INTAKE_PAUSE = 0;
