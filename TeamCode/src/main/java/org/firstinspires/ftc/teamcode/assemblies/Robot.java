@@ -274,7 +274,6 @@ public class Robot {
         double distToCornerX = BasicDrive.SCORE_X - drive.oQlocalizer.posX_mm;
         double headingCanShootThreshold = 90-Math.toDegrees(Math.atan((distToCornerX-GoalSizeThreshold)/distToCornerY))-Math.toDegrees(Math.atan((distToCornerY-GoalSizeThreshold)/distToCornerX));
         headingCanShootThreshold = Math.min(MaxHeadingDeclination, headingCanShootThreshold);
-        //TODO: Take out details
         if(details){
             teamUtil.log("Heading can shoot threshold: " + headingCanShootThreshold + " Current Declination: " + Math.abs(drive.getHeadingODO() - drive.robotGoalHeading()) + " DistX : " + distToCornerX + " DistY: " + distToCornerY);
         }
@@ -419,7 +418,7 @@ public class Robot {
 
 
         // Launch it
-        shooter.shootSuperFastNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,true,true, false, goalDistance); // TODO: change log shot back to false
+        shooter.shootSuperFastNoWait(Intake.leftLoad!= Intake.ARTIFACT.NONE,true,false, false, goalDistance);
 
         intake.intakeStart();
 
@@ -1206,7 +1205,6 @@ public class Robot {
             boolean enoughTime = System.currentTimeMillis() - startTime < 30000 - B05_SHOT_THRESHOLD; // check that there is enough time and we want to get more
             // shoot 5th set of balls
             if (enoughTime) {
-                // TODO: This might be a good place for a failsafe in case the detector says nothing was loaded.  Maybe just shoot 3 fast?
                 if (!autoShootPattern(useArms, 5000))
                 //if (!driveWhileShootingPattern(useArms, teamUtil.alliance == teamUtil.Alliance.BLUE ? (B08_SHOOT4_H) : 360 - B08_SHOOT4_H, B00_SHOOT_VELOCITY, 5000))
                     return false;
@@ -1237,7 +1235,7 @@ public class Robot {
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int) B01_SHOT_X, (int) B01_SHOT_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
-            shooter.setShootSpeed(B01_FLYWHEEL_VEL); // TODO: Determine optimal speed for first 3 shots. ALSO set pitch!
+            shooter.setShootSpeed(B01_FLYWHEEL_VEL);
             Shooter.VELOCITY_COMMANDED = B01_FLYWHEEL_VEL;
             shooter.aim(B01_SHOT_PITCH);
             shooter.sidePushersHold();
@@ -1600,7 +1598,7 @@ public class Robot {
         // Prep Shooter
         nextGoalDistance = drive.getGoalDistance((int)B05_SHOOT1_X, (int)B05_SHOOT1_Y * (teamUtil.alliance== teamUtil.Alliance.RED ? -1 : 1));
         if (useArms) {
-            shooter.setShootSpeed(B05_SHOT1_VEL); // TODO: Determine optimal speed for first 3 shots
+            shooter.setShootSpeed(B05_SHOT1_VEL);
             Shooter.VELOCITY_COMMANDED = B05_SHOT1_VEL;
             autoShootFastPreload(); // go fast on preloads--don't bother with pattern
 
@@ -1663,7 +1661,7 @@ useIntakeDetector = false;
                 }
                         }
                         intake.signalArtifacts();
-            if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, false,3000); // TODO: Need to test for failure here and do something smart to avoid massive penalities
+            if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, false,3000);
 // push the gate allowing for timeout
             drive.mirroredMoveToYHoldingLine(B07_RAMP_VELOCITY, B07_RAMP_Y, B07_RAMP_X, B07_RAMP_H, B06_SETUP1_H, 0, null, 0, B07_RAMP_TIMEOUT);
             drive.stopMotors();
@@ -1677,7 +1675,7 @@ long pause = gateLeaveTime - (System.currentTimeMillis() - startTime);
         if (!drive.mirroredMoveToXHoldingLine(B00_PICKUP_VELOCITY, B07_PICKUP1_X,B06_PICKUP1_Y,B07_PICKUP1_H, B06_SETUP1_H, B00_CORNER_VELOCITY, null, 0, 1500)) return;
         if (useArms) autoTransferAndLoadNoWait(B07_PICKUP2_INTAKE_PAUSE, false,3000);
         }
-                // TODO: Adjust flywheel speed for 2nd 3 shots
+
                 // Drive back to shooting zone
                 if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B08_SHOOT2_Y+B08_SHOOT2_DRIFT,B08_SHOOT2_X,B08_SHOOT2_DH, B08_SHOOT2_H, B08_SHOOT2_END_VEL, null, 0, 2000)) return;
         // shoot second set of balls
@@ -1689,7 +1687,7 @@ stopRobot();
                     }
 
                     /////////////////////////////Intake 3rd group and shoot
-                    shooter.setShootSpeed(B06_SHOT34_VELOCITY); // TODO: Determine optimal speed for first 3 shots
+                    shooter.setShootSpeed(B06_SHOT34_VELOCITY);
 Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
 // Setup to pickup group 3
         teamUtil.log("==================== Group 3 ================");
@@ -1709,8 +1707,7 @@ Shooter.VELOCITY_COMMANDED = B06_SHOT34_VELOCITY;
                 intake.signalArtifacts();
         drive.stopMotors(); // kill some forward momentum
         teamUtil.pause(B08_PICKUP3_PAUSE);
-        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, false,3000); // TODO: Need to test for failure here and do something smart to avoid massive penalities
-// TODO: Adjust flywheel speed for 3rd group
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP3_INTAKE_PAUSE, false,3000);
 
 // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT3_X-B08_SHOOT3_DRIFT,B08_SHOOT3_Y,B08_SHOOT3_DH, B08_SHOOT3_H, B08_SHOOT3_END_VEL, null, 0, 3000)) return;
@@ -1744,8 +1741,7 @@ stopRobot();
 
         drive.stopMotors(); // kill some forward momentum
         teamUtil.pause(B08_PICKUP4_PAUSE);
-        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, false,3000); // TODO: Need to test for failure here and do something smart to avoid massive penalities
-// TODO: Adjust flywheel speed for 4th group
+        if (useArms) autoTransferAndLoadNoWait(B07_PICKUP4_INTAKE_PAUSE, false,3000);
 // Drive back to shooting zone
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B08_SHOOT4_X-B08_SHOOT4_DRIFT,B08_SHOOT4_Y,B08_SHOOT4_DH, B08_SHOOT4_H, B08_SHOOT4_END_VEL, null, 0, 4000)) return;
         // shoot 4th set of balls
@@ -1905,7 +1901,6 @@ stopRobot();
                 if (shootIfCan(true)) { // try to take a shot asap
                     numshots++;
                     if (numshots < totalShots) {
-                        // TODO: Do we need a pause here to make sure previous shot (still sitting in shooter) doesn't trigger flipNextFast to think it is done?
                         intake.flipNextFastNoWait(); // load next when the shot happens
                     }
                     intake.signalArtifacts();
@@ -1923,7 +1918,7 @@ stopRobot();
 
         blinkin.setSignal(Blinkin.Signals.OFF);
         if (System.currentTimeMillis() <= timeOutTime) {
-            // Wait for last shot to finish before moving TODO: This could wrap up a bit earlier...as soon as pusher connects the ball with the flywheels
+            // Wait for last shot to finish before moving
             while (shooter.pusher.moving.get() && teamUtil.keepGoing(timeOutTime)) {
                 teamUtil.pause(25);
             }
@@ -2126,7 +2121,7 @@ logShot(shooter.leftFlywheel.getVelocity());
         long timeOutTime = System.currentTimeMillis() + timeOut;
         teamUtil.pause(pause);
         if (intake.elevatorToFlippersV2(false)) {
-            // TODO: This might be a good place to detect what is loaded
+
 
             int shot = 1; // load first shot that is available
             int nextShot;
@@ -2148,7 +2143,7 @@ logShot(shooter.leftFlywheel.getVelocity());
                 }
             }
         } else { // intake failed in some way
-            // TODO: Maybe pause then try again for some amount of time?
+
             teamUtil.log("ElevatorToFlippersV2 failed. Giving up on Transfer.");
         }
         transferring.set(false);

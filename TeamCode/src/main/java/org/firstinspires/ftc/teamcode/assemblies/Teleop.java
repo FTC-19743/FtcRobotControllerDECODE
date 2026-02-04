@@ -38,7 +38,7 @@ public class Teleop extends LinearOpMode {
         long totalRunTime = endTime-startTime;
         long loopTime = totalRunTime/loopAmount;
 
-        //TODO: take away (only for testing)
+        //only for testing
         telemetry.addLine("Button Press Number" + buttonPressNumber);
 
         teamUtil.log("Loop Time" + loopTime);
@@ -58,7 +58,7 @@ public class Teleop extends LinearOpMode {
         robot.initialize(true);
         //robot.shooter.flywheelNormal();
         robot.shooter.flywheelEnhanced();
-        //robot.initCV(enableLiveView);// TODO: false for competition
+        //robot.initCV(enableLiveView);// false for competition
 
         if (teamUtil.justRanAuto) {
             robot.drive.setRobotPosition(teamUtil.cacheX, teamUtil.cacheY, teamUtil.cacheHeading);
@@ -76,7 +76,6 @@ public class Teleop extends LinearOpMode {
         if (Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) { // If we are going to keep this running the whole time
             robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // start it right away
         }
-        // TODO: Consider a pause here to avoid spamming log
 
         telemetry.addLine("Ready to start");
         telemetry.addLine("ALLIANCE : " + teamUtil.alliance);

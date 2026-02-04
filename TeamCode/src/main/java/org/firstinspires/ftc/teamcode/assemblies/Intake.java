@@ -385,7 +385,7 @@ public class Intake {
             middle_flipper.setPosition(FLIPPER_CEILING_MIDDLE); // release middle
             middleLoad = ARTIFACT.NONE;
             return middleFlipToSensor;
-            // TODO: Should we release the left or right at this point?
+            // Should we release the left or right at this point?
         }else{
             if (servoPositionIs(left_flipper,EDGE_FLIPPER_SHOOTER_TRANSFER)) { // left already pinned
                 left_flipper.setPosition(FLIPPER_CEILING); // release left
@@ -627,10 +627,9 @@ public class Intake {
         if (elevator.getCurrentPosition() > ELEVATOR_DOWN_ENCODER) {
             teamUtil.log("WARNING: elevatorToFlippersV2 called while elevator not at bottom--Ignored");
             elevatorMoving.set(false);
-            return true; // TODO: Should this be false?
+            return true;
         }
 
-        // TODO: Consider turning the intake wheel off at this point, it might make it slightly more difficult for the elevator to go up but avoid pulling in extra balls
 
         // "transfer" the sensor readings to the loaded level, this is a backup for the loaded detector
         setLoadedArtifacts(leftIntake, middleIntake, rightIntake);

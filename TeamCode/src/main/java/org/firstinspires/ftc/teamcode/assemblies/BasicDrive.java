@@ -1737,7 +1737,7 @@ public class BasicDrive{
         loop();
         double startEncoder = oQlocalizer.posX_mm;
         boolean goingUp;
-        //TODO: Detect a drive heading that is incompatible with encoder readings and fail out (e.g. drive heading of 0 with x target < x start)  Fix Y version as well.
+        //Detect a drive heading that is incompatible with encoder readings and fail out (e.g. drive heading of 0 with x target < x start)
         if(xTarget-startEncoder >=0){
             goingUp = true;
             if(driveHeading > 90 && driveHeading < 270){ // 0-90 and 270-360 is a valid range
@@ -1886,7 +1886,7 @@ public class BasicDrive{
             return stallY(power, driveHeading,robotHeading, minVel, timeOut);
         }
     }
-        public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
+    public void moveToV2(double maxVelocity, double strafeTarget, double straightTarget, double robotHeading, double endVelocity,ActionCallback action, double actionTarget, boolean endInDeadband, long timeout){
         teamUtil.log("MoveTo StrafeTarget: " + strafeTarget +  " Straight target: " + straightTarget + " robotH: " + robotHeading + " MaxV: " + maxVelocity + " EndV: " + endVelocity + " EndInDeadband: " + endInDeadband);
 
         //TODO THIS CODE SHALL NOT BE USED UNTIL THE ANGLE PROBLEM IS FIXED
@@ -2230,7 +2230,6 @@ public class BasicDrive{
         while (Math.abs(currentHeading - heading) > SPIN_DECEL_THRESHOLD_DEGREES) {
             setMotorVelocities(leftCoefficient * velocity, rightCoefficient * velocity, leftCoefficient * velocity, rightCoefficient * velocity);
             loop();
-            //TODO FIND OUT HOW TO UPDATE LOCALIZERS HEADING INFO ONLY
             //odo.update(Pinpoint.readData.ONLY_UPDATE_HEADING);
             currentHeading = getHeadingODO();
         }
@@ -2242,8 +2241,6 @@ public class BasicDrive{
         }
         while (Math.abs(currentHeading - heading) > SPIN_CRAWL_DEGREES) {
             loop();
-            //TODO FIND OUT HOW TO UPDATE LOCALIZERS HEADING INFO ONLY
-
             //odo.update(Pinpoint.readData.ONLY_UPDATE_HEADING);
             currentHeading = getHeadingODO();
             velocity = ((MAX_VELOCITY - SPIN_CRAWL_SPEED) / (SPIN_DECEL_THRESHOLD_DEGREES - SPIN_CRAWL_DEGREES)) * (Math.abs(currentHeading - heading) - SPIN_DECEL_THRESHOLD_DEGREES) + MAX_VELOCITY; // wrote an equasion
@@ -2259,8 +2256,6 @@ public class BasicDrive{
         }
         while (Math.abs(currentHeading - heading) > SPIN_DRIFT_DEGREES) {
             loop();
-            //TODO FIND OUT HOW TO UPDATE LOCALIZERS HEADING INFO ONLY
-
             //odo.update(Pinpoint.readData.ONLY_UPDATE_HEADING);
             currentHeading = getHeadingODO();
             velocity = SPIN_CRAWL_SPEED;
@@ -2399,7 +2394,7 @@ public class BasicDrive{
         float FASTSLOPE = 1f;
         float SLOWSPEED = .1f;
         //float STRAFESLOWSPEED = 0.25f;
-        //float SLOPE = 1 / (1 - DEADBAND); // linear from edge of dead band to full power  TODO: Should this be a curve?
+        //float SLOPE = 1 / (1 - DEADBAND); // linear from edge of dead band to full power  Should this be a curve?
 
         float POWERFACTOR = 1; // MAKE LESS THAN 0 to cap upperlimit of power
         float leftX;
@@ -2497,7 +2492,7 @@ public class BasicDrive{
         }
         //telemetry.addLine("Current Speed State " + currentSpeedState);
 
-        //TODO: take out soon just for testing purposes
+        // just for testing purposes
         //telemetry.addLine("Left Joystick Y: " + leftJoyStickY);
         //telemetry.addLine("Left Joystick X: " + leftJoyStickX);
         //telemetry.addLine("fl power: " + frontLeft);
@@ -2519,7 +2514,7 @@ public class BasicDrive{
         float FASTSLOPE = 1f;
         float SLOWSPEED = .1f;
         //float STRAFESLOWSPEED = 0.25f;
-        //float SLOPE = 1 / (1 - DEADBAND); // linear from edge of dead band to full power  TODO: Should this be a curve?
+        //float SLOPE = 1 / (1 - DEADBAND); // linear from edge of dead band to full power  Should this be a curve?
 
         float POWERFACTOR = 1; // MAKE LESS THAN 0 to cap upperlimit of power
         float leftX;
@@ -2644,7 +2639,7 @@ public class BasicDrive{
         }
         //telemetry.addLine("Current Speed State " + currentSpeedState);
 
-        //TODO: take out soon just for testing purposes
+        // just for testing purposes
         //telemetry.addLine("Left Joystick Y: " + leftJoyStickY);
         //telemetry.addLine("Left Joystick X: " + leftJoyStickX);
         //telemetry.addLine("fl power: " + frontLeft);
