@@ -131,7 +131,7 @@ public class Teleop extends LinearOpMode {
 
             if (shootingMode) {
                 if(!robot.localizer.localizing.get()) {
-                    if (robot.canShoot(robot.drive.robotGoalDistance())) { // TODO: is this the right version of this method? Seems like it using old flywheel speed check logic
+                    if (robot.canShoot(robot.drive.robotGoalDistance())) {
                         robot.blinkin.setSignal(Blinkin.Signals.NORMAL_WHITE);
                     } else {
                         robot.blinkin.setSignal(Blinkin.Signals.AIMING);
