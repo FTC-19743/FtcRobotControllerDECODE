@@ -49,6 +49,7 @@ public class CalibrateArms extends LinearOpMode {
     
     public enum Ops {
         Test_CVLocalizer,
+        Test_IMU,
         Test_Intake,
         Test_DetectorV2,
         Test_Intake_Detector,
@@ -111,6 +112,7 @@ public class CalibrateArms extends LinearOpMode {
                 teamUtil.logSystemHealth();
             }
             switch (AA_Operation) {
+                case Test_IMU : testIMU();break;
                 case Test_Intake : testIntake();break;
                 case Test_Intake_Detector: testIntakeDetector();break;
                 case Test_DetectorV2 : testDetectorV2(); break;
@@ -260,6 +262,18 @@ public class CalibrateArms extends LinearOpMode {
     }
 
     public static boolean DETECTOR_COLORS = false;
+
+    public void testIMU() {
+        robot.drive.loop();
+        telemetry.addData("IMU Ang Vel: " , robot.drive.oQlocalizer.velHeading_radS);
+        telemetry.addLine(String.format("IMU Ang Vel: %.3f",  robot.drive.oQlocalizer.velHeading_radS));
+
+        if (gamepad1.left_trigger > 0.5) {
+            robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
+        } else {
+            robot.shooter.stopShooter();
+        }
+    }
 
     public void testIntakeDetector() {
         robot.intake.intakeTelemetry();
