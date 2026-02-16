@@ -9,6 +9,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.assemblies.GoalSideV3;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
 import org.firstinspires.ftc.teamcode.assemblies.Robot;
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
@@ -141,7 +142,7 @@ public class TestAutoPaths extends LinearOpMode{
         else return "N";
     }
 
-    public static double PARK_VELOCITY = Robot.B00_MAX_SPEED;
+    public static double PARK_VELOCITY = 2000;
     public static double PARK_END_VELOCITY = 0;
     public static double PARK_X = 0;
     public static double PARK_Y = 1100;
@@ -153,8 +154,8 @@ public class TestAutoPaths extends LinearOpMode{
         if(gamepad1.bWasReleased()){
             //robot.drive.mirroredMoveToYHoldingLine(PARK_VELOCITY, PARK_Y, PARK_X,PARK_DRIVE, PARK_ROBOT, PARK_END_VELOCITY, null, 0, 3000);
             long startTime = System.currentTimeMillis();
-
-            robot.mirroredDriveToShotPositionFast(Robot.B05_SHOT_X, Robot.B05_SHOT_Y, Robot.B05_SHOT_RH, Robot.B05_SHOT_END_VEL, Robot.B05_SHOT_STRAIGHT_PERCENT, Robot.B05_SHOT_DRIFT_PERCENT);
+            GoalSideV3 gs = new GoalSideV3(robot, telemetry);
+            gs.mirroredDriveToShotPositionFast(gs.B05_SHOT_X, gs.B05_SHOT_Y, gs.B05_SHOT_RH, gs.B05_SHOT_END_VEL, gs.B05_SHOT_STRAIGHT_PERCENT, gs.B05_SHOT_DRIFT_PERCENT);
             teamUtil.log("mirroredDriveToShotPositionFast finished in " + (System.currentTimeMillis() - startTime));
             robot.blinkin.setSignal(Blinkin.Signals.OFF);
             boolean targetHeadingWasOK = false;
@@ -209,7 +210,8 @@ public class TestAutoPaths extends LinearOpMode{
             robot.intake.getReadyToIntake();
             teamUtil.pause(1000);
             long startTime = System.currentTimeMillis();
-            robot.grab3(GRAB_VEL, GRAB_X, GRAB_TIME);
+            GoalSideV3 gs = new GoalSideV3(robot, telemetry);
+            gs.grab3(GRAB_VEL, GRAB_X, GRAB_TIME);
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
             teamUtil.pause(250);
