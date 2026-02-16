@@ -72,6 +72,7 @@ public class AprilTagLocalizer {
         if (visionPortal != null) {
             visionPortal.close();
         }
+        visionPortalRunning = false;
     }
 
     public void initCV() {
@@ -134,8 +135,48 @@ public class AprilTagLocalizer {
 
         // Disable or re-enable the aprilTag processor at any time.
         //visionPortal.setProcessorEnabled(aprilTag, true);
+
+        visionPortalRunning = false;
+
     }
 
+    // Do NOT call if vision portal is not already set up
+    public void startStreaming() {
+        if (visionPortal != null) {
+            visionPortal.resumeStreaming();
+        }
+    }
+    // Do NOT call if vision portal is not already set up
+    public void stopStreaming() {
+        if (visionPortal != null) {
+            visionPortal.stopStreaming();
+        }
+    }
+    public boolean isStreaming() {
+        if (visionPortal != null) {
+            return visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING;
+        }
+        return false;
+    }
+
+    // Do NOT call if vision portal is not already set up
+    public void startProcessing() {
+        if (visionPortal != null) {
+            visionPortal.setProcessorEnabled(aprilTag, true);
+        }
+    }
+    // Do NOT call if vision portal is not already set up
+    public void stopProcessing() {
+        if (visionPortal != null) {
+            visionPortal.setProcessorEnabled(aprilTag, false);
+        }
+    }
+    public boolean isProcessing() {
+        if (visionPortal != null) {
+            return visionPortal.getProcessorEnabled(aprilTag);
+        }
+        return false;
+    }
     public Pose3D getFreshRobotPose() {
         if (aprilTag != null) {
             List<AprilTagDetection> currentDetections = aprilTag.getFreshDetections();
@@ -178,19 +219,31 @@ public class AprilTagLocalizer {
         thread.start();
     }
 
+    public boolean visionPortalRunning = false;
+    public boolean startedJIT = false;
+    public boolean startedStreaming = false;
+
     public boolean localize(long timeOut) {
         teamUtil.log("Localize starting");
         long startTime = System.currentTimeMillis();
         long timeOutTime = startTime + timeOut;
         teamUtil.robot.blinkin.setSignal(Blinkin.Signals.COLORWAVESFORESTPALETTE);
-        initCV(); // set up vision portal just in time
+        if (!visionPortalRunning) {
+            initCV(); // set up vision portal just in time
+            startedJIT = true;
+            startedStreaming = true;
+        } else if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            visionPortal.resumeStreaming();
+            startedJIT = false;
+            startedStreaming = true;
+        }
         while (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING && teamUtil.keepGoing(timeOutTime)) {
             teamUtil.pause(50);
         }
         // We are either streaming or timed out
         if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
             teamUtil.log("localize TIMED OUT waiting for streaming to start");
-            visionPortal.close();
+            if (startedJIT) visionPortal.close(); else if (startedStreaming) visionPortal.stopStreaming();
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
             localizing.set(false);
             return false;
@@ -213,19 +266,20 @@ public class AprilTagLocalizer {
         }
         if (count == 0) {
             teamUtil.log("localize failed to get any samples");
-            visionPortal.close();
+            if (startedJIT) visionPortal.close(); else if (startedStreaming) visionPortal.stopStreaming();
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
             localizing.set(false);
             return false;
         }
         if (System.currentTimeMillis() >= timeOutTime) {
             teamUtil.log("localize TIMED OUT collecting samples");
-            visionPortal.close();
+            if (startedJIT) visionPortal.close(); else if (startedStreaming) visionPortal.stopStreaming();
             teamUtil.robot.blinkin.setSignal(Blinkin.Signals.OFF);
             localizing.set(false);
             return false;
         }
-        visionPortal.close();
+        // wrap up
+        if (startedJIT) visionPortal.close(); else if (startedStreaming) visionPortal.stopStreaming();
         teamUtil.robot.drive.loop(); // make sure we have current robot position
         double newX = sumX/count ;
         double newY = sumY/count;

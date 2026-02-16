@@ -150,9 +150,17 @@ public class CalibrateArms extends LinearOpMode {
 
     boolean continousDetection = false;
     public Pose3D lastPose;
+    long lastLoopTime = 0;
+    boolean detecting = false;
     public void testLocalizer() {
         robot.drive.loop();
+        telemetry.addLine("Loop Time: " + (System.currentTimeMillis() - lastLoopTime));
+        telemetry.addLine("Intake Detector: " + detecting);
+        telemetry.addLine("VP Setup: " + localizer.visionPortalRunning + " Streaming: " + localizer.isStreaming() + " Processing: " + localizer.isProcessing());
+
+        lastLoopTime = System.currentTimeMillis();
         robot.drive.localizerTelemetry();
+
         if (gamepad1.dpadUpWasReleased()) {
             localizer.localize(5000);
             robot.drive.loop();
@@ -170,6 +178,44 @@ public class CalibrateArms extends LinearOpMode {
         if (gamepad1.aWasReleased()) {
             localizer.stopCV();
             continousDetection = false;
+        }
+        if (gamepad1.xWasReleased()) {
+            if (!localizer.visionPortalRunning) {
+                localizer.initCV();
+            } else {
+                localizer.startStreaming();
+            }
+        }
+        if (gamepad1.bWasReleased()) {
+            if (localizer.visionPortalRunning) {
+                localizer.stopStreaming();
+            }
+        }
+        if (gamepad1.leftBumperWasReleased()) {
+            if (!localizer.visionPortalRunning) {
+                localizer.initCV();
+            } else {
+                localizer.startProcessing();
+            }
+        }
+        if (gamepad1.rightBumperWasReleased()) {
+            if (localizer.visionPortalRunning) {
+                localizer.stopProcessing();
+            }
+        }
+        if (gamepad1.psWasReleased()) {
+            detecting = !detecting;
+        }
+        if (detecting) {
+            if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
+                robot.intake.detectIntakeArtifactsV2();
+                robot.intake.signalArtifacts();
+            } else if (robot.intake.detectorMode == Intake.DETECTION_MODE.LOADED) {
+                robot.intake.detectLoadedArtifactsV2();
+                robot.intake.signalArtifacts();
+            } else {
+                robot.intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
+            }
         }
         if (continousDetection) {
             Pose3D pose = localizer.getFreshRobotPose();
