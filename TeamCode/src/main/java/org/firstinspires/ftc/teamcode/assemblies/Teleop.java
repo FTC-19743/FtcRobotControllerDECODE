@@ -20,6 +20,7 @@ public class Teleop extends LinearOpMode {
     Robot robot;
 
     boolean shootingMode = false;
+    public static int RumbleTime = 500;
     
     /*
     public void loopRunTimeCalculate(int loopNumber,boolean button){
@@ -72,6 +73,7 @@ public class Teleop extends LinearOpMode {
         boolean endgameMode = false;
         boolean limelightOverride = false;
         boolean footUp = true;
+
 
         if (Intake.KEEP_INTAKE_DETECTOR_SNAPSCRIPT_RUNNING) { // If we are going to keep this running the whole time
             robot.startLimeLightPipeline(Robot.PIPELINE_INTAKE); // start it right away
@@ -310,6 +312,8 @@ public class Teleop extends LinearOpMode {
                         robot.intake.setIntakeArtifacts(teamUtil.Pattern.PPG); //Manual override, balls unknown
                     }
                     robot.intake.elevatorToShooterFastNoWait(false);
+                    robot.intake.flashRGBSignals(robot.intake.rgbRed, robot.intake.rgbRed, robot.intake.rgbRed, RumbleTime);
+
                 }
             }
             if (!limelightOverride) {
@@ -322,6 +326,7 @@ public class Teleop extends LinearOpMode {
 
             if (gamepad2.backWasPressed()) {
                 robot.intake.elevatorToFlippersV2NoWait(true); // use loaded detector
+                robot.intake.flashRGBSignals(robot.intake.rgbRed, robot.intake.rgbRed, robot.intake.rgbRed, RumbleTime);
             }
 
             robot.intake.signalArtifacts();

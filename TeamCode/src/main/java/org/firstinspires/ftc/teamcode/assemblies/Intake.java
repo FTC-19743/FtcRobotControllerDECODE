@@ -17,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Config // Makes Static data members available in Dashboard
 public class Intake {
@@ -58,7 +59,7 @@ public class Intake {
 
     static public double ELEVATOR_CALIBRATE_POWER = -0.1;
     static public int ELEVATOR_GROUND = 5;
-    static public long ELEVATOR_PAUSE_1 = 300;
+    static public long ELEVATOR_PAUSE_1 = 0;
     static public long ELEVATOR_PAUSE_2 = 500;
     public static float ELEVATOR_UP_POWER = .5f;
     public static float ELEVATOR_DOWN_POWER = -.5f;
@@ -74,7 +75,7 @@ public class Intake {
     public static int ELEVATOR_HOLD_VELOCITY = 1500;
     public static long ELEVATOR_STARTUP_TIME = 250;
 
-    static public double INTAKE_IN_POWER = 0.7;
+    static public double INTAKE_IN_POWER = 1;
     static public double INTAKE_OUT_POWER = -0.7;
 
     static public float FLIPPER_PRE_TRANSFER = 0.94f;
@@ -676,8 +677,10 @@ public class Intake {
         left_flipper.setPosition(FLIPPER_TRANSFER);
         right_flipper.setPosition(FLIPPER_TRANSFER);
         middle_flipper.setPosition(FLIPPER_TRANSFER);
-        if(detectLoaded) detectorMode = DETECTION_MODE.LOADED;
-        teamUtil.pause(ELEVATOR_PAUSE_2);
+        if(detectLoaded) {
+            detectorMode = DETECTION_MODE.LOADED;
+            teamUtil.pause(ELEVATOR_PAUSE_2);
+        }
 
         if (waitForGround) {
             boolean success =  elevatorToGroundV2();
@@ -735,10 +738,25 @@ public class Intake {
         }
     }
     public void setRGBSignals(ARTIFACT left, ARTIFACT middle, ARTIFACT right) {
-        setRGBSignal(rgbLeft, left);
-        setRGBSignal(rgbMiddle, middle);
-        setRGBSignal(rgbRight, right);
+        if(System.currentTimeMillis() > LockTime.get()) {
+            setRGBSignal(rgbLeft, left);
+            setRGBSignal(rgbMiddle, middle);
+            setRGBSignal(rgbRight, right);
+        }
     }
+    public static float rgbRed = 0.28f;
+    AtomicLong LockTime = new AtomicLong(0);
+
+    public void flashRGBSignals(float left, float middle, float right, long flashTime) {
+        if(System.currentTimeMillis() > LockTime.get()) {
+            LockTime.set(flashTime+System.currentTimeMillis());
+            rgbLeft.setPosition(left);
+            rgbMiddle.setPosition(middle);
+            rgbRight.setPosition(right);
+        }
+
+    }
+
     public void signalArtifacts () {
         if (detectorMode == DETECTION_MODE.INTAKE) {
             setRGBSignals(leftIntake, middleIntake, rightIntake);

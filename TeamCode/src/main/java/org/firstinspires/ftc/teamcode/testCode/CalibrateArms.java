@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -18,6 +19,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.assemblies.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
@@ -70,7 +72,7 @@ public class CalibrateArms extends LinearOpMode {
         //FtcDashboard.setDrawDefaultField(false); // enable to eliminate field drawing
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry()); // write telemetry to Driver Station and Dashboard
         teamUtil.init(this);
-        
+
         robot = new Robot();
         robot.initialize(true);
         robot.drive.setHeading(0);
@@ -157,6 +159,7 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine("Loop Time: " + (System.currentTimeMillis() - lastLoopTime));
         telemetry.addLine("Intake Detector: " + detecting);
         telemetry.addLine("VP Setup: " + localizer.visionPortalRunning + " Streaming: " + localizer.isStreaming() + " Processing: " + localizer.isProcessing());
+        telemetry.addLine("MJPEG: " + localizer.MJPEG);
 
         lastLoopTime = System.currentTimeMillis();
         robot.drive.localizerTelemetry();
@@ -311,14 +314,18 @@ public class CalibrateArms extends LinearOpMode {
 
     public void testIMU() {
         robot.drive.loop();
-        telemetry.addData("IMU Ang Vel: " , robot.drive.oQlocalizer.velHeading_radS);
+
+        telemetry.addData("IMU Ang Vel: " , Math.toDegrees(robot.drive.oQlocalizer.velHeading_radS));
         telemetry.addLine(String.format("IMU Ang Vel: %.3f",  robot.drive.oQlocalizer.velHeading_radS));
+
 
         if (gamepad1.left_trigger > 0.5) {
             robot.shooter.setShootSpeed(SHOOTER_VELOCITY);
         } else {
             robot.shooter.stopShooter();
         }
+
+
     }
 
     public void testIntakeDetector() {
@@ -452,7 +459,7 @@ public class CalibrateArms extends LinearOpMode {
             robot.intake.calibrateElevators();
         }
         if (gamepad1.yWasReleased()) {
-            robot.intake.elevatorToFlippersV2(true, true);
+            robot.intake.elevatorToShooterFastNoWait(false);
         }
         if (gamepad1.aWasReleased()) {
             robot.intake.elevatorToGroundV2();
@@ -686,5 +693,6 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine("Aimer Position: "+robot.shooter.currentAim());
 
         robot.drive.loop();
+
     }
 }
