@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
+import android.util.Size;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -24,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AprilTagLocalizer {
     HardwareMap hardwareMap;
     Telemetry telemetry;
+    public static boolean MJPEG = true;
     /**
      * Variables to store the position and orientation of the camera on the robot. Setting these
      * values requires a definition of the axes of the camera and robot:
@@ -76,7 +79,7 @@ public class AprilTagLocalizer {
     }
 
     public void initCV() {
-
+        teamUtil.log("AprilTag Localizer initCV starting");
         // Create the AprilTag processor.
         aprilTag = new AprilTagProcessor.Builder()
                 // The following default settings are available to un-comment and edit as needed.
@@ -113,14 +116,17 @@ public class AprilTagLocalizer {
 
 
         // Choose a camera resolution. Not all cameras support all resolutions.
-        //builder.setCameraResolution(new Size(1920, 1080));
+        builder.setCameraResolution(new Size(1920, 1080));
 
         // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
         //builder.enableLiveView(true);
 
         // Set the stream format; MJPEG uses less bandwidth than default YUY2.
-        //builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
-        builder.setStreamFormat(VisionPortal.StreamFormat.MJPEG);
+        if (MJPEG) {
+            builder.setStreamFormat(VisionPortal.StreamFormat.MJPEG);
+        } else {
+            builder.setStreamFormat(VisionPortal.StreamFormat.YUY2);
+        }
 
         // Choose whether or not LiveView stops if no processors are enabled.
         // If set "true", monitor shows solid orange screen if no processors enabled.
@@ -136,7 +142,8 @@ public class AprilTagLocalizer {
         // Disable or re-enable the aprilTag processor at any time.
         //visionPortal.setProcessorEnabled(aprilTag, true);
 
-        visionPortalRunning = false;
+        visionPortalRunning = true;
+        teamUtil.log("AprilTag Localizer initCV Finished");
 
     }
 
@@ -185,7 +192,7 @@ public class AprilTagLocalizer {
                 for (AprilTagDetection detection : currentDetections) {
                     if (detection.metadata != null) {
                         if (detection.id == 20 || detection.id == 24) {
-                            return detection.robotPose; // return the first one we find, very hard for the robot to see both at the same time.
+                            return detection.robotPose; // return the first one we find, very hard for the robot to see both at the same time...
                         }
                     }
                 }

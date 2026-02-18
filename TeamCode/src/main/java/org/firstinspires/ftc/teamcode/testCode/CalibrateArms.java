@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.testCode;
 
 
 
+import android.graphics.Point;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -51,6 +53,7 @@ public class CalibrateArms extends LinearOpMode {
     
     public enum Ops {
         Test_CVLocalizer,
+        Test_Calibrate_Localizer,
         Test_IMU,
         Test_Intake,
         Test_DetectorV2,
@@ -125,6 +128,7 @@ public class CalibrateArms extends LinearOpMode {
                 case Test_PIDF: shooterPIDF();break;
                 case Teleport : teleport();break;
                 case Test_CVLocalizer : testLocalizer(); break;
+                case Test_Calibrate_Localizer : calibrateLocalizer(); break;
             }
 
             // Drawing stuff on the field
@@ -208,6 +212,7 @@ public class CalibrateArms extends LinearOpMode {
         }
         if (gamepad1.psWasReleased()) {
             detecting = !detecting;
+            if (detecting) robot.intake.resetIntakeDetector();
         }
         if (detecting) {
             if (robot.intake.detectorMode == Intake.DETECTION_MODE.INTAKE) {
@@ -247,6 +252,83 @@ public class CalibrateArms extends LinearOpMode {
                         Math.toDegrees(robot.drive.oQlocalizer.heading_rad) -newH));
 
             }
+        }
+    }
+    public static int HALF_TILE = (int)(24*25.4/2);
+    public static Point[] pos = {
+            new Point(0,0),
+            new Point(HALF_TILE,0),
+            new Point(HALF_TILE*2,0),
+            new Point(HALF_TILE*3,0),
+            new Point(HALF_TILE*4,0),
+
+            new Point(HALF_TILE*4,HALF_TILE),
+            new Point(HALF_TILE*3,HALF_TILE),
+            new Point(HALF_TILE*2,HALF_TILE),
+            new Point(HALF_TILE,HALF_TILE),
+            new Point(0,HALF_TILE),
+
+            new Point(0,HALF_TILE*2),
+            new Point(HALF_TILE,HALF_TILE*2),
+            new Point(HALF_TILE*2,HALF_TILE*2),
+            new Point(HALF_TILE*3,HALF_TILE*2),
+            new Point(HALF_TILE*4,HALF_TILE*2),
+
+            new Point(HALF_TILE*4,-HALF_TILE),
+            new Point(HALF_TILE*3,-HALF_TILE),
+            new Point(HALF_TILE*2,-HALF_TILE),
+            new Point(HALF_TILE,-HALF_TILE),
+            new Point(0,-HALF_TILE),
+
+            new Point(0,HALF_TILE*-2),
+            new Point(HALF_TILE,HALF_TILE*-2),
+            new Point(HALF_TILE*2,HALF_TILE*-2),
+            new Point(HALF_TILE*3,HALF_TILE*-2),
+            new Point(HALF_TILE*4,HALF_TILE*-2),
+    };
+
+    public static float CALIBRATE_POWER = .3f;
+    public static float CALIBRATE_END_POWER = .2f;
+
+    public void calibrateLocalizer() {
+        if (gamepad1.yWasReleased()) {
+            localizer.initCV();
+            teamUtil.pause(2000);
+
+            for (int i = 0; i < pos.length; i++) {
+                // Move to next location and point at goal
+                robot.drive.moveToPower(CALIBRATE_POWER, pos[i].y, pos[i].x, robot.drive.getGoalHeading(pos[i].x, pos[i].y), CALIBRATE_END_POWER, null, 0, true, 3000);
+                robot.drive.stopMotors();
+                teamUtil.pause(1000);
+                robot.drive.loop();
+                robot.drive.spinToHeading(robot.drive.getGoalHeading(robot.drive.oQlocalizer.posX_mm, robot.drive.oQlocalizer.posY_mm));
+                teamUtil.pause(1000);
+                robot.drive.loop();
+
+                // get some readings at this location
+                double sumX = 0;
+                double sumY = 0;
+                double sumH = 0;
+                int count = 0;
+                long sampleStopTime = System.currentTimeMillis() + 1000;
+                while (System.currentTimeMillis() < sampleStopTime) {
+                    Pose3D pose = localizer.getFreshRobotPose();
+                    if (pose != null) {
+                        sumX += pose.getPosition().x * -25.4;
+                        sumY += pose.getPosition().y * -25.4;
+                        sumH += pose.getOrientation().getYaw(AngleUnit.DEGREES) - 90;
+                        count++;
+                    } else {
+                        //teamUtil.log("WARNING: No fresh pose");
+                    }
+                    teamUtil.pause(50); // give time to AprilTagProcessor
+                }
+
+                // Log results from this position
+                teamUtil.log("POSEDATA $" + robot.drive.oQlocalizer.posX_mm + "$" + robot.drive.oQlocalizer.posY_mm + "$" + Math.toDegrees(robot.drive.oQlocalizer.heading_rad) + "$" +
+                        sumX / count + "$" + sumY / count + "$" + sumH / count + "$" + count);
+            }
+            localizer.stopCV();
         }
     }
     public void initCV () {
