@@ -8,7 +8,6 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -21,7 +20,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.CameraName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.assemblies.AprilTagLocalizer;
 import org.firstinspires.ftc.teamcode.assemblies.AxonPusher;
 import org.firstinspires.ftc.teamcode.assemblies.Intake;
@@ -155,7 +153,7 @@ public class CalibrateArms extends LinearOpMode {
     private WebcamName webcamL, webcamF, webcamR;
 
     boolean continousDetection = false;
-    public Pose3D lastPose;
+    public AprilTagLocalizer.IDPose lastPose = null;
     long lastLoopTime = 0;
     boolean detecting = false;
     public void testLocalizer() {
@@ -226,15 +224,16 @@ public class CalibrateArms extends LinearOpMode {
             }
         }
         if (continousDetection) {
-            Pose3D pose = localizer.getFreshRobotPose();
-            if (pose != null) {
-                lastPose = pose;
+            AprilTagLocalizer.IDPose idPose = localizer.getFreshRobotPose();
+            if (idPose != null) {
+                lastPose = idPose;
             } else {
-                pose = lastPose;
+                idPose = lastPose;
             }
-            if (pose!= null) {
+            if (idPose != null) {
+                Pose3D pose = idPose.pose;
+                /*
                 double newX=0,newY=0,newH=0 ;
-
                 if (teamUtil.alliance== teamUtil.Alliance.RED) {
                     newX = pose.getPosition().x*-1*25.4 + AprilTagLocalizer.ADJUST_RED_X;
                     newY = pose.getPosition().y*-1*25.4 + AprilTagLocalizer.ADJUST_RED_Y;
@@ -244,16 +243,20 @@ public class CalibrateArms extends LinearOpMode {
                     newY = pose.getPosition().y*-1*25.4 + AprilTagLocalizer.ADJUST_BLUE_Y;
                     newH = pose.getOrientation().getYaw(AngleUnit.DEGREES)-90 + AprilTagLocalizer.ADJUST_BLUE_H;
                 }
-
-                telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", newX, newY, newH));
-                telemetry.addLine(String.format("Diff: X: %.0f Y: %.0f H: %.1f ",
-                        robot.drive.oQlocalizer.posX_mm - newX,
-                        robot.drive.oQlocalizer.posY_mm - newY,
-                        Math.toDegrees(robot.drive.oQlocalizer.heading_rad) -newH));
-
+                 */
+                AprilTagLocalizer.Pose newPose = localizer.camToActualV4(pose, idPose.ID);
+                if (newPose != null) {
+                    telemetry.addLine(String.format("Camera: X: %.0f Y: %.0f H: %.1f ", pose.getPosition().x*-1*25.4, pose.getPosition().y*-1*25.4, pose.getOrientation().getYaw(AngleUnit.DEGREES)-90));
+                    telemetry.addLine(String.format("Adjusted: X: %.0f Y: %.0f H: %.1f ", newPose.x, newPose.y, newPose.heading));
+                    telemetry.addLine(String.format("Diff: X: %.0f Y: %.0f H: %.1f ",
+                            robot.drive.oQlocalizer.posX_mm - newPose.x,
+                            robot.drive.oQlocalizer.posY_mm - newPose.y,
+                            Math.toDegrees(robot.drive.oQlocalizer.heading_rad) - newPose.heading));
+                }
             }
         }
     }
+
     public static int HALF_TILE = (int)(24*25.4/2);
     public static Point[] pos = {
             new Point(0,0),
@@ -297,7 +300,7 @@ public class CalibrateArms extends LinearOpMode {
 
             for (int i = 0; i < pos.length; i++) {
                 // Move to next location and point at goal
-                robot.drive.moveToPower(CALIBRATE_POWER, pos[i].y, pos[i].x, robot.drive.getGoalHeading(pos[i].x, pos[i].y), CALIBRATE_END_POWER, null, 0, true, 3000);
+                robot.drive.moveToPower(CALIBRATE_POWER, pos[i].y, pos[i].x, robot.drive.getGoalHeading(pos[i].x, pos[i].y), CALIBRATE_END_POWER, null, 0, true, 10000);
                 robot.drive.stopMotors();
                 teamUtil.pause(1000);
                 robot.drive.loop();
@@ -312,7 +315,8 @@ public class CalibrateArms extends LinearOpMode {
                 int count = 0;
                 long sampleStopTime = System.currentTimeMillis() + 1000;
                 while (System.currentTimeMillis() < sampleStopTime) {
-                    Pose3D pose = localizer.getFreshRobotPose();
+                    AprilTagLocalizer.IDPose idPose = localizer.getFreshRobotPose();
+                    Pose3D pose = idPose != null ? idPose.pose : null;
                     if (pose != null) {
                         sumX += pose.getPosition().x * -25.4;
                         sumY += pose.getPosition().y * -25.4;
@@ -327,9 +331,56 @@ public class CalibrateArms extends LinearOpMode {
                 // Log results from this position
                 teamUtil.log("POSEDATA $" + robot.drive.oQlocalizer.posX_mm + "$" + robot.drive.oQlocalizer.posY_mm + "$" + Math.toDegrees(robot.drive.oQlocalizer.heading_rad) + "$" +
                         sumX / count + "$" + sumY / count + "$" + sumH / count + "$" + count);
+
+                if ((i+1) % 5 == 0) { // Manual reset of robot position every 5 measurements to keep odo as accurate as possible
+                    while (!gamepad1.yWasReleased()) {
+                        teamUtil.pause(100);
+                        robot.drive.loop();
+                        robot.drive.localizerTelemetry();
+                        telemetry.update();
+                    }
+                    robot.drive.setRobotPosition(0,0,0);
+                    while (!gamepad1.yWasReleased()) {
+                        teamUtil.pause(100);
+                        robot.drive.loop();
+                        robot.drive.localizerTelemetry();
+                        telemetry.update();
+                    }
+                }
             }
             localizer.stopCV();
         }
+        if (gamepad1.aWasReleased()) {
+            localizer.initCV();
+        }
+        if (gamepad1.bWasReleased()) {
+            // get some readings at this location
+            double sumX = 0;
+            double sumY = 0;
+            double sumH = 0;
+            int count = 0;
+            long sampleStopTime = System.currentTimeMillis() + 1000;
+            while (System.currentTimeMillis() < sampleStopTime) {
+                AprilTagLocalizer.IDPose idPose = localizer.getFreshRobotPose();
+                Pose3D pose = idPose != null ? idPose.pose : null;
+                if (pose != null) {
+                    sumX += pose.getPosition().x * -25.4;
+                    sumY += pose.getPosition().y * -25.4;
+                    sumH += pose.getOrientation().getYaw(AngleUnit.DEGREES) - 90;
+                    count++;
+                } else {
+                    //teamUtil.log("WARNING: No fresh pose");
+                }
+                teamUtil.pause(50); // give time to AprilTagProcessor
+            }
+
+            // Log results from this position
+            teamUtil.log("POSEDATA $" + robot.drive.oQlocalizer.posX_mm + "$" + robot.drive.oQlocalizer.posY_mm + "$" + Math.toDegrees(robot.drive.oQlocalizer.heading_rad) + "$" +
+                    sumX / count + "$" + sumY / count + "$" + sumH / count + "$" + count);
+        }
+        robot.drive.loop();
+        robot.drive.localizerTelemetry();
+        telemetry.update();
     }
     public void initCV () {
         teamUtil.log("Initializing multi cam vision portal for Calibrate Arms");

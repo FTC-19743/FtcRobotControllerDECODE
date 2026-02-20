@@ -57,6 +57,9 @@ public class Teleop extends LinearOpMode {
 
         robot = new Robot();
         robot.initialize(true);
+        robot.localizer.initCV();
+        robot.localizer.stopProcessing(); // keep this off to save loop time until we need it.
+
         //robot.shooter.flywheelNormal();
         robot.shooter.flywheelEnhanced();
         //robot.initCV(enableLiveView);// false for competition
@@ -65,7 +68,6 @@ public class Teleop extends LinearOpMode {
             robot.drive.setRobotPosition(teamUtil.cacheX, teamUtil.cacheY, teamUtil.cacheHeading);
         } else {
             robot.drive.setHeading(0);
-
             robot.calibrate();
         }
         teamUtil.justRanAuto = false;
@@ -358,7 +360,7 @@ public class Teleop extends LinearOpMode {
 
         teamUtil.log("shutting down");
         robot.stopLimeLight();
-
+        robot.localizer.stopCV();
         teamUtil.cacheHeading = robot.drive.getHeadingODO();
         teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;
         teamUtil.cacheX = robot.drive.oQlocalizer.posX_mm;
