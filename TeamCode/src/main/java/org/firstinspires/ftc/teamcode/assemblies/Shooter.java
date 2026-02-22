@@ -397,7 +397,7 @@ public class Shooter {
     public static double A09_DEEP_VELOCITY_M = 0.15748;
     public static double A09_DEEP_VELOCITY_B = 1127.55906;
 
-    public static double MANUAL_FLYWHEEL_ADJUST = 0;
+    public static double MANUAL_FLYWHEEL_ADJUST = -60;
     public static double LONG_MANUAL_FLYWHEEL_ADJUST = 0;
 
     public static double AMax = 0.0491219;
@@ -526,7 +526,7 @@ public class Shooter {
     public static double pitchANew = -2.8869e-8;
     public static double pitchBNew = 0.000186393;
     public static double pitchCNew = 0.153392;
-    public static double longPitch = .40; // .44 with the old function
+    public static double longPitch = .50; // .44 with the old function
 
 
     public double calculatePitchV2(double distance){
@@ -549,16 +549,18 @@ public class Shooter {
 
     public static double longVelocityM = 0.3;
     public static double longVelocityB = 540;
-    public static double newLongVelocityM = 0.24698;
-    public static double newLongVelocityB = 554.71749;
+    public static double newLongVelocityM = 0.0833333;
+    public static double newLongVelocityB = 1300;
+    public static double MANUAL_FLYWHEEL_ADJUST_COEFFICIENT = 0.75;
+
 
     public double calculateVelocityV2(double distance){
         if (distance<SHORT_DISTANCE_THRESHOLD){
-            return velocityAShort*distance*distance+velocityBShort*distance+velocityCShort;
+            return velocityAShort*distance*distance+velocityBShort*distance+velocityCShort+(MANUAL_FLYWHEEL_ADJUST_COEFFICIENT*0.75);
         }if (distance<MID_DISTANCE_THRESHOLD){
-            return velocityANew*distance*distance+velocityBNew*distance+velocityCNew;
+            return velocityANew*distance*distance+velocityBNew*distance+velocityCNew+MANUAL_FLYWHEEL_ADJUST;
         }else{
-            return newLongVelocityM*distance+newLongVelocityB;
+            return newLongVelocityM*distance+newLongVelocityB+LONG_MANUAL_FLYWHEEL_ADJUST;
         }
     }
 
