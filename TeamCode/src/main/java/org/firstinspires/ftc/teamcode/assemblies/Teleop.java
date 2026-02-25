@@ -20,6 +20,7 @@ public class Teleop extends LinearOpMode {
     Robot robot;
 
     boolean shootingMode = false;
+    boolean wasInFarZone = false;
     public static int RumbleTime = 500;
     
     /*
@@ -127,9 +128,17 @@ public class Teleop extends LinearOpMode {
             if (gamepad1.psWasReleased()) {
                 if (shootingMode) {
                     shootingMode = false;
+                    robot.shooter.flywheelEnhanced();
                     robot.blinkin.setSignal(Blinkin.Signals.OFF);
-                } else {
+                } else { // go into shooting mode and set flywheel coeffs appropriately
                     shootingMode = true;
+                    if (robot.drive.oQlocalizer.posX_mm < Shooter.PIDF_X_THRESHOLD) {
+                        robot.shooter.flywheelEnhancedFar();
+                        wasInFarZone = true;
+                    } else {
+                        robot.shooter.flywheelEnhanced();
+                        wasInFarZone = false;
+                    }
                 }
             }
 
@@ -213,6 +222,15 @@ public class Teleop extends LinearOpMode {
                 if (!robot.shooter.superFastShooting.get() && !robot.shootingArtifactColor.get()) {
                     // adjust shooter flywheel and pitch if we are not actively shooting at the moment
                     robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
+                }
+                // Adjusting the flywheel PIDF coeffs in realtime defeats their purpose so instead we...
+                // Adjust PIDF coeffs if we drove across the threshold in shooting mode
+                if (wasInFarZone && robot.drive.oQlocalizer.posX_mm > Shooter.PIDF_X_THRESHOLD) { // crossing into near zone
+                    robot.shooter.flywheelEnhanced();
+                    wasInFarZone = false;
+                } else if (!wasInFarZone && robot.drive.oQlocalizer.posX_mm > Shooter.PIDF_X_THRESHOLD) { // crossing into far zone
+                    robot.shooter.flywheelEnhancedFar();
+                    wasInFarZone = true;
                 }
             }
 

@@ -33,7 +33,7 @@ public class GoalSideV3 {
 
     // This is what we are aiming for throughout auto for max consistency while minimizing travel distances
     public static int IDEAL_GOAL_DISTANCE = 1220;
-    public static int IDEAL_FLYWHEEL = 800;
+    public static int IDEAL_FLYWHEEL = 790;
     public static float IDEAL_PITCH = 0.32f;
 
 

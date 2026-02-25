@@ -675,6 +675,11 @@ public class CalibrateArms extends LinearOpMode {
         telemetry.addLine("Aimer Position: "+robot.shooter.currentAim());
 
         if(gamepad1.startWasReleased()){
+            if (robot.drive.oQlocalizer.posX_mm < Shooter.PIDF_X_THRESHOLD) {
+                robot.shooter.flywheelEnhancedFar();
+            } else {
+                robot.shooter.flywheelEnhanced();
+            }
             robot.shooter.adjustShooterV4(robot.drive.robotGoalDistance());
             SHOOTER_VELOCITY = Shooter.VELOCITY_COMMANDED;
         }

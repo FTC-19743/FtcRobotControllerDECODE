@@ -50,14 +50,19 @@ public class Shooter {
     public static double shooterF = 0;
 
     // New PIDF coeffecients using Feed Forward to get faster recovery
-    public static double shooterLeftP = 35;
-    public static double shooterLeftI = .35;
-    public static double shooterLeftD = 0.05;
-    public static double shooterLeftF = 13.5;
-    public static double shooterRightP = 35;
-    public static double shooterRightI = .35;
-    public static double shooterRightD = 0.1;
-    public static double shooterRightF = 13.5;
+    public static double shooterLeftP = 50; // 50
+    public static double shooterLeftI = 0;
+    public static double shooterLeftD = 0.2; // .1
+    public static double shooterLeftF = 14.2; // 13.2
+    public static double shooterRightP = 50; // 50
+    public static double shooterRightI = 0;
+    public static double shooterRightD = 0.2; // .1
+    public static double shooterRightF = 13.7; // 13.1
+
+    public static double shooterLeftFarD = 0.2; // .1
+    public static double shooterLeftFarF = 14.2; // 13.2
+    public static double shooterRightFarD = 0.2; // .1
+    public static double shooterRightFarF = 13.7; // 13.1
 
     //THESE are the PIDF numbers to get the flywheels from 0 to 900 fast
 
@@ -66,7 +71,7 @@ public class Shooter {
     public static double shooterStartD = 4;
     public static double shooterStartF = 0;
 
-
+    public static int PIDF_X_THRESHOLD = -700; // below this we use FAR PIDF coeffs
 
 
     public static float AIMER_FAR_LONG = .540f; // far from long
@@ -78,7 +83,7 @@ public class Shooter {
     public static double CLOSE_LONG_VELOCITY = 1800; // 1600?
     public static double FAR_CLOSE_VELOCITY = 1200;
     public static double CLOSE_CLOSE_VELOCITY = 800;
-    public static double SHOOT_3_AIM_CHANGE = .01;
+    public static double SHOOT_3_AIM_CHANGE = 0; // was .01 but with enhanced PIDF, we don't need this anymore
 
     public static double MID_DISTANCE_THRESHOLD = 2667;
     public static double MID_SHORT_DISTANCE_THRESHOLD = 1400;
@@ -139,7 +144,12 @@ public class Shooter {
     public void flywheelEnhanced() {
         leftFlywheel.setVelocityPIDFCoefficients(shooterLeftP, shooterLeftI, shooterLeftD, shooterLeftF);
         rightFlywheel.setVelocityPIDFCoefficients(shooterRightP, shooterRightI, shooterRightD, shooterRightF);
-        teamUtil.log("set shooter PIDF to enhanced for faster recovery");
+        teamUtil.log("set shooter PIDF to enhanced MID for faster recovery");
+    }
+    public void flywheelEnhancedFar() {
+        leftFlywheel.setVelocityPIDFCoefficients(shooterLeftP, shooterLeftI, shooterLeftFarD, shooterLeftFarF);
+        rightFlywheel.setVelocityPIDFCoefficients(shooterRightP, shooterRightI, shooterRightFarD, shooterRightFarF);
+        teamUtil.log("set shooter PIDF to enhanced FAR for faster recovery");
     }
 
     public void initialize() {
