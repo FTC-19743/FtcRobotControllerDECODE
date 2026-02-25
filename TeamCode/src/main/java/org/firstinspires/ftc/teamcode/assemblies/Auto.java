@@ -226,7 +226,7 @@ public class Auto extends LinearOpMode {
                     //robot.goalSideV2(true, useIntakeDetector, gateLeaveTime, true);
                 }
             } else {
-                robot.humanSide(true);
+                robot.humanSide(true, useIntakeDetector);
             }
             robot.drive.stopMotors();
             robot.drive.waitForRobotToStop(1000);

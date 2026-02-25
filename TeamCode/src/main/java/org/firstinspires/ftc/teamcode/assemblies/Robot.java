@@ -908,8 +908,8 @@ public class Robot {
     public static int LOCALIZE_GOAL_X = 1617;
     public static int LOCALIZE_GOAL_Y = 824;
     public static double LOCALIZE_GOAL_H = 0;
-    public static int LOCALIZE_HUMAN_X = 0;
-    public static int LOCALIZE_HUMAN_Y = 0;
+    public static int LOCALIZE_HUMAN_X = -1534;
+    public static int LOCALIZE_HUMAN_Y = 381;
     public static double LOCALIZE_HUMAN_H = 0;
 
     public void setStartLocalizedPosition () {
@@ -935,7 +935,9 @@ public class Robot {
         gs.goalSideV3(useArms, useIntakeDetector, gateLeaveTime);
     }
 
-    public void humanSide(boolean useArms) {
+    public void humanSide(boolean useArms, boolean useIntakeDetector) {
+        FarSideV1 fs = new FarSideV1(this, telemetry);
+        fs.farSideV1(useArms, useIntakeDetector);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////

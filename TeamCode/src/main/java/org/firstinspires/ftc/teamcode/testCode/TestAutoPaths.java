@@ -55,6 +55,7 @@ public class TestAutoPaths extends LinearOpMode{
         teamUtil.justRanAuto = false;
         teamUtil.justRanCalibrateRobot = false;
         teamUtil.alliance = RED;
+        teamUtil.SIDE = teamUtil.Side.HUMAN;
 
         robot.calibrate();
 
@@ -187,11 +188,11 @@ public class TestAutoPaths extends LinearOpMode{
         }
         if (gamepad1.dpadDownWasPressed()){
             long startTime = System.currentTimeMillis();
+            robot.humanSide(USE_ARMS, USE_INTAKE_DETECTOR);
             robot.drive.stopMotors();
-            //robot.getMoreBallsV2();
             elapsedTime = System.currentTimeMillis()-startTime;
-
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
+
         }
         if (gamepad1.dpadRightWasReleased()) {
             robot.intake.resetIntakeDetector();
