@@ -19,6 +19,7 @@ public class Auto extends LinearOpMode {
     boolean useIntakeDetector = false;
     long gateLeaveTime = Robot.gateElapsedTime;
     boolean useV3 = false;
+    public static long gateMaxLeaveTime = 13000;
 
 
     public void runOpMode() {
@@ -87,7 +88,7 @@ public class Auto extends LinearOpMode {
             teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
             teamUtil.telemetry.addLine("----------------------------------");
             teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            if (gamepad1.dpadUpWasPressed() && gateLeaveTime < 11000) {
+            if (gamepad1.dpadUpWasPressed() && gateLeaveTime < gateMaxLeaveTime) {
                 gateLeaveTime += 1000;
             }
             if(gamepad1.dpadDownWasPressed() && gateLeaveTime > 0){ // stop negative
@@ -236,7 +237,7 @@ public class Auto extends LinearOpMode {
             robot.blinkin.setSignal(Blinkin.Signals.OFF);
             robot.stopLimeLight();
             //while (opModeIsActive()) { }// don't kill opMode until the last possible moment to allow other threads to finish
-            teamUtil.pause(500);
+//            teamUtil.pause(500); related to line above?
             robot.drive.loop();
 
             teamUtil.cacheHeading = robot.drive.getHeadingODO();

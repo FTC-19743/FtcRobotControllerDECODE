@@ -45,7 +45,7 @@ public class GoalSideV3 {
     public static double B00_PICKUP_H = 180;
     public static long B00_INTAKE_REVERSE_PAUSE = 200;
 
-    public static long B09_PARK_TIME_CUTOFF = 2000;
+    public static long B09_PARK_TIME_CUTOFF = 2200;
     public static double B09_PARK_END_VELOCITY = 1500;
     public static double B09_PARK_X = 200;
     public static double B09_PARK_Y = 1000;
@@ -274,9 +274,9 @@ public class GoalSideV3 {
     public static long B05_INTAKE_PAUSE = 300;
     public static double B05_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
     public static double B05_SHOT_PITCH = IDEAL_PITCH;
-    public static double B05_SHOT_X = 600; // was 650
-    public static double B05_SHOT_Y = 700 ; // was 750
-    public static double B05_SHOT_RH = 35;
+    public static double B05_SHOT_X = 1030; // was 600
+    public static double B05_SHOT_Y = 500; // was 700
+    public static double B05_SHOT_RH = 56;
     public static double B05_SHOT_END_VEL = 1000;
     public static double B05_SHOT_STRAIGHT_PERCENT = .5;
     public static double B05_SHOT_DRIFT_PERCENT = .95;

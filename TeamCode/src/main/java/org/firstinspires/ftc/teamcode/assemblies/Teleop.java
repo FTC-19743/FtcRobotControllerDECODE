@@ -228,7 +228,7 @@ public class Teleop extends LinearOpMode {
                 if (wasInFarZone && robot.drive.oQlocalizer.posX_mm > Shooter.PIDF_X_THRESHOLD) { // crossing into near zone
                     robot.shooter.flywheelEnhanced();
                     wasInFarZone = false;
-                } else if (!wasInFarZone && robot.drive.oQlocalizer.posX_mm > Shooter.PIDF_X_THRESHOLD) { // crossing into far zone
+                } else if (!wasInFarZone && robot.drive.oQlocalizer.posX_mm < Shooter.PIDF_X_THRESHOLD) { // crossing into far zone
                     robot.shooter.flywheelEnhancedFar();
                     wasInFarZone = true;
                 }
@@ -379,6 +379,7 @@ public class Teleop extends LinearOpMode {
         teamUtil.log("shutting down");
         robot.stopLimeLight();
         robot.localizer.stopCV();
+        robot.blinkin.setSignal(Blinkin.Signals.OFF);
         teamUtil.cacheHeading = robot.drive.getHeadingODO();
         teamUtil.cacheY = robot.drive.oQlocalizer.posY_mm;
         teamUtil.cacheX = robot.drive.oQlocalizer.posX_mm;
