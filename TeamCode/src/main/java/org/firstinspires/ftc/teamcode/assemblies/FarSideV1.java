@@ -1,13 +1,11 @@
 package org.firstinspires.ftc.teamcode.assemblies;
 
 import static org.firstinspires.ftc.teamcode.libs.teamUtil.Pattern.GPP;
-import static org.firstinspires.ftc.teamcode.libs.teamUtil.Pattern.PGP;
 import static org.firstinspires.ftc.teamcode.libs.teamUtil.Pattern.PPG;
 
 import com.acmerobotics.dashboard.config.Config;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
 
 @Config
@@ -54,30 +52,48 @@ public class FarSideV1 {
     public static boolean emptyRamp = true;
     public static int emptyRampPause = 1000;
 
+    public static boolean details = false;
+
     public void stopRobot(){
         drive.stopMotors();
         intake.intakeStop();
         shooter.stopShooter();
     }
 
+    public boolean flywheelsReady() {
+        if (details) {
+            teamUtil.log("shooterFlyWheelsReady Waiting: TVel: " + Shooter.VELOCITY_COMMANDED + " RVel: " + shooter.rightFlywheel.getVelocity() + " LVel: " + shooter.leftFlywheel.getVelocity());
+        }
+
+        double velo = Shooter.VELOCITY_COMMANDED;
+        double minVelo = velo - Shooter.VELOCITY_COMMANDED_THRESHOLD;
+        double maxVelo = velo + Shooter.VELOCITY_COMMANDED_THRESHOLD;
+
+        return (shooter.rightFlywheel.getVelocity() < maxVelo && shooter.leftFlywheel.getVelocity() < maxVelo &&
+                shooter.rightFlywheel.getVelocity() > minVelo && shooter.leftFlywheel.getVelocity() > minVelo);
+
+    }
     public boolean farSideShoot3 (boolean useArms, long flyWheelPause, long timeOut) {
         teamUtil.log("farSideShoot3 Starting");
-        long timeOutTime = System.currentTimeMillis() + timeOut;
-
+        long startTime = System.currentTimeMillis();
+        long timeOutTime = startTime + timeOut;
+        long FlywheelTime = startTime + flyWheelPause;
+        drive.stopMotors();
+        drive.waitForRobotToStop(2000); // kill any remaining momentum before we start looking for the shot
         if (useArms) {
             // Make sure flywheels are spun up and heading is good
-            while ((!robot.autoShooterHeadingReady() || !shooter.isLoaded() || robot.shooterFlyWheelsReady(drive.robotGoalDistance())) && teamUtil.keepGoing(timeOutTime)) {
+            while ((!robot.autoShooterHeadingReady() || !shooter.isLoaded() || flywheelsReady() || System.currentTimeMillis() < FlywheelTime) && teamUtil.keepGoing(timeOutTime)) {
+                if (details) teamUtil.log("Waiting Heading: "+robot.autoShooterHeadingReady()+" Loaded: " + shooter.isLoaded() + " Flywheels: " + flywheelsReady());
                 robot.autoHoldShotHeading();
             }
         }
         robot.drive.stopMotors();
-        teamUtil.pause(flyWheelPause); // extra time to get flywheels running at ideal speed
 
         if (System.currentTimeMillis() >=timeOutTime) {
             teamUtil.log("farSideShoot3 TIMED OUT waiting for valid shooting conditions");
             return false;
         } else {
-            return robot.autoShootSuperFast(useArms, false,5000); // Don't bother with pattern on preloads since we are going to empty the ramp
+            return robot.autoShootSuperFast(useArms, false,5000); // Don't bother with pattern
         }
 
     }
@@ -88,7 +104,7 @@ public class FarSideV1 {
     public static double B01_SHOT_END_VEL = 300;
     public static double B01_FLYWHEEL_VEL = IDEAL_FLYWHEEL;
     public static float B01_SHOT_PITCH = IDEAL_PITCH;
-    public static long B01_FLYWHEEL_PAUSE = 1000;
+    public static long B01_FLYWHEEL_PAUSE = 0;
     public boolean preloads(boolean useArms) {
         teamUtil.log("==================== Preloads (Group 1) ================");
         // Drive fast to shooting zone
@@ -119,6 +135,7 @@ public class FarSideV1 {
         if (getMoreBalls()) {
             if (useArms) robot.autoTransferAndLoadSuperFastNoWait(B02_INTAKE_PAUSE,3000); // Rely on Loaded Detector for these
             // Drive back to shooting zone
+            shooter.setShootSpeed(B01_FLYWHEEL_VEL);
             if (!drive.mirroredMoveToYHoldingLine(B02_OFF_WALL_VELOCITY, B02_OFF_WALL_Y,B02_OFF_WALL_X,B02_OFF_WALL_DRIVE_HEADING, B02_OFF_WALL_ROBOT_HEADING, B02_OFF_WALL_END_VELOCITY, null, 0, 2100)) return false;
             if (!drive.mirroredMoveToYHoldingLine(B02_FAST_APPROACH_VELOCITY, B02_FAST_APPROACH_Y,B02_FAST_APPROACH_X,B02_FAST_APPROACH_DRIVE_HEADING, B01_SHOT_H, B02_FAST_APPROACH_END_VELOCITY, null, 0, 2100)) return false;
             return farSideShoot3(useArms, 0, 5000);
@@ -127,10 +144,67 @@ public class FarSideV1 {
         }
     }
 
+    public static double B03_PICKUP_X = -950;
+    public static double B03_PICKUP_Y = 1200;
+    public static double B03_PICKUP_END_VELOCITY = 500;
+    public static double B03_PICKUP_DH = 0;
+    public static double B03_PICKUP_H = 180;
+    public static double B03_PICKUP_VELOCITY = 1000;
+    public static long  B03_PICKUP_PAUSE = 0;
+    public static long  B03_PICKUP_INTAKE_PAUSE = 500;
 
+    public static double B03_SETUP_Y = B03_PICKUP_Y-100;
+    public static double B03_SETUP_X = -1350;
+    public static double B03_SETUP_DH = 90;
+    public static double B03_SETUP_END_VELOCITY = 500;
+
+    public static double B03_CORNER_X = B03_SETUP_X+100;
+    public static double B03_CORNER_VELOCITY = 300;
+
+
+    public boolean getPatternBallsAndShoot(boolean useArms, boolean useIntakeDetector) {
+        // pickup group 4
+        teamUtil.log("==================== Pattern Set ================");
+        if (useArms) { intake.getReadyToIntakeNoWait(); }
+        if (!drive.mirroredMoveToYHoldingLine(B00_MAX_SPEED, B03_SETUP_Y, B03_SETUP_X, B03_SETUP_DH, B03_PICKUP_H, B03_SETUP_END_VELOCITY, null, 0, 3000)) return false;
+        if (!drive.mirroredMoveToXHoldingLine(B03_PICKUP_VELOCITY, B03_PICKUP_X, B03_PICKUP_Y, B03_PICKUP_DH, B03_PICKUP_H, B03_PICKUP_END_VELOCITY, null, 0, 3000)) return false;
+        // Manually set what is loaded in intake in case detector fails
+        if (useIntakeDetector) {
+            intake.detectIntakeArtifactsV2();
+        } else {
+            intake.logDetectorOutput(); // for debugging purposes
+            if (teamUtil.alliance == teamUtil.Alliance.BLUE) { // balls are reversed from audience
+                intake.setIntakeArtifacts(GPP);
+                intake.setLoadedArtifacts(GPP); // Assumes artifacts are preloaded in this order!!
+
+            } else {
+                intake.setIntakeArtifacts(PPG);
+                intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
+            }
+        }
+        intake.signalArtifacts();
+
+        drive.stopMotors(); // kill some forward momentum
+        teamUtil.pause(B03_PICKUP_PAUSE);
+        if (useArms) robot.autoTransferAndLoadSuperFastNoWait(B03_PICKUP_INTAKE_PAUSE,3000); // Rely on Loaded Detector for these
+
+        // Drive back to shooting zone
+        shooter.setShootSpeed(B01_FLYWHEEL_VEL);
+        if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B03_CORNER_X,B03_PICKUP_Y,B03_PICKUP_DH+180, B03_PICKUP_H, B03_CORNER_VELOCITY, null, 0, 2100)) return false;
+        if (!drive.mirroredMoveToYHoldingLine(B02_FAST_APPROACH_VELOCITY, B02_FAST_APPROACH_Y,B02_FAST_APPROACH_X,B02_FAST_APPROACH_DRIVE_HEADING, B01_SHOT_H, B02_FAST_APPROACH_END_VELOCITY, null, 0, 2100)) return false;
+        return farSideShoot3(useArms, 0, 5000);
+    }
+
+
+    public static long CYCLE_TIME = 6000;
+    public static long PARK_TIME = 2000;
+
+    public static double B05_PARK_X = -950;
+    public static double B05_PARK_Y = B01_SHOT_Y;
+    public static double B05_PARK_END_VELOCITY = 300;
 
     ///  ////////////////////////////////////////////////////////////////  GOAL SIDE V3
-    public void farSideV1(boolean useArms, boolean useIntakeDetector) {
+    public void farSideV1(boolean useArms, boolean useIntakeDetector, boolean getPatternBalls, long cycle1Time, long cycle2Time) {
         double nextGoalDistance = 0;
         long startTime = System.currentTimeMillis();
         double savedDeclination;
@@ -157,17 +231,54 @@ public class FarSideV1 {
                 teamUtil.log("FAILED to Start Intake Detector, failing over to hardcoded mode instead");
             }
         } else {
-            teamUtil.log("NOT using Detector. Running in hardcoded mode for patterns.");
+            teamUtil.log("NOT using Detector. Running in hardcoded mode.");
         }
 
         /////////////////////////////Shoot Preloads (Group 1)
-        if (!preloads(useArms)) return;
+        if (!preloads(useArms)) {
+            stopRobot();
+            return;
+        }
+        shooter.setShootSpeed(Shooter.MAX_IDLE_FLYWHEEL_VELOCITY);
 
-        /////////////////////////////Get the corner ones and shoot (Group 2)
-        getCornerBallsAndShoot(useArms);
+        /////////////////////////////Get the Pre-Set corner ones and shoot (Group 2)
+        if (!getCornerBallsAndShoot(useArms)) {
+            stopRobot();
+            return;
+        }
+        shooter.setShootSpeed(Shooter.MAX_IDLE_FLYWHEEL_VELOCITY);
+
+        /////////////////////////////Get the nearest pattern pre-set group and shoot (Group 3 optional)
+        if (getPatternBalls) {
+            if (!getPatternBallsAndShoot(useArms, useIntakeDetector)) {
+                stopRobot();
+                return;
+            }
+            shooter.setShootSpeed(Shooter.MAX_IDLE_FLYWHEEL_VELOCITY);
+        }
+
+        ///////////////////////////// Cycle Corner 1
+        if (cycle1Time > 0 && System.currentTimeMillis()- startTime + CYCLE_TIME + PARK_TIME < 30000) {// if we can do cycle1 and still park, go for it
+            while (System.currentTimeMillis() - startTime < cycle1Time) {    // wait until its time
+                teamUtil.pause(50);
+            }
+            if (!getCornerBallsAndShoot(useArms)) {stopRobot();return;}
+        }
+        ///////////////////////////// Cycle Corner 2
+        if (cycle2Time > 0 && System.currentTimeMillis() - startTime + CYCLE_TIME + PARK_TIME < 30000) {// if we can do cycle2 and still park, go for it
+            while (System.currentTimeMillis() - startTime < cycle2Time) {    // wait until its time
+                teamUtil.pause(50);
+            }
+            if (!getCornerBallsAndShoot(useArms)) {stopRobot();return;}
+        }
 
         /////////////////////////////Park off the line
-
+        if(System.currentTimeMillis() - startTime < 30000 - PARK_TIME){ // 2 seconds left
+            if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, B05_PARK_X, B05_PARK_Y, 0, 0, B05_PARK_END_VELOCITY, null, 0, 2000)) {stopRobot();return;}
+            drive.stopMotors();
+        }else{
+            teamUtil.log("Not enough time to park. Stopping");
+        }
 
         /////////////////////////////Wrap up
         stopRobot();
@@ -240,5 +351,8 @@ public class FarSideV1 {
         return true;
     }
 
+    public void park() {
+
+    }
 
 }

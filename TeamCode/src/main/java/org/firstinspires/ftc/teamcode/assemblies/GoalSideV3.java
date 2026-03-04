@@ -33,7 +33,7 @@ public class GoalSideV3 {
 
     // This is what we are aiming for throughout auto for max consistency while minimizing travel distances
     public static int IDEAL_GOAL_DISTANCE = 1220;
-    public static int IDEAL_FLYWHEEL = 790;
+    public static int IDEAL_FLYWHEEL = 780;
     public static float IDEAL_PITCH = 0.32f;
 
 
@@ -65,7 +65,7 @@ public class GoalSideV3 {
     public static double B01_SHOT_Y = 780;
     public static double B01_SHOT_H = 45;
     public static double B01_SHOT_END_VEL = 500;
-    public static double B01_FLYWHEEL_VEL = IDEAL_FLYWHEEL-20; // a little less for the super fast shots up front
+    public static double B01_FLYWHEEL_VEL = IDEAL_FLYWHEEL;//-20; // a little less for the super fast shots up front (not any more)
     public static float B01_SHOT_PITCH = IDEAL_PITCH;
     public boolean preloads(boolean useArms) {
         teamUtil.log("==================== Preloads (Group 1) ================");
@@ -223,7 +223,7 @@ public class GoalSideV3 {
     public static double B04_SHOT_Y = 650; // was 700
     public static double B04_SHOT_RH = 35;
     public static double B04_SHOT_END_VEL = 1000; // was 400 before GoalSideV3
-    public static double B04_SHOT_STRAIGHT_PERCENT = .4;
+    public static double B04_SHOT_STRAIGHT_PERCENT = .3;
     public static double B04_SHOT_DRIFT_PERCENT = .9;
     public static double B04_FLYWHEEL_VELOCITY = IDEAL_FLYWHEEL;
     public static float B04_SHOT_PITCH = IDEAL_PITCH;
@@ -327,7 +327,7 @@ public class GoalSideV3 {
         double savedDeclination;
         teamUtil.log("##################################################################################");
         teamUtil.log("#########################  Starting GoalSideV3 Auto ##############################");
-        shooter.flywheelStartup(); // set flywheel to fast start PIDF coefs
+        shooter.flywheelEnhanced(); // Enhanced PIDF for close in shots
         intake.setLoadedArtifacts(PPG); // Assumes artifacts are preloaded in this order!!
         intake.setIntakeArtifacts(PPG);
         intake.signalArtifacts();
@@ -400,6 +400,7 @@ public class GoalSideV3 {
 
     public static double DRIVE_TO_SHOT_ROTATION_ADJUST_FACTOR = 20;
     public boolean mirroredDriveToShotPositionFast(double xTarget, double yTarget, double shotHeading, double endVelocity, double straightPercent, double driftPercent) {
+        long startTime = System.currentTimeMillis();
         teamUtil.log("mirroredDriveToShotPositionFast");
         int currentX = drive.oQlocalizer.posX_mm;
         int currentY = drive.oQlocalizer.posY_mm;
@@ -419,6 +420,8 @@ public class GoalSideV3 {
         drive.ROTATION_ADJUST_FACTOR = DRIVE_TO_SHOT_ROTATION_ADJUST_FACTOR; // chill out rotation adjust for this large/quick spin/translation
         if (!drive.mirroredMoveToXHoldingLine(B00_MAX_SPEED, driftX, driftY, driveHeading, shotHeading,endVelocity,null, 0, 3000 )) return false;
         drive.ROTATION_ADJUST_FACTOR = store;
+        teamUtil.log("mirroredDriveToShotPositionFast Finished in: " + (System.currentTimeMillis() - startTime));
+
         return true;
     }
 

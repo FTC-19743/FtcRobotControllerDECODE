@@ -935,9 +935,9 @@ public class Robot {
         gs.goalSideV3(useArms, useIntakeDetector, gateLeaveTime);
     }
 
-    public void humanSide(boolean useArms, boolean useIntakeDetector) {
+    public void humanSide(boolean useArms, boolean useIntakeDetector, boolean getPatternBalls, long cycle1Time, long cycle2Time) {
         FarSideV1 fs = new FarSideV1(this, telemetry);
-        fs.farSideV1(useArms, useIntakeDetector);
+        fs.farSideV1(useArms, useIntakeDetector, getPatternBalls, cycle1Time, cycle2Time);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////

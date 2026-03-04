@@ -22,6 +22,11 @@ public class TestAutoPaths extends LinearOpMode{
 
     static public boolean USE_ARMS = false;
     static public boolean USE_INTAKE_DETECTOR = false;
+    static public boolean GET_PATTERN_BALLS = true;
+    static public long CYCLE1_TIME = 16000;
+    static public long CYCLE2_TIME = 21000;
+
+
     public long elapsedTime = 0;
 
     public enum Ops {
@@ -188,7 +193,7 @@ public class TestAutoPaths extends LinearOpMode{
         }
         if (gamepad1.dpadDownWasPressed()){
             long startTime = System.currentTimeMillis();
-            robot.humanSide(USE_ARMS, USE_INTAKE_DETECTOR);
+            robot.humanSide(USE_ARMS, USE_INTAKE_DETECTOR, GET_PATTERN_BALLS, CYCLE1_TIME, CYCLE2_TIME);
             robot.drive.stopMotors();
             elapsedTime = System.currentTimeMillis()-startTime;
             teamUtil.log("---------- Elapsed Time: " + elapsedTime);
