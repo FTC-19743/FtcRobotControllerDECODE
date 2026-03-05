@@ -9,17 +9,18 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.libs.Blinkin;
 import org.firstinspires.ftc.teamcode.libs.teamUtil;
+
 @Config
 
-@Autonomous(name = "Auto", group = "LinearOpMode")
-public class Auto extends LinearOpMode {
+@Autonomous(name = "AutoFAR", group = "LinearOpMode")
+public class AutoFar extends LinearOpMode {
 
     Robot robot;
-    boolean shootingMode = false;
-    boolean useIntakeDetector = false;
-    long gateLeaveTime = Robot.gateElapsedTime;
-    boolean useV3 = false;
-    public static long gateMaxLeaveTime = 13000;
+    boolean getPatternSet = false;
+    long cycle1Time = 0;
+    long cycle2Time = 0;
+    long cycle3Time = 0;
+    long cycle4Time = 0;
 
 
     public void runOpMode() {
@@ -33,7 +34,8 @@ public class Auto extends LinearOpMode {
         teamUtil.justRanCalibrateRobot = false;
         robot.calibrate();
         robot.intake.flippersToTransfer();
-        teamUtil.SIDE = teamUtil.Side.GOAL;
+
+        teamUtil.SIDE = teamUtil.Side.HUMAN;
 
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
@@ -54,44 +56,9 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
-        useIntakeDetector = false;
-        /*
-        while (!gamepad1.aWasReleased() && !isStopRequested()) {
-            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-            teamUtil.telemetry.addLine("----------------------------------");
-            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-            teamUtil.telemetry.addLine("Press Bumpers To use Intake Detector");
-            if (gamepad1.rightBumperWasReleased() || gamepad1.leftBumperWasReleased()) {
-                useIntakeDetector = !useIntakeDetector;
-            }
-            teamUtil.telemetry.update();
-        }
-        if (isStopRequested()) return;
-         */
-
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-            teamUtil.telemetry.addLine("----------------------------------");
-            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            if (gamepad1.dpadUpWasPressed() && gateLeaveTime < gateMaxLeaveTime) {
-                gateLeaveTime += 1000;
-            }
-            if(gamepad1.dpadDownWasPressed() && gateLeaveTime > 0){ // stop negative
-                gateLeaveTime -= 1000;
-            }
-            teamUtil.telemetry.update();
-        }
-        if (isStopRequested()) return;
-
-
-        while (!gamepad1.aWasReleased() && !isStopRequested()) {
-            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
             teamUtil.telemetry.addLine("----------------------------------");
             teamUtil.telemetry.addLine("Check Limelight functionality");
             teamUtil.telemetry.addLine("Press Bumpers To Reset Lime Light Detector");
@@ -112,87 +79,119 @@ public class Auto extends LinearOpMode {
         }
         if (isStopRequested()) return;
 
-        useV3 = true;
-        /*
-        teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-        teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-        teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-        teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-        teamUtil.telemetry.addLine("----------------------------------");
-        teamUtil.telemetry.addLine("Use auto V3: "+useV3);
-        teamUtil.telemetry.update();
-        while (!gamepad1.aWasPressed() && !isStopRequested()) {
-            if(gamepad1.dpadUpWasPressed()){
-                useV3 = true;
-            }else if(gamepad1.dpadDownWasPressed()){
-                useV3 = false;
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("Press Bumpers To Change");
+            if (gamepad1.rightBumperWasReleased() || gamepad1.leftBumperWasReleased()) {
+                getPatternSet = !getPatternSet;
             }
+            teamUtil.telemetry.update();
         }
-        if(isStopRequested()) return;
-        */
-
-        robot.intake.intakeNum = 0;
-        Intake.leftIntake = Intake.ARTIFACT.NONE;
-        Intake.middleIntake = Intake.ARTIFACT.NONE;
-        Intake.rightIntake = Intake.ARTIFACT.NONE;
-        robot.intake.setRGBSignals(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE); // turn off signals
-
-        teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
-        teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-        teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-        teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-        teamUtil.telemetry.addLine("Use auto V3: "+useV3);
-        teamUtil.telemetry.addLine("----------------------------------");
-        teamUtil.telemetry.addLine("Press A to Localize and start CV");
-        teamUtil.telemetry.update();
-        while (!gamepad1.aWasReleased() && !isStopRequested()) {}
         if (isStopRequested()) return;
-        robot.setStartLocalizedPosition();
-        robot.initCV(false);
+
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Cycle 1 time: "+ cycle1Time +" ms");
+            if (gamepad1.dpadUpWasPressed()) {
+                cycle1Time += 1000;
+            }
+            if(gamepad1.dpadDownWasPressed() && cycle1Time > 0){ // stop negative
+                cycle1Time -= 1000;
+            }
+            teamUtil.telemetry.update();
+        }
+        if (isStopRequested()) return;
+
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("Cycle 1 time: "+ cycle1Time +" ms");
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Cycle 2 time: "+ cycle2Time +" ms");
+            if (gamepad1.dpadUpWasPressed()) {
+                cycle2Time += 1000;
+            }
+            if(gamepad1.dpadDownWasPressed() && cycle2Time > 0){ // stop negative
+                cycle2Time -= 1000;
+            }
+            teamUtil.telemetry.update();
+        }
+        if (isStopRequested()) return;
+
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("Cycle 1 time: "+ cycle1Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 2 time: "+ cycle2Time +" ms");
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Cycle 3 time: "+ cycle3Time +" ms");
+            if (gamepad1.dpadUpWasPressed()) {
+                cycle3Time += 1000;
+            }
+            if(gamepad1.dpadDownWasPressed() && cycle3Time > 0){ // stop negative
+                cycle3Time -= 1000;
+            }
+            teamUtil.telemetry.update();
+        }
+        if (isStopRequested()) return;
+
+        while (!gamepad1.aWasReleased() && !isStopRequested()) {
+            teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
+            teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("Cycle 1 time: "+ cycle1Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 2 time: "+ cycle2Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 3 time: "+ cycle3Time +" ms");
+            teamUtil.telemetry.addLine("----------------------------------");
+            teamUtil.telemetry.addLine("Cycle 4 time: "+ cycle4Time +" ms");
+            if (gamepad1.dpadUpWasPressed()) {
+                cycle4Time += 1000;
+            }
+            if(gamepad1.dpadDownWasPressed() && cycle4Time > 0){ // stop negative
+                cycle4Time -= 1000;
+            }
+            teamUtil.telemetry.update();
+        }
+        if (isStopRequested()) return;
 
 
         while (!gamepad1.aWasReleased() && !isStopRequested()) {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("Use auto V3: "+useV3);
-            robot.drive.localizerTelemetry();
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("Cycle 1 time: "+ cycle1Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 2 time: "+ cycle2Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 3 time: "+ cycle3Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 4 time: "+ cycle4Time +" ms");
             teamUtil.telemetry.addLine("----------------------------------");
-            if (robot.detectPattern()) {
-                teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
-            } else {
-                teamUtil.telemetry.addLine("NO APRIL TAG PATTERN DETECTED. Defaulting to: " + teamUtil.pattern);
-            }
-            teamUtil.telemetry.addLine("Press A to Finish Setup");
+            teamUtil.telemetry.addLine("Press A to Localize");
             teamUtil.telemetry.update();
         }
         if (isStopRequested()) return;
-
+        robot.setStartLocalizedPosition();
 
         while (!isStarted()) {
             teamUtil.telemetry.addLine("Side: " + teamUtil.SIDE);
             teamUtil.telemetry.addLine("Alliance: " + teamUtil.alliance);
-            teamUtil.telemetry.addLine("Use Intake Detector: " + useIntakeDetector);
-            teamUtil.telemetry.addLine("Gate leave elapsed time: "+ gateLeaveTime +" ms");
-            teamUtil.telemetry.addLine("Use auto V3: "+useV3);
-            robot.drive.localizerTelemetry();
+            teamUtil.telemetry.addLine("GetPatternSet: " + getPatternSet);
+            teamUtil.telemetry.addLine("Cycle 1 time: "+ cycle1Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 2 time: "+ cycle2Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 3 time: "+ cycle3Time +" ms");
+            teamUtil.telemetry.addLine("Cycle 4 time: "+ cycle4Time +" ms");
             teamUtil.telemetry.addLine("----------------------------------");
-            if (robot.detectPattern()) {
-                teamUtil.telemetry.addLine("Pattern: " + teamUtil.pattern);
-                robot.intake.detectorMode = Intake.DETECTION_MODE.LOADED;
-                robot.intake.setLoadedArtifacts(teamUtil.pattern);
-                robot.intake.signalArtifacts();
-            } else {
-                teamUtil.telemetry.addLine("NO APRIL TAG PATTERN DETECTED. Defaulting to: " + teamUtil.pattern);
-                robot.intake.setRGBsOff();
-            }
             teamUtil.telemetry.addLine("READY TO GO");
             teamUtil.telemetry.update();
         }
         robot.intake.setLoadedArtifacts(Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE, Intake.ARTIFACT.NONE);
         robot.intake.signalArtifacts();
-        robot.stopCV();
         if (isStopRequested()) return;
 
         if(teamUtil.alliance == teamUtil.Alliance.RED){
@@ -208,7 +207,7 @@ public class Auto extends LinearOpMode {
             long startTime = System.currentTimeMillis();
             //teamUtil.pause(delay);
 
-            robot.goalSideV3(true, useIntakeDetector, gateLeaveTime);
+            robot.humanSide(true, false, getPatternSet, cycle1Time, cycle2Time, cycle3Time, cycle4Time);
 
             robot.drive.stopMotors();
             robot.drive.waitForRobotToStop(1000);

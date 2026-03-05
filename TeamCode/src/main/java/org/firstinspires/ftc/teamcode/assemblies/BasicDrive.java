@@ -541,6 +541,7 @@ public class BasicDrive{
         setMotorPowers(flV, frV, blV, brV);
     }
 
+    public static double SPIN_CLIP = 180;
     // drive the motors at the specified heading (robot relative) at the specified velocity while holding the (robot relative) robot heading
     public void driveMotorsHeadings(double driveHeading, double robotHeading, double velocity) {
         // move robot based on a heading to face and a heading to drive to
@@ -548,8 +549,8 @@ public class BasicDrive{
         double x, y, scale;
 
         // Determine how much adjustment for rotational drift
-        double headingError = getHeadingError(robotHeading); // Difference between desired and actual robot heading
-        //double headingError = Math.max(-45.0, Math.min(getHeadingError(robotHeading), 45.0)); // clip this to 45 degrees in either direction to control rate of spin
+        //double headingError = getHeadingError(robotHeading); // Difference between desired and actual robot heading
+        double headingError = Math.max(-SPIN_CLIP, Math.min(getHeadingError(robotHeading), SPIN_CLIP)); // clip this in either direction to control rate of spin
         double rotationAdjust = ROTATION_ADJUST_FACTOR * headingError; // scale based on amount of rotational error.....Took out velocity
         if(details) teamUtil.log("Params: DriveHeading: " +driveHeading + " RobotHeading: " + robotHeading + " Velocity: " + velocity+ " RobotHeadingError: " + headingError +  " ODOHeading: " + getHeadingODO()+ " RotAdjust: " + rotationAdjust);
 
@@ -1783,7 +1784,7 @@ public class BasicDrive{
             stopMotors();
             return false;
         }
-        teamUtil.log("moveToXHoldingLine--Finished.  Current xPos:" + oQlocalizer.posX_mm + " Current yPos: "+ oQlocalizer.posY_mm);
+        teamUtil.log("moveToXHoldingLine--Finished.  Current xPos:" + oQlocalizer.posX_mm + " yPos: "+ oQlocalizer.posY_mm + " H: "+ Math.toDegrees(oQlocalizer.heading_rad));
         return true;
     }
     public boolean moveToYHoldingLine(double velocity, double yTarget, double xTarget, double driveHeading, double robotHeading, double endVelocity, ActionCallback action, double actionTarget, long timeout) {
@@ -1838,7 +1839,7 @@ public class BasicDrive{
             stopMotors();
             return false;
         }
-        teamUtil.log("moveToYHoldingLine--Finished.  Current yPos:" + oQlocalizer.posY_mm + " Current xPos: "+ oQlocalizer.posX_mm);
+        teamUtil.log("moveToYHoldingLine--Finished.  Current yPos:" + oQlocalizer.posY_mm + " xPos: "+ oQlocalizer.posX_mm + " H: "+ Math.toDegrees(oQlocalizer.heading_rad));
         return true;
     }
 

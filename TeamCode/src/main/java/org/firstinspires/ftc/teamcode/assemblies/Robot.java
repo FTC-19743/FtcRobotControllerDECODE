@@ -864,7 +864,7 @@ public class Robot {
                 // Adjust the pitch of the shooter to match distance and flywheel velocity
                 //shooter.changeAim(goalDistance, flyWheelVelocity); // FIXED for now, trust the pathing to work. Could consider adding this to autoHoldShotHeading()
 
-                shooter.shootSuperFastNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, false, true, true, 0); // launch the shot sequence in another thread
+                shooter.shootSuperFastNoWait(Intake.leftLoad != Intake.ARTIFACT.NONE, false, true, true, goalDistance); // launch the shot sequence in another thread
                 // wait for it to finish while adjusting robot heading if needed
                 while (shooter.superFastShooting.get() && teamUtil.keepGoing(timeOutTime)) {
                     autoHoldShotHeading();
@@ -935,9 +935,9 @@ public class Robot {
         gs.goalSideV3(useArms, useIntakeDetector, gateLeaveTime);
     }
 
-    public void humanSide(boolean useArms, boolean useIntakeDetector, boolean getPatternBalls, long cycle1Time, long cycle2Time) {
+    public void humanSide(boolean useArms, boolean useIntakeDetector, boolean getPatternBalls, long cycle1Time, long cycle2Time, long cycle3Time, long cycle4Time) {
         FarSideV1 fs = new FarSideV1(this, telemetry);
-        fs.farSideV1(useArms, useIntakeDetector, getPatternBalls, cycle1Time, cycle2Time);
+        fs.farSideV1(useArms, useIntakeDetector, getPatternBalls, cycle1Time, cycle2Time, cycle3Time, cycle4Time);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
